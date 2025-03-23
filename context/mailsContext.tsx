@@ -1,50 +1,112 @@
 "use client";
-import { createContext, useState, useEffect, useContext } from "react";
-import { Sender, Folder, Mail } from "@/types/data";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
+import { Mail } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 
 interface MailsContextType {
-  senders: Sender[];
-  folders: Folder[];
   mails: Mail[];
+  isMailsLoading: boolean;
+  mailsListError: string | null;
+  markAsReadError: string | null;
+  markAsRead: (id: string) => Promise<void>;
+  bookmarkError: string | null;
+  bookmark: (id: string) => Promise<void>;
+  summarizeError: string | null;
+  summarize: (id: string) => Promise<void>;
 }
 
 const MailsContext = createContext<MailsContextType | null>(null);
 
 export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
-  const [senders, setSenders] = useState<Sender[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [mails, setMails] = useState<Mail[]>([]);
-
+  const [isMailsLoading, setIsMailsLoading] = useState(false);
+  const [mailsListError, setMailsListError] = useState<string | null>(null);
+  const [markAsReadError, setMarkAsReadError] = useState<string | null>(null);
+  const [bookmarkError, setBookmarkError] = useState<string | null>(null);
   const api = useAxios();
-  useEffect(() => {
-    const fetchSenders = async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
-      const data = await api.get(`/senders/user/${user.user.id}`);
-      setSenders(data.data);
-    };
-    const fetchFolders = async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
-      const data = await api.get(`/folders/user/${user.user.id}`);
-      setFolders(data.data);
-    };
-    const fetchMails = async () => {
+  const [summarizeError, setSummarizeError] = useState<string | null>(null);
+  const fetchMails = useCallback(async () => {
+    try {
+      setIsMailsLoading(true);
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
       const data = await api.get(`/mails/user/${user.user.id}`);
       setMails(data.data);
-    };
-    fetchSenders();
-    fetchFolders();
+    } catch (error) {
+      setMailsListError(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      console.error(error);
+    } finally {
+      setIsMailsLoading(false);
+    }
+  }, [api, supabase]);
+  const markAsRead = useCallback(
+    async (id: string, read = true) => {
+      try {
+        await api.put(`/mails/read/${id}`, { read });
+      } catch (error) {
+        setMarkAsReadError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(error);
+      }
+    },
+    [api]
+  );
+  const bookmark = useCallback(
+    async (id: string, bookmark = true) => {
+      try {
+        await api.put(`/mails/bookmark/${id}`, { bookmark });
+      } catch (error) {
+        setBookmarkError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(error);
+      }
+    },
+    [api]
+  );
+  const summarize = useCallback(
+    async (id: string) => {
+      try {
+        const response = await api.get(`/mails/summarize/${id}`);
+        return response.data;
+      } catch (error) {
+        setSummarizeError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(error);
+      }
+    },
+    [api]
+  );
+  useEffect(() => {
     fetchMails();
   }, []);
 
   return (
-    <MailsContext.Provider value={{ senders, folders, mails }}>
+    <MailsContext.Provider
+      value={{
+        mails,
+        isMailsLoading,
+        mailsListError,
+        markAsReadError,
+        markAsRead,
+        bookmarkError,
+        bookmark,
+        summarizeError,
+        summarize,
+      }}
+    >
       {children}
     </MailsContext.Provider>
   );
