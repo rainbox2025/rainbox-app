@@ -2,11 +2,15 @@
 import { Onboardingmodal } from "@/components/onboardingmodal";
 import { useOnboarding } from "@/context/onboardingContext";
 import { useMails } from "@/context/mailsContext";
+import { useFolders } from "@/context/foldersContext";
+import { useSenders } from "@/context/sendersContext";
 import React, { useEffect, useState } from "react";
 
 const page = () => {
   const { isOnboardingComplete } = useOnboarding();
-  const { senders, folders, mails } = useMails();
+  const { mails } = useMails();
+  const { folders } = useFolders();
+  const { senders } = useSenders();
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   useEffect(() => {
     const checkOnboarding = async () => {
