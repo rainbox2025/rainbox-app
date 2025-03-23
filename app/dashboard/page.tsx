@@ -7,7 +7,6 @@ import React, { useEffect, useState } from "react";
 const page = () => {
   const { isOnboardingComplete } = useOnboarding();
   const { senders, folders, mails } = useMails();
-  console.log(senders, folders, mails);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   useEffect(() => {
     const checkOnboarding = async () => {

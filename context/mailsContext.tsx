@@ -1,7 +1,8 @@
 "use client";
 import { createContext, useState, useEffect, useContext } from "react";
-import { User, Sender, Folder, Mail } from "@/types/data";
+import { Sender, Folder, Mail } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
+import { useAxios } from "@/hooks/useAxios";
 
 interface MailsContextType {
   senders: Sender[];
@@ -16,36 +17,26 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const [senders, setSenders] = useState<Sender[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [mails, setMails] = useState<Mail[]>([]);
+
+  const api = useAxios();
   useEffect(() => {
     const fetchSenders = async () => {
       const { data: user } = await supabase.auth.getUser();
-      const { data: senders } = await supabase
-        .from("senders")
-        .select("*")
-        .eq("user_id", user?.user?.id);
-      if (senders) {
-        setSenders(senders as Sender[]);
-      }
+      if (!user.user) return;
+      const data = await api.get(`/senders/user/${user.user.id}`);
+      setSenders(data.data);
     };
     const fetchFolders = async () => {
       const { data: user } = await supabase.auth.getUser();
-      const { data: folders } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("user_id", user?.user?.id);
-      if (folders) {
-        setFolders(folders as Folder[]);
-      }
+      if (!user.user) return;
+      const data = await api.get(`/folders/user/${user.user.id}`);
+      setFolders(data.data);
     };
     const fetchMails = async () => {
       const { data: user } = await supabase.auth.getUser();
-      const { data: mails } = await supabase
-        .from("mails")
-        .select("*")
-        .eq("user_id", user?.user?.id);
-      if (mails) {
-        setMails(mails as Mail[]);
-      }
+      if (!user.user) return;
+      const data = await api.get(`/mails/user/${user.user.id}`);
+      setMails(data.data);
     };
     fetchSenders();
     fetchFolders();
