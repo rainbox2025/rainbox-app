@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   }
 
   if (redirectTo) {
+    console.log("redirectTo", redirectTo);
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
   const { data: user } = await supabase.auth.getUser();
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     if (userError) {
       console.log(userError.code + " " + userError.message);
     }
+    console.log(userData);
     if (!userData) {
       const { data: userData, error: userInsertError } = await supabase
         .from("users")
@@ -45,5 +47,5 @@ export async function GET(request: Request) {
     }
   }
   // URL to redirect to after sign up process completes
-  return NextResponse.redirect(`${origin}/protected`);
+  return NextResponse.redirect(`${origin}/dashboard`);
 }

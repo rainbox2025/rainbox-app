@@ -3,7 +3,7 @@
   display: none;
   position: relative;
   overflow: hidden;
-  background-color: #f2fbf5;
+  background-color: #f2f7fb;
 }
 
 .content-container {
@@ -33,7 +33,7 @@
 
 .background-circle {
   position: absolute;
-  fill: #dbf3e2;
+  fill: #dbe8f3;
 }
 
 .image-logo {

@@ -14,6 +14,7 @@ import { Check, Loader2 } from "lucide-react";
 
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/authContext";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 export const Onboardingmodal = () => {
   const {
     isOnboardingComplete,
@@ -25,15 +26,13 @@ export const Onboardingmodal = () => {
     currentStep,
   } = useOnboarding();
   const supabase = createClient();
-  const [userName, setUserName] = useState("lodash");
+  const [userName, setUserName] = useState("");
   const [userNameError, setUserNameError] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameValid, setIsUsernameValid] = useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
 
-  // Add effect to focus input on mount
   useEffect(() => {
     if (!user) return;
   }, [user]);
@@ -80,24 +79,18 @@ export const Onboardingmodal = () => {
             <form onSubmit={handleUsernameSubmit} className="space-y-4">
               <div className="flex relative">
                 <Input
-                  ref={inputRef}
                   type="text"
                   placeholder="Username"
                   name="username"
                   value={userName}
                   onChange={handleUsernameChange}
-                  className={`rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-red-500" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-green-500" : ""}`}
+                  className={`focus:outline-none focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-destructive" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-primaryBlue" : ""}`}
                   disabled={isCheckingUsername}
-                  autoFocus
                 />
                 <div className="bg-gray-100 flex items-center px-3 rounded-r-md">
-                  @rainbox.app
+                  @rainbox.in
                 </div>
-                {isUsernameValid && userName.trim() && !isCheckingUsername && (
-                  <div className="absolute right-14 top-1/2 transform -translate-y-1/2">
-                    <Check className="h-4 w-4 text-green-500" />
-                  </div>
-                )}
+
                 {isCheckingUsername && (
                   <div className="absolute right-14 top-1/2 transform -translate-y-1/2">
                     <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
@@ -118,10 +111,12 @@ export const Onboardingmodal = () => {
                   a different email address
                 </p>
               ) : null}
-              <p className="text-xs text-gray-500 flex items-center gap-1">
-                <span>⚠️</span> You won't be able to change this email address
-                later
-              </p>
+              <Alert variant="default">
+                <AlertTitle>Important:</AlertTitle>
+                <AlertDescription>
+                  You won't be able to change this email address later
+                </AlertDescription>
+              </Alert>
               <Button
                 type="submit"
                 className="w-full"
@@ -182,7 +177,11 @@ export const Onboardingmodal = () => {
             </ul>
 
             <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={previousStep}>
+              <Button
+                disabled={currentStep === 2}
+                variant="outline"
+                onClick={previousStep}
+              >
                 Back
               </Button>
               <Button onClick={nextStep}>Next</Button>
@@ -271,7 +270,7 @@ export const Onboardingmodal = () => {
           <DialogTitle>Onboarding</DialogTitle>
           <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
             <div
-              className="bg-pink-500 h-2 rounded-full"
+              className="bg-primaryBlue h-2 rounded-full"
               style={{ width: `${(currentStep / 3) * 100}%` }}
             ></div>
           </div>

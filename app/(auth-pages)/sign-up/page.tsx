@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-import { Mail } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { GoogleIcon } from "@/icons";
 
 export default async function Signup(props: {
@@ -33,7 +31,7 @@ export default async function Signup(props: {
         </div>
 
         <div className="mb-4">
-          <form action={signInWithGoogleAction}>
+          <form>
             <Button
               type="submit"
               variant="outline"
@@ -69,6 +67,17 @@ export default async function Signup(props: {
               type="password"
               name="password"
               placeholder="Password"
+              minLength={6}
+              required
+              className="h-12"
+            />
+          </div>
+
+          <div>
+            <Input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm password"
               minLength={6}
               required
               className="h-12"
