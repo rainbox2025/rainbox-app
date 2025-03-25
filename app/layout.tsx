@@ -8,6 +8,8 @@ import "./globals.css";
 import { OnboardingProvider } from "@/context/onboardingContext";
 import { AuthProvider } from "@/context/authContext";
 import { MailsProvider } from "@/context/mailsContext";
+import { FoldersProvider } from "@/context/foldersContext";
+import { SendersProvider } from "@/context/sendersContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -52,7 +54,11 @@ export default function RootLayout({
               <div className="flex flex-col gap-20 max-w-5xl p-5">
                 <MailsProvider>
                   <AuthProvider>
-                    <OnboardingProvider>{children}</OnboardingProvider>
+                    <FoldersProvider>
+                      <SendersProvider>
+                        <OnboardingProvider>{children}</OnboardingProvider>
+                      </SendersProvider>
+                    </FoldersProvider>
                   </AuthProvider>
                 </MailsProvider>
               </div>
