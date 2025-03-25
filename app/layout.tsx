@@ -10,6 +10,7 @@ import { AuthProvider } from "@/context/authContext";
 import { MailsProvider } from "@/context/mailsContext";
 import { FoldersProvider } from "@/context/foldersContext";
 import { SendersProvider } from "@/context/sendersContext";
+import Sidebar from "@/components/sidebar/Sidebar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -44,6 +45,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Sidebar />
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col gap-20 items-center">
               <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">

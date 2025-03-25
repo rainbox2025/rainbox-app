@@ -47,11 +47,11 @@ export default async function Signup(props: {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-background px-2 text-muted-foreground">OR</span>
+            <span className="bg-background px-md text-muted-foreground">OR</span>
           </div>
         </div>
 
-        <form className="space-y-4" action={signUpAction}>
+        <form className="space-y-md-4" action={signUpAction}>
           <div>
             <Input
               type="email"

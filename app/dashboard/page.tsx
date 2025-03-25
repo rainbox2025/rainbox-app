@@ -5,6 +5,7 @@ import { useMails } from "@/context/mailsContext";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 import React, { useEffect, useState } from "react";
+import Sidebar from "@/components/sidebar/Sidebar";
 
 const page = () => {
   const { isOnboardingComplete } = useOnboarding();
@@ -26,6 +27,7 @@ const page = () => {
     <div>
       {showOnboardingModal && <Onboardingmodal />}
       <h1>Hello</h1>
+      <Sidebar />
     </div>
   );
 };
