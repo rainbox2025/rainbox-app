@@ -29,3 +29,24 @@ export interface Mail {
   read: boolean;
   bookmarked: boolean;
 }
+export interface Feed {
+  id: string;
+  name: string;
+  icon?: string;
+  count: number;
+  category?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  count: number;
+  isExpanded: boolean;
+}
+
+export interface User {
+  email: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  usedFeeds: number;
+  totalFeeds: number;
+}
