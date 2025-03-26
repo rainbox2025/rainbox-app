@@ -30,7 +30,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-card-foreground">
-                Delete {itemType === 'category' ? 'Category' : 'Feed'}
+                {itemType === 'category' ? 'Delete Folder' : 'Unfollow Sender'}
               </h2>
               <button
                 onClick={onClose}

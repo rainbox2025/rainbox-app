@@ -8,6 +8,7 @@ interface ConfirmModalProps {
   title: string;
   description: string;
   confirmText?: string;
+  isInput?: boolean;
   showUnfollowOption?: boolean;
 }
 
@@ -16,6 +17,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onClose,
   onConfirm,
   title,
+  isInput = false,
   description,
   confirmText = 'Confirm',
   showUnfollowOption = false
