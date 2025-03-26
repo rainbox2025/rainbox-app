@@ -175,35 +175,35 @@ export default function SortableFeed({
                   onClick={handleMarkAsRead}
                 >
                   <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Mark as read</span>
+                  <span className="text-sm">Mark as read</span>
                 </button>
                 <button
                   className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
                   onClick={handleRename}
                 >
                   <PencilIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Rename</span>
+                  <span className="text-sm">Rename</span>
                 </button>
                 <button
                   className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
                   onClick={handleMoveToFolder}
                 >
                   <FolderIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Move to folder</span>
+                  <span className="text-sm">Move to folder</span>
                 </button>
                 <button
                   className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
                   onClick={handleMuteNotifications}
                 >
                   <BellSlashIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Mute notifications</span>
+                  <span className="text-sm">Mute notifications</span>
                 </button>
                 <button
-                  className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary text-red-600 transition-all duration-300 ease-in-out hover:cursor-pointer"
+                  className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary  transition-all duration-300 ease-in-out hover:cursor-pointer"
                   onClick={handleUnfollow}
                 >
                   <TrashIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Unfollow</span>
+                  <span className="text-sm">Unfollow</span>
                 </button>
               </motion.div>
             )}

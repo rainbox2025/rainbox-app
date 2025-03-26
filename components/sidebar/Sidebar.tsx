@@ -170,14 +170,14 @@ const Sidebar = () => {
 
 
       {/* Footer */}
-      <div className="px-md py-sm flex items-center justify-between border-t">
+      {/* <div className="px-md py-sm flex items-center justify-between border-t">
         <span className="text-sm font-medium text-muted-foreground">{user.usedFeeds}/{user.totalFeeds} Feeds (Free)</span>
         <button
           className="btn"
         >
           Upgrade
         </button>
-      </div>
+      </div> */}
 
       {/* Resize handle */}
       <div

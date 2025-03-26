@@ -22,6 +22,9 @@ import { initialCategories, initialFeeds } from '@/mock/data';
 import { FeedIcon } from './FeedIcon';
 import SortableCategory from './SortableCategory';
 import SortableFeed from './SortableFeed';
+import { FeedModal } from './FeedModal';
+import { ConfirmModal } from './ConfirmationModal';
+import { FolderModal } from './FolderModal';
 
 export default function Inbox() {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -40,6 +43,90 @@ export default function Inbox() {
   const [focusedCategory, setFocusedCategory] = useState<string | null>('marketing'); // Default focus on Marketing
   const newFolderInputRef = useRef<HTMLInputElement>(null);
 
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
+  const [currentAction, setCurrentAction] = useState<'delete' | 'unfollow' | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId],
+    }));
+    setFocusedCategory(categoryId);
+  };
+
+  const handleCreateFolder = (folderName: string) => {
+    const newFolder: Category = {
+      id: folderName.toLowerCase().replace(/\s+/g, '-'),
+      name: folderName,
+      count: 0,
+      isExpanded: true
+    };
+
+    setCategories(prev => [newFolder, ...prev]);
+    setExpandedCategories(prev => ({
+      ...prev,
+      [newFolder.id]: true
+    }));
+    setFocusedCategory(newFolder.id);
+    setIsFolderModalOpen(false);
+  };
+
+  const openFolderCreationModal = () => {
+    setIsFolderModalOpen(true);
+  };
+
+  const handleRenameCategory = (categoryId: string, newName: string) => {
+    setCategories(prev =>
+      prev.map(category =>
+        category.id === categoryId
+          ? { ...category, name: newName }
+          : category
+      )
+    );
+  };
+
+  const handleDeleteCategory = () => {
+    if (targetId) {
+      // Remove the category
+      setCategories(prev =>
+        prev.filter(category => category.id !== targetId)
+      );
+
+      // Remove all feeds in that category or move them to root
+      setFeeds(prev =>
+        prev.map(feed =>
+          feed.category === targetId
+            ? { ...feed, category: '' }
+            : feed
+        )
+      );
+
+      // Clean up expanded state
+      setExpandedCategories(prev => {
+        const newState = { ...prev };
+        delete newState[targetId];
+        return newState;
+      });
+
+      // Reset focus if needed
+      if (focusedCategory === targetId) {
+        setFocusedCategory(null);
+      }
+    }
+  };
+
+  const handleUnfollowFeed = () => {
+    if (targetId) {
+      // Remove the feed or mark as unfollowed
+      setFeeds(prev =>
+        prev.filter(feed => feed.id !== targetId)
+      );
+    }
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -51,20 +138,6 @@ export default function Inbox() {
     })
   );
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId],
-    }));
-    setFocusedCategory(categoryId);
-  };
-
-  const handleCreateFolder = () => {
-    setIsCreatingFolder(true);
-    setTimeout(() => {
-      newFolderInputRef.current?.focus();
-    }, 100);
-  };
 
   const handleSaveFolder = () => {
     if (newFolderName.trim()) {
@@ -87,47 +160,6 @@ export default function Inbox() {
 
     setIsCreatingFolder(false);
     setNewFolderName('');
-  };
-
-  const handleRenameCategory = (categoryId: string, newName: string) => {
-    setCategories(prev =>
-      prev.map(category =>
-        category.id === categoryId
-          ? { ...category, name: newName }
-          : category
-      )
-    );
-    console.log(`Renamed folder ${categoryId} to ${newName}`);
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    // Remove the category
-    setCategories(prev =>
-      prev.filter(category => category.id !== categoryId)
-    );
-
-    // Remove all feeds in that category or move them to root
-    setFeeds(prev =>
-      prev.map(feed =>
-        feed.category === categoryId
-          ? { ...feed, category: '' }
-          : feed
-      )
-    );
-
-    // Clean up expanded state
-    setExpandedCategories(prev => {
-      const newState = { ...prev };
-      delete newState[categoryId];
-      return newState;
-    });
-
-    // Reset focus if needed
-    if (focusedCategory === categoryId) {
-      setFocusedCategory(null);
-    }
-
-    console.log(`Deleted folder: ${categoryId} and moved its feeds to root`);
   };
 
   // Update category counts when feeds are moved
@@ -323,6 +355,7 @@ export default function Inbox() {
   const categoryIds = categories.map(category => `category-${category.id}`);
   const rootFeedIds = rootFeeds.map(feed => `feed-${feed.id}`);
 
+
   return (
     <DndContext
       sensors={sensors}
@@ -335,7 +368,7 @@ export default function Inbox() {
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
-            onClick={handleCreateFolder}
+            onClick={openFolderCreationModal}
           >
             <FolderPlusIcon className="w-5 h-5" />
           </button>
@@ -417,6 +450,48 @@ export default function Inbox() {
         </div>
       </div>
 
+
+      {/* Folder Creation Modal */}
+      <FolderModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onSave={handleCreateFolder}
+        title="Create New Folder"
+      />
+
+      {/* Confirmation Modal (for delete/unfollow) */}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setCurrentAction(null);
+          setTargetId(null);
+        }}
+        onConfirm={() => {
+          if (currentAction === 'delete') handleDeleteCategory();
+          if (currentAction === 'unfollow') handleUnfollowFeed();
+        }}
+        title={
+          currentAction === 'delete'
+            ? 'Delete Folder'
+            : 'Unfollow Feed'
+        }
+        description={
+          currentAction === 'delete'
+            ? 'Are you sure you want to delete this folder? This operation cannot be undone.'
+            : 'Are you sure you want to unfollow this feed?'
+        }
+        showUnfollowOption={currentAction === 'delete'}
+      />
+
+      {/* Feed Edit Modal */}
+      {/* <FeedModal
+        isOpen={isFeedModalOpen}
+        onClose={() => setIsFeedModalOpen(false)}
+        feed={selectedFeed}
+        categories={categories}
+      onSave={handleSaveFeed}
+      /> */}
       {/* Drag Overlay */}
       <DragOverlay>
         {activeId && activeFeed && (
@@ -443,6 +518,7 @@ export default function Inbox() {
           </div>
         )}
       </DragOverlay>
+
     </DndContext>
   );
 }
