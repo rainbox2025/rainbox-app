@@ -20,7 +20,7 @@ interface SendersContextType {
 
 const SendersContext = createContext<SendersContextType | null>(null);
 
-export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
+export const SendersProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
   const [senders, setSenders] = useState<Sender[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);

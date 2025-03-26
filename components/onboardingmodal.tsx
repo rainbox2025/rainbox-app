@@ -68,7 +68,7 @@ export const Onboardingmodal = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
+          <div className="space-y-md-4">
             <h3 className="text-lg font-semibold border-b pb-2">
               Create your Newsletter email address
             </h3>
@@ -76,7 +76,7 @@ export const Onboardingmodal = () => {
               Subscribe to newsletters with this email address
             </p>
 
-            <form onSubmit={handleUsernameSubmit} className="space-y-4">
+            <form onSubmit={handleUsernameSubmit} className="space-y-md-4">
               <div className="flex relative">
                 <Input
                   type="text"
@@ -132,7 +132,7 @@ export const Onboardingmodal = () => {
 
       case 2:
         return (
-          <div className="space-y-4">
+          <div className="space-y-md-4">
             <h3 className="text-lg font-semibold border-b pb-2">
               Get your newsletters from Gmail or Outlook to Rainbox
             </h3>
@@ -146,7 +146,7 @@ export const Onboardingmodal = () => {
               newsletter emails from Gmail and Outlook to Rainbox
             </p>
 
-            <ul className="list-disc list-inside space-y-2 text-sm">
+            <ul className="list-disc list-inside space-y-md-2 text-sm">
               <li>
                 Instructions for email forwarding:
                 <ul className="list-inside ml-5 mt-1">
@@ -191,7 +191,7 @@ export const Onboardingmodal = () => {
 
       case 3:
         return (
-          <div className="space-y-4">
+          <div className="space-y-md-4">
             <h3 className="text-lg font-semibold border-b pb-2">
               Upgrade to Pro for the best experience
             </h3>
@@ -200,7 +200,7 @@ export const Onboardingmodal = () => {
               <div className="border rounded-lg p-4">
                 <h4 className="font-medium">Free Plan</h4>
                 <p className="font-bold">FREE</p>
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 space-y-md-2">
                   <li className="flex items-center gap-2">
                     <Check size={16} className="text-green-500" />
                     <span>10 Newsletters</span>
@@ -218,7 +218,7 @@ export const Onboardingmodal = () => {
                   <p className="font-bold">$20/year</p>
                   <span className="text-sm text-gray-500">$2.5/mo</span>
                 </div>
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 space-y-md-2">
                   <li className="flex items-center gap-2">
                     <Check size={16} className="text-green-500" />
                     <span>Unlimited Newsletters</span>
@@ -264,7 +264,7 @@ export const Onboardingmodal = () => {
   };
 
   return (
-    <Dialog open={true} onOpenChange={() => {}}>
+    <Dialog open={true} onOpenChange={() => { }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Onboarding</DialogTitle>
