@@ -1,17 +1,17 @@
 "use client";
-import { motion, AnimatePresence } from 'framer-motion';
-import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Cog8ToothIcon,
   BookmarkIcon,
   UserCircleIcon,
   SquaresPlusIcon,
   DocumentDuplicateIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
-import { user } from '@/mock/data';
-import Image from 'next/image';
-import Inbox from './Inbox';
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
+import { user } from "@/mock/data";
+import Image from "next/image";
+import Inbox from "./Inbox";
 
 const Sidebar = () => {
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
@@ -26,11 +26,11 @@ const Sidebar = () => {
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingRef.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
     // Add a class to the body to change cursor during resize
-    document.body.style.cursor = 'ew-resize';
-    document.body.style.userSelect = 'none'; // Prevent text selection during resize
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none"; // Prevent text selection during resize
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -47,34 +47,36 @@ const Sidebar = () => {
 
   const handleMouseUp = () => {
     isDraggingRef.current = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
     // Reset cursor and user-select
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
   };
 
   // Clean up event listeners if component unmounts while dragging
   useEffect(() => {
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
     };
   }, []);
 
   return (
     <div
       ref={sidebarRef}
-      className="h-screen flex flex-col bg-background border-r border-border shadow-sm relative"
+      className="h-screen flex flex-col bg-background shadow-sm relative "
       style={{ width: `${width}px` }}
     >
       {/* Header */}
       <div className="px-md py-xs flex items-center justify-between border-b border-border">
         <div className="flex items-center space-x-md">
           <Image src="/RainboxLogo.png" alt="Logo" width={32} height={32} />
-          <span className="font-bold text-xl tracking-tight text-foreground">Rainbox</span>
+          <span className="font-bold text-xl tracking-tight text-foreground">
+            Rainbox
+          </span>
         </div>
         <div className="flex items-center space-x-md">
           <button
@@ -96,8 +98,12 @@ const Sidebar = () => {
         {/* Email Info */}
         <div className="px-md py-sm pr-md flex items-center justify-between border-b border-border">
           <div className="flex items-center space-x-md overflow-hidden mr-md flex-shrink min-w-0">
-            <span className="text-muted-foreground w-5 h-5 flex items-center justify-center flex-shrink-0">@</span>
-            <span className="text-sm font-medium truncate text-foreground">{user.email}</span>
+            <span className="text-muted-foreground w-5 h-5 flex items-center justify-center flex-shrink-0">
+              @
+            </span>
+            <span className="text-sm font-medium truncate text-foreground">
+              {user.email}
+            </span>
           </div>
 
           <div className="flex items-center space-x-3 flex-shrink-0">
@@ -116,7 +122,8 @@ const Sidebar = () => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    This is your registered email address. It&apos;s used for account notifications and recovery.
+                    This is your registered email address. It&apos;s used for
+                    account notifications and recovery.
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -124,7 +131,7 @@ const Sidebar = () => {
             <button
               className="text-muted-foreground hover:text-foreground rounded-full hover:bg-accent cursor-pointer relative"
               onClick={() => {
-                if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
                   navigator.clipboard.writeText(user.email);
                   setShowCopiedMessage(true);
                   setTimeout(() => setShowCopiedMessage(false), 1000);
@@ -153,11 +160,17 @@ const Sidebar = () => {
         {/* Navigation */}
         <div className="border-b border-border">
           <nav className="">
-            <a href="#" className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground">
+            <a
+              href="#"
+              className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
+            >
               <SquaresPlusIcon className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Discover</span>
             </a>
-            <a href="#" className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground">
+            <a
+              href="#"
+              className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
+            >
               <BookmarkIcon className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Bookmarks</span>
             </a>
@@ -168,18 +181,6 @@ const Sidebar = () => {
         <Inbox />
       </div>
 
-
-      {/* Footer */}
-      {/* <div className="px-md py-sm flex items-center justify-between border-t">
-        <span className="text-sm font-medium text-muted-foreground">{user.usedFeeds}/{user.totalFeeds} Feeds (Free)</span>
-        <button
-          className="btn"
-        >
-          Upgrade
-        </button>
-      </div> */}
-
-      {/* Resize handle */}
       <div
         className="absolute top-0 right-0 w-[2px] h-full bg-muted-foreground hover:bg-primary cursor-ew-resize transform translate-x-0.5"
         onMouseDown={handleMouseDown}

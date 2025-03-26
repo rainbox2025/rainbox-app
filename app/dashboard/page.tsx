@@ -27,7 +27,6 @@ const page = () => {
     <div>
       {showOnboardingModal && <Onboardingmodal />}
       <h1>Hello</h1>
-      <Sidebar />
     </div>
   );
 };
