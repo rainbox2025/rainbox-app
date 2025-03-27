@@ -3,6 +3,9 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  usedFeeds: number;
+  totalFeeds: number;
 }
 export interface Sender {
   id: string;

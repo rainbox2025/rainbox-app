@@ -9,14 +9,16 @@ import {
   DocumentDuplicateIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { user } from "@/mock/data";
 import Image from "next/image";
 import Inbox from "./Inbox";
+import { useAuth } from "@/context/authContext";
 
 const Sidebar = () => {
+  const { user, logout } = useAuth(); // Use the auth context
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [showInfoMessage, setShowInfoMessage] = useState(false);
   const [width, setWidth] = useState(320); // Default width in pixels
+  const [showUserModal, setShowUserModal] = useState(false);
   const sidebarRef = useRef(null);
   const isDraggingRef = useRef(false);
 
@@ -64,6 +66,14 @@ const Sidebar = () => {
     };
   }, []);
 
+  const handleCopyEmail = () => {
+    if (user?.email && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(user.email);
+      setShowCopiedMessage(true);
+      setTimeout(() => setShowCopiedMessage(false), 1000);
+    }
+  };
+
   return (
     <div
       ref={sidebarRef}
@@ -85,14 +95,84 @@ const Sidebar = () => {
           >
             <Cog8ToothIcon className="w-5 h-5" />
           </button>
-          <button
-            className="text-blue-500 hover:text-blue-700 rounded-full hover:bg-accent cursor-pointer"
-            aria-label="Account"
-          >
-            <UserCircleIcon className="w-6 h-6" />
-          </button>
+          <div className="relative">
+            {user?.avatar_url ? (
+              <Image
+                src={user.avatar_url}
+                alt="User Avatar"
+                width={50}
+                height={50}
+                className="rounded-full w-6 h-6 hover:cursor-pointer"
+                aria-label="Account"
+                onMouseEnter={() => setShowUserModal(true)}
+                onMouseLeave={() => setShowUserModal(false)}
+              />
+            ) : (
+              <UserCircleIcon className="w-6 h-6 text-muted-foreground" />
+            )}
+
+            <AnimatePresence>
+              {showUserModal && (
+                <motion.div
+                  className="absolute right-0 mr-md top-8 -translate-y-1/2 bg-popover text-popover-foreground rounded-lg shadow-xl p-md w-40 z-50"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                  onMouseEnter={() => setShowUserModal(true)}
+                  onMouseLeave={() => setShowUserModal(false)}
+                >
+                  <div className="flex flex-col items-center space-y-sm">
+                    {user?.avatar_url ? (
+                      <Image
+                        src={user.avatar_url}
+                        alt="User Avatar"
+                        width={48}
+                        height={48}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <UserCircleIcon className="w-12 h-12 text-muted-foreground" />
+                    )}
+
+                    <div className="text-center">
+                      <h2 className="text-sm font-semibold">
+                        {user?.user_name || 'User Profile'}
+                      </h2>
+                      <p className="text-xs text-muted-foreground truncate max-w-full">
+                        {user?.email}
+                      </p>
+                    </div>
+
+                    <div className="w-full space-y-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs">Plan</span>
+                        <span className="text-xs font-medium capitalize">
+                          {user?.plan || 'Free'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs">Feeds</span>
+                        <span className="text-xs font-medium">
+                          {user?.usedFeeds || 0} / {user?.totalFeeds || 10}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={logout}
+                      className="w-full bg-destructive text-destructive-foreground rounded-md py-xs text-xs hover:bg-destructive/90 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
+
 
       <div className="flex-1 overflow-y-auto">
         {/* Email Info */}
@@ -102,7 +182,7 @@ const Sidebar = () => {
               @
             </span>
             <span className="text-sm font-medium truncate text-foreground">
-              {user.email}
+              {user?.email || 'Not logged in'}
             </span>
           </div>
 
@@ -122,22 +202,16 @@ const Sidebar = () => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    This is your registered email address. It&apos;s used for
-                    account notifications and recovery.
+                    {user?.plan ? `Current Plan: ${user.plan}` : 'Account Information'}
                   </motion.div>
                 )}
               </AnimatePresence>
             </button>
             <button
               className="text-muted-foreground hover:text-foreground rounded-full hover:bg-accent cursor-pointer relative"
-              onClick={() => {
-                if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  navigator.clipboard.writeText(user.email);
-                  setShowCopiedMessage(true);
-                  setTimeout(() => setShowCopiedMessage(false), 1000);
-                }
-              }}
+              onClick={handleCopyEmail}
               title="Copy email to clipboard"
+              disabled={!user?.email}
             >
               <DocumentDuplicateIcon className="w-5 h-5" />
               <AnimatePresence>

@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: [
+      'lh3.googleusercontent.com',
+      'avatars.githubusercontent.com', // Add this if you use GitHub auth
+      'ui-avatars.com', // Add if you use placeholder avatars
+    ],
+  },
+  // other configurations...
 };
 
-export default nextConfig;
+module.exports = nextConfig;
