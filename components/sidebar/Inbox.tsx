@@ -6,6 +6,7 @@ import {
   FolderPlusIcon,
 } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DndContext,
   closestCenter,
@@ -22,7 +23,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Feed, Category } from "@/types/data";
+import { Feed, Category, Folder, Sender } from "@/types/data";
 import { initialCategories, initialFeeds } from "@/mock/data";
 import { FeedIcon } from "./FeedIcon";
 import SortableCategory from "./SortableCategory";
@@ -30,14 +31,25 @@ import SortableFeed from "./SortableFeed";
 import { FeedModal } from "./FeedModal";
 import { ConfirmModal } from "./ConfirmationModal";
 import { FolderModal } from "./FolderModal";
+import { useFolders } from "@/context/foldersContext";
+import { useSenders } from "@/context/sendersContext";
 
 export default function Inbox() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [feeds, setFeeds] = useState<Feed[]>(initialFeeds);
+  const { folders, isFoldersLoading } = useFolders();
+  const { senders, isSendersLoading } = useSenders();
+  const [categories, setCategories] = useState<Folder[]>(
+    isFoldersLoading ? [] : folders.map(folder => ({
+      id: folder.id,
+      name: folder.name,
+      count: folder.count || 0,
+      isExpanded: false
+    }))
+  );
+  const [feeds, setFeeds] = useState<Sender[]>(senders);
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >(
-    initialCategories.reduce(
+    folders.reduce(
       (acc, category) => ({
         ...acc,
         [category.id]: category.isExpanded,
@@ -194,9 +206,35 @@ export default function Inbox() {
   };
 
   // Update counts whenever feeds change
+  // Update useEffect to update categories when folders load
   useEffect(() => {
-    updateCategoryCounts(feeds);
-  }, [feeds]);
+    if (!isFoldersLoading) {
+      setCategories(
+        folders.map(folder => ({
+          id: folder.id,
+          name: folder.name,
+          count: folder.count || 0,
+          isExpanded: false
+        }))
+      );
+    }
+  }, [folders, isFoldersLoading]);
+
+  if (isFoldersLoading) {
+    return (
+      <div className="flex-1 bg-background text-foreground rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+        {[1, 2, 3, 4, 5, 6].map((_, index) => (
+          <div key={index} className="mb-3">
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;

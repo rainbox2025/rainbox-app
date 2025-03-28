@@ -3,6 +3,9 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  usedFeeds: number;
+  totalFeeds: number;
 }
 export interface Sender {
   id: string;
@@ -12,12 +15,17 @@ export interface Sender {
   user_id: string;
   created_at: string;
   folder_id?: string;
+  icon?: string;
+  count: number;
+  category?: string;
 }
 export interface Folder {
   id: string;
   name: string;
-  user_id: string;
-  created_at: string;
+  user_id?: string;
+  created_at?: string;
+  count: number;
+  isExpanded: boolean;
 }
 export interface Mail {
   id: string;
