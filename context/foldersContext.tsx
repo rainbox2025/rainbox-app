@@ -61,7 +61,11 @@ export const FoldersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-        const data = await api.post(`/folders/user/${user.user.id}`, { name });
+
+        console.log("User ID:", user.user.id);
+        console.log("folder name:", name);
+        const data = await api.post(`/folders`, { name, user_id: user.user.id });
+        console.log("New folder created:", data.data);
         setFolders([...folders, data.data]);
       } catch (error) {
         setCreateFolderError(
