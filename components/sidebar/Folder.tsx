@@ -217,7 +217,10 @@ export default function Folder({
       <Modal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
-        onSave={(newName) => renameFolder(category.id, newName)}
+        onSave={(newName) => {
+          console.log("in modal, name is", newName);
+          renameFolder(category.id, newName)
+        }}
         initialValue={category.name}
         title="Rename Category"
       />

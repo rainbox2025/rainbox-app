@@ -76,7 +76,7 @@ export default function Sender({
       if (onRenameFeed) {
         onRenameFeed(feed.id, newName);
       } else {
-        renameSender(feed.id, newName);
+        ;
       }
     }
 
@@ -218,7 +218,10 @@ export default function Sender({
       <Modal
         isOpen={isRenaming}
         onClose={() => setIsRenaming(false)}
-        onSave={handleRenameComplete}
+        onSave={(newName) => {
+          console.log("in modal, name is", newName);
+          renameSender(feed.id, newName)
+        }}
         initialValue={feed.name}
         title="Rename Category"
       />
