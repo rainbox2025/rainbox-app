@@ -1,8 +1,8 @@
-import { Feed } from "@/types/data";
+import { SenderType } from "@/types/data";
 import { useSortable } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
-import { FeedIcon } from "./FeedIcon";
+import { SenderIcon } from "./SenderIcon";
 import { useState, useRef, useEffect } from 'react';
 import { BellSlashIcon, CheckIcon, EllipsisHorizontalIcon, FolderIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "./DeleteModal";
@@ -10,17 +10,17 @@ import { Modal } from "./Modal";
 import { useSenders } from "@/context/sendersContext";
 
 interface SenderProps {
-  feed: Feed;
-  onRenameFeed?: (feedId: string, newName: string) => void;
-  onUnfollowFeed?: (feedId: string) => void;
+  sender: SenderType;
+  onRenameSender?: (senderId: string, newName: string) => void;
+  onUnfollowSender?: (senderId: string) => void;
 }
 
 export default function Sender({
-  feed,
-  onRenameFeed,
-  onUnfollowFeed
+  sender,
+  onRenameSender,
+  onUnfollowSender
 }: SenderProps) {
-  const { renameSender } = useSenders();
+  const { renameSender, unsubcribeSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
@@ -34,10 +34,10 @@ export default function Sender({
     transition,
     isDragging,
   } = useSortable({
-    id: `feed-${feed.id}`,
+    id: `sender-${sender.id}`,
     data: {
-      type: 'feed',
-      feed
+      type: 'sender',
+      sender
     }
   });
 
@@ -72,9 +72,9 @@ export default function Sender({
   };
 
   const handleRenameComplete = (newName: string) => {
-    if (newName.trim() && newName !== feed.name) {
-      if (onRenameFeed) {
-        onRenameFeed(feed.id, newName);
+    if (newName.trim() && newName !== sender.name) {
+      if (onRenameSender) {
+        onRenameSender(sender.id, newName);
       } else {
         ;
       }
@@ -87,21 +87,21 @@ export default function Sender({
     e.stopPropagation();
     setMenuOpen(false);
     // Add your mark as read logic here
-    console.log(`Marked ${feed.name} as read`);
+    console.log(`Marked ${sender.name} as read`);
   };
 
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
     // Add your move to folder logic here
-    console.log(`Move ${feed.name} to folder`);
+    console.log(`Move ${sender.name} to folder`);
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
     // Add your mute notifications logic here
-    console.log(`Muted notifications for ${feed.name}`);
+    console.log(`Muted notifications for ${sender.name}`);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
@@ -111,12 +111,12 @@ export default function Sender({
   };
 
   const confirmUnfollow = () => {
-    if (onUnfollowFeed) {
-      onUnfollowFeed(feed.id);
+    if (onUnfollowSender) {
+      onUnfollowSender(sender.id);
     } else {
-      console.log(`Unfollowed ${feed.name}`);
+      console.log(`Unfollowed ${sender.name}`);
     }
-    setIsUnfollowModalOpen(false);
+    ;
   };
 
   const cancelUnfollow = () => {
@@ -136,9 +136,9 @@ export default function Sender({
             : 'hover:bg-accent'}`}
       >
         <div className="flex items-center space-x-md overflow-hidden flex-1">
-          <FeedIcon feed={feed} />
+          <SenderIcon sender={sender} />
           <span className="text-sm text-foreground truncate overflow-hidden mr-2">
-            {feed.name}
+            {sender.name}
           </span>
         </div>
 
@@ -201,7 +201,7 @@ export default function Sender({
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {feed.count >= 1000 ? `${Math.floor(feed.count / 1000)}K+` : feed.count}
+            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
           </span>
         </div>
       </motion.div>
@@ -209,9 +209,9 @@ export default function Sender({
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={cancelUnfollow}
-        onConfirm={confirmUnfollow}
-        itemName={feed.name}
-        itemType="feed"
+        onConfirm={() => { setIsUnfollowModalOpen(false); console.log("unsubcribeSender: ", sender.id); unsubcribeSender(sender.id) }}
+        itemName={sender.name}
+        itemType="sender"
       />
 
       {/* Rename Modal */}
@@ -220,10 +220,10 @@ export default function Sender({
         onClose={() => setIsRenaming(false)}
         onSave={(newName) => {
           console.log("in modal, name is", newName);
-          renameSender(feed.id, newName)
+          renameSender(sender.id, newName)
         }}
-        initialValue={feed.name}
-        title="Rename Category"
+        initialValue={sender.name}
+        title="Rename Sender"
       />
     </>
   );

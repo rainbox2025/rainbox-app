@@ -58,9 +58,17 @@ export const SendersProvider = ({
   const unsubcribeSender = useCallback(
     async (id: string) => {
       try {
+        console.log("came insdie unsubscribe");
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-        await api.delete(`/senders/${id}`);
+
+        console.log("unsubscribed to : ", id);
+        await api.patch(`/senders/${id}`, { subscribed: false });
+        console.log("unsubscribed");
+
+        setSenders((prevSenders) =>
+          prevSenders.filter((sender) => sender.id !== id)
+        );
       } catch (error) {
         setUnsubcribeSenderError(
           error instanceof Error ? error.message : "Unknown error"
@@ -75,9 +83,16 @@ export const SendersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
+
+
         await api.patch(`/senders/${id}`, { name });
         console.log("renamed");
-        fetchSenders();
+
+        setSenders((prevSenders) =>
+          prevSenders.map((sender) =>
+            sender.id === id ? { ...sender, name } : sender
+          )
+        );
       } catch (error) {
         setRenameSenderError(
           error instanceof Error ? error.message : "Unknown error"

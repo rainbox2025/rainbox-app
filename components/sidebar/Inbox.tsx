@@ -23,10 +23,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Feed, Category, FolderType, SenderType } from "@/types/data";
-import { FeedIcon } from "./FeedIcon";
-import Folder from "./Folder";
-import Sender from "./Sender";
+import { FolderType, SenderType } from "@/types/data";
+import { SenderIcon } from "./SenderIcon";
+import FolderComponent from "./Folder";
+import SenderComponent from "./Sender";
 import { ConfirmModal } from "./ConfirmationModal";
 import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
@@ -35,29 +35,29 @@ import { useSenders } from "@/context/sendersContext";
 export default function Inbox() {
   const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder } = useFolders();
   const { senders, isSendersLoading } = useSenders();
-  const [expandedCategories, setExpandedCategories] = useState<
+  const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
   >({});
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeFeed, setActiveFeed] = useState<Feed | null>(null);
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
-  const [focusedCategory, setFocusedCategory] = useState<string | null>(
+  const [activeSender, setActiveSender] = useState<SenderType | null>(null);
+  const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
+  const [focusedFolder, setFocusedFolder] = useState<string | null>(
     "marketing"
   ); // Default focus on Marketing
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
-  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
+  const [isSenderModalOpen, setIsSenderModalOpen] = useState(false);
+  const [selectedSender, setSelectedSender] = useState<SenderType | null>(null);
   const [currentAction, setCurrentAction] = useState<
     "delete" | "unfollow" | null
   >(null);
   const [targetId, setTargetId] = useState<string | null>(null);
 
-  // Initialize expanded categories state when folders load
+  // Initialize expanded folders state when folders load
   useEffect(() => {
     if (!isFoldersLoading && folders.length > 0) {
-      setExpandedCategories(
+      setExpandedFolders(
         folders.reduce(
           (acc, folder) => ({
             ...acc,
@@ -69,37 +69,37 @@ export default function Inbox() {
     }
   }, [folders, isFoldersLoading]);
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => ({
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders((prev) => ({
       ...prev,
-      [categoryId]: !prev[categoryId],
+      [folderId]: !prev[folderId],
     }));
-    setFocusedCategory(categoryId);
+    setFocusedFolder(folderId);
   };
 
   const openFolderCreationModal = () => {
     setIsFolderModalOpen(true);
   };
 
-  const handleRenameCategory = (categoryId: string, newName: string) => {
+  const handleRenameFolder = (folderId: string, newName: string) => {
     // This would need to be implemented in the folder context
-    console.log(`Rename category ${categoryId} to ${newName}`);
+    console.log(`Rename folder ${folderId} to ${newName}`);
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteFolder = () => {
     if (targetId) {
       deleteFolder(targetId);
 
       // Clean up expanded state
-      setExpandedCategories((prev) => {
+      setExpandedFolders((prev) => {
         const newState = { ...prev };
         delete newState[targetId];
         return newState;
       });
 
       // Reset focus if needed
-      if (focusedCategory === targetId) {
-        setFocusedCategory(null);
+      if (focusedFolder === targetId) {
+        setFocusedFolder(null);
       }
 
       setIsConfirmModalOpen(false);
@@ -108,8 +108,8 @@ export default function Inbox() {
     }
   };
 
-  const handleUnfollowFeed = () => {
-    console.log(`Unfollowing feed with ID: ${targetId}`);
+  const handleUnfollowSender = () => {
+    console.log(`Unfollowing sender with ID: ${targetId}`);
     setIsConfirmModalOpen(false);
     setCurrentAction(null);
     setTargetId(null);
@@ -130,17 +130,17 @@ export default function Inbox() {
     const { active } = event;
     setActiveId(active.id as string);
 
-    if (active.id.toString().startsWith("feed-")) {
-      const feedId = active.id.toString().replace("feed-", "");
-      const feed = senders.find((f) => f.id === feedId);
-      if (feed) {
-        setActiveFeed(feed);
+    if (active.id.toString().startsWith("sender-")) {
+      const senderId = active.id.toString().replace("sender-", "");
+      const sender = senders.find((s) => s.id === senderId);
+      if (sender) {
+        setActiveSender(sender);
       }
-    } else if (active.id.toString().startsWith("category-")) {
-      const categoryId = active.id.toString().replace("category-", "");
-      const category = folders.find((c) => c.id === categoryId);
-      if (category) {
-        setActiveCategory(category);
+    } else if (active.id.toString().startsWith("folder-")) {
+      const folderId = active.id.toString().replace("folder-", "");
+      const folder = folders.find((f) => f.id === folderId);
+      if (folder) {
+        setActiveFolder(folder);
       }
     }
   };
@@ -150,51 +150,51 @@ export default function Inbox() {
 
     if (!over) {
       setActiveId(null);
-      setActiveFeed(null);
-      setActiveCategory(null);
+      setActiveSender(null);
+      setActiveFolder(null);
       return;
     }
 
-    // Moving a feed
-    if (active.id.toString().startsWith("feed-") && over) {
-      const feedId = active.id.toString().replace("feed-", "");
-      const feed = senders.find((f) => f.id === feedId);
+    // Moving a sender
+    if (active.id.toString().startsWith("sender-") && over) {
+      const senderId = active.id.toString().replace("sender-", "");
+      const sender = senders.find((s) => s.id === senderId);
 
-      if (!feed) return;
+      if (!sender) return;
 
-      let targetCategory = "";
+      let targetFolder = "";
 
-      // If dropped over a category
-      if (over.id.toString().startsWith("category-")) {
-        targetCategory = over.id.toString().replace("category-", "");
+      // If dropped over a folder
+      if (over.id.toString().startsWith("folder-")) {
+        targetFolder = over.id.toString().replace("folder-", "");
 
-        // Update the feed's category would be handled by the context
+        // Update the sender's folder would be handled by the context
         console.log(
-          `Moved ${feed.name} from ${feed.category || "root"} to ${targetCategory || "root"}`
+          `Moved ${sender.name} from ${sender.category || "root"} to ${targetFolder || "root"}`
         );
 
-        addSenderToFolder(feed.id, targetCategory);
+        addSenderToFolder(sender.id, targetFolder);
 
-        // Force re-render of the target category
-        if (!expandedCategories[targetCategory]) {
-          setExpandedCategories((prev) => ({
+        // Force re-render of the target folder
+        if (!expandedFolders[targetFolder]) {
+          setExpandedFolders((prev) => ({
             ...prev,
-            [targetCategory]: true,
+            [targetFolder]: true,
           }));
         }
 
-        // Focus the category
-        setFocusedCategory(targetCategory);
+        // Focus the folder
+        setFocusedFolder(targetFolder);
       }
-      // If dropped over another feed or root items
+      // If dropped over another sender or root items
       else {
-        console.log(`Reordering feed or moving to root area`);
+        console.log(`Reordering sender or moving to root area`);
       }
     }
-    // Moving a category (folder)
+    // Moving a folder
     else if (
-      active.id.toString().startsWith("category-") &&
-      over.id.toString().startsWith("category-")
+      active.id.toString().startsWith("folder-") &&
+      over.id.toString().startsWith("folder-")
     ) {
       // Folder reordering would be handled by context
       console.log(`Reordering folders`);
@@ -203,17 +203,17 @@ export default function Inbox() {
     // Clear drag state
     setTimeout(() => {
       setActiveId(null);
-      setActiveFeed(null);
-      setActiveCategory(null);
+      setActiveSender(null);
+      setActiveFolder(null);
     }, 50);
   };
 
-  // Get root items (not in any category)
-  const rootFeeds = senders.filter((feed) => !feed.category || feed.category === "");
+  // Get root items (not in any folder)
+  const rootSenders = senders.filter((sender) => !sender.category || sender.category === "");
 
-  // Get feeds for a specific category
-  const getFeedsForCategory = (categoryId: string) => {
-    return senders.filter((feed) => feed.category === categoryId);
+  // Get senders for a specific folder
+  const getSendersForFolder = (folderId: string) => {
+    return senders.filter((sender) => sender.category === folderId);
   };
 
   // Calculate total count for display
@@ -235,8 +235,8 @@ export default function Inbox() {
     );
   }
 
-  const categoryIds = folders.map((category) => `category-${category.id}`);
-  const rootFeedIds = rootFeeds.map((feed) => `feed-${feed.id}`);
+  const folderIds = folders.map((folder) => `folder-${folder.id}`);
+  const rootSenderIds = rootSenders.map((sender) => `sender-${sender.id}`);
 
   return (
     <DndContext
@@ -265,22 +265,22 @@ export default function Inbox() {
         </div>
 
         <div className="px-0 py-0">
-          {/* Categories */}
+          {/* Folders */}
           <SortableContext
-            items={categoryIds}
+            items={folderIds}
             strategy={verticalListSortingStrategy}
           >
-            {folders.map((category) => (
-              <Folder
-                key={category.id}
-                category={category}
-                expanded={expandedCategories[category.id] || false}
-                toggleExpanded={toggleCategory}
-                feeds={getFeedsForCategory(category.id)}
-                activeCategory={focusedCategory}
-                onRenameCategory={handleRenameCategory}
-                onDeleteCategory={(categoryId) => {
-                  setTargetId(categoryId);
+            {folders.map((folder) => (
+              <FolderComponent
+                key={folder.id}
+                folder={folder}
+                expanded={expandedFolders[folder.id] || false}
+                toggleExpanded={toggleFolder}
+                senders={getSendersForFolder(folder.id)}
+                activeFolder={focusedFolder}
+                onRenameFolder={handleRenameFolder}
+                onDeleteFolder={(folderId) => {
+                  setTargetId(folderId);
                   setCurrentAction("delete");
                   setIsConfirmModalOpen(true);
                 }}
@@ -288,7 +288,7 @@ export default function Inbox() {
             ))}
           </SortableContext>
 
-          {/* Root Items (not in any category) */}
+          {/* Root Items (not in any folder) */}
           <motion.div
             id="root-items"
             initial={{ opacity: 0 }}
@@ -296,15 +296,15 @@ export default function Inbox() {
             transition={{ delay: 0.2 }}
           >
             <SortableContext
-              items={rootFeedIds}
+              items={rootSenderIds}
               strategy={verticalListSortingStrategy}
             >
-              {rootFeeds.map((feed) => (
-                <Sender
-                  key={feed.id}
-                  feed={feed}
-                // onUnfollow={(feedId) => {
-                //   setTargetId(feedId);
+              {rootSenders.map((sender) => (
+                <SenderComponent
+                  key={sender.id}
+                  sender={sender}
+                // onUnfollow={(senderId) => {
+                //   setTargetId(senderId);
                 //   setCurrentAction("unfollow");
                 //   setIsConfirmModalOpen(true);
                 // }}
@@ -338,41 +338,41 @@ export default function Inbox() {
           setTargetId(null);
         }}
         onConfirm={() => {
-          if (currentAction === "delete") handleDeleteCategory();
-          if (currentAction === "unfollow") handleUnfollowFeed();
+          if (currentAction === "delete") handleDeleteFolder();
+          if (currentAction === "unfollow") handleUnfollowSender();
         }}
-        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Feed"}
+        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Sender"}
         description={
           currentAction === "delete"
             ? "Are you sure you want to delete this folder? This operation cannot be undone."
-            : "Are you sure you want to unfollow this feed?"
+            : "Are you sure you want to unfollow this sender?"
         }
         showUnfollowOption={currentAction === "delete"}
       />
 
       <DragOverlay>
-        {activeId && activeFeed && (
+        {activeId && activeSender && (
           <div className="px-md py-1.5 flex items-center justify-between rounded-md bg-secondary dark:bg-secondary text-foreground shadow-md">
             <div className="flex items-center space-x-3">
-              <FeedIcon feed={activeFeed} />
-              <span className="text-sm">{activeFeed.name}</span>
+              <SenderIcon sender={activeSender} />
+              <span className="text-sm">{activeSender.name}</span>
             </div>
             <span className="text-sm text-muted-foreground font-medium">
-              {activeFeed.count >= 1000
-                ? `${Math.floor(activeFeed.count / 1000)}K+`
-                : activeFeed.count}
+              {activeSender.count >= 1000
+                ? `${Math.floor(activeSender.count / 1000)}K+`
+                : activeSender.count}
             </span>
           </div>
         )}
 
-        {activeId && activeCategory && (
+        {activeId && activeFolder && (
           <div className="px-md py-2 flex items-center justify-between rounded-md bg-secondary dark:bg-secondary text-foreground shadow-md">
             <div className="flex items-center space-x-3">
               <ChevronRightIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{activeCategory.name}</span>
+              <span className="text-sm font-medium">{activeFolder.name}</span>
             </div>
             <span className="text-sm text-muted-foreground font-medium">
-              {activeCategory.count}
+              {activeFolder.count}
             </span>
           </div>
         )}

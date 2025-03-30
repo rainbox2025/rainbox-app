@@ -7,18 +7,20 @@ export const PATCH = async (
 ) => {
   const supabase = await createClient();
   const { senderId } = await params;
-  const { name } = await request.json();
+  const { name, subscribed } = await request.json();
   const sender = await supabase
     .from("senders")
     .select("*")
     .eq("id", senderId)
     .single();
+    
   if (!sender) {
     return NextResponse.json({ error: "Sender not found" }, { status: 404 });
   }
+
   const { data, error } = await supabase
     .from("senders")
-    .update({ name: name })
+    .update({ name: name, subscribed: subscribed })
     .eq("id", senderId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,34 +1,34 @@
-import { Category, Feed } from "@/types/data";
+import { FolderType, SenderType } from "@/types/data";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import Sender from "./Sender";
+import SenderComponent from "./Sender";
 import { Modal } from "./Modal";
 import { useState, useRef, useEffect } from 'react';
 import { DeleteConfirmationModal } from "./DeleteModal";
 import { useFolders } from "@/context/foldersContext";
 
 interface FolderProps {
-  category: Category;
+  folder: FolderType;
   expanded: boolean;
   toggleExpanded: (id: string) => void;
-  feeds: Feed[];
-  activeCategory: string | null;
-  onRenameCategory: (categoryId: string, newName: string) => void;
-  onDeleteCategory: (categoryId: string) => void;
-  onMarkCategoryAsRead?: (categoryId: string) => void;
+  senders: SenderType[];
+  activeFolder: string | null;
+  onRenameFolder: (folderId: string, newName: string) => void;
+  onDeleteFolder: (folderId: string) => void;
+  onMarkFolderAsRead?: (folderId: string) => void;
 }
 
 export default function Folder({
-  category,
+  folder,
   expanded,
   toggleExpanded,
-  feeds,
-  activeCategory,
-  onRenameCategory,
-  onDeleteCategory,
-  onMarkCategoryAsRead
+  senders,
+  activeFolder,
+  onRenameFolder,
+  onDeleteFolder,
+  onMarkFolderAsRead
 }: FolderProps) {
   const { deleteFolder, renameFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,10 +45,10 @@ export default function Folder({
     transition,
     isDragging,
   } = useSortable({
-    id: `category-${category.id}`,
+    id: `folder-${folder.id}`,
     data: {
-      type: 'category',
-      category
+      type: 'folder',
+      folder
     }
   });
 
@@ -58,8 +58,8 @@ export default function Folder({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const feedIds = feeds.map(feed => `feed-${feed.id}`);
-  const isCategoryActive = activeCategory === category.id;
+  const senderIds = senders.map(sender => `sender-${sender.id}`);
+  const isFolderActive = activeFolder === folder.id;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -101,11 +101,11 @@ export default function Folder({
     e.stopPropagation();
     setMenuOpen(false);
     // Add your mute notifications logic here
-    console.log(`Muted notifications for ${category.name}`);
+    console.log(`Muted notifications for ${folder.name}`);
   };
 
   const confirmMarkAsRead = () => {
-    onMarkCategoryAsRead?.(category.id);
+    onMarkFolderAsRead?.(folder.id);
     setIsMarkAsReadModalOpen(false);
   };
 
@@ -114,9 +114,9 @@ export default function Folder({
       <div ref={setNodeRef} style={style} className={`mb-0 ${isDragging ? 'z-10' : ''}`}>
         <motion.div
           whileTap={{ scale: 0.98 }}
-          onClick={() => toggleExpanded(category.id)}
+          onClick={() => toggleExpanded(folder.id)}
           className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer
-    ${isCategoryActive
+    ${isFolderActive
               ? 'bg-primary/10 text-primary'
               : isDragging
                 ? 'bg-secondary'
@@ -134,7 +134,7 @@ export default function Folder({
             </div>
 
             <span className="text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-foreground">
-              {category.name}
+              {folder.name}
             </span>
           </div>
 
@@ -188,14 +188,14 @@ export default function Folder({
               </AnimatePresence>
             </div>
             <span className="text-xs text-muted-foreground font-medium">
-              {category.count >= 1000 ? `${Math.floor(category.count / 1000)}K+` : category.count}
+              {folder.count >= 1000 ? `${Math.floor(folder.count / 1000)}K+` : folder.count}
             </span>
           </div>
         </motion.div>
 
-        {/* Feeds for this category with animation */}
+        {/* Senders for this folder with animation */}
         <AnimatePresence>
-          {expanded && feeds.length > 0 && (
+          {expanded && senders.length > 0 && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -203,9 +203,9 @@ export default function Folder({
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="ml-6 mt-1.25 space-y-md-1.25"
             >
-              <SortableContext items={feedIds} strategy={verticalListSortingStrategy}>
-                {feeds.map((feed) => (
-                  <Sender key={feed.id} feed={feed} />
+              <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+                {senders.map((sender) => (
+                  <SenderComponent key={sender.id} sender={sender} />
                 ))}
               </SortableContext>
             </motion.div>
@@ -219,19 +219,19 @@ export default function Folder({
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={(newName) => {
           console.log("in modal, name is", newName);
-          renameFolder(category.id, newName)
+          renameFolder(folder.id, newName)
         }}
-        initialValue={category.name}
-        title="Rename Category"
+        initialValue={folder.name}
+        title="Rename Folder"
       />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeletingModalOpen}
         onClose={() => setIsDeletingModalOpen(false)}
-        onConfirm={() => { setIsDeletingModalOpen(false); deleteFolder(category.id) }}
-        itemName={category.name}
-        itemType="category"
+        onConfirm={() => { setIsDeletingModalOpen(false); deleteFolder(folder.id) }}
+        itemName={folder.name}
+        itemType="folder"
       />
 
       {/* Mark as Read Confirmation Modal */}
@@ -239,8 +239,8 @@ export default function Folder({
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
         onSave={confirmMarkAsRead}
-        initialName="Mark all items in this category as read?"
-        title="Mark Category as Read"
+        initialName="Mark all items in this folder as read?"
+        title="Mark Folder as Read"
       /> */}
     </>
   );
