@@ -8,8 +8,7 @@ export const POST = async (
   const supabase = await createClient();
   const { sender_id } = await params;
   const { folder_id } = await request.json();
-  console.log(folder_id);
-  console.log(sender_id);
+
   const folder = await supabase
     .from("folders")
     .select("*")

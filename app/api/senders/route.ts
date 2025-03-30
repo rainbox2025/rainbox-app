@@ -9,7 +9,8 @@ export const POST = async (req: Request) => {
     domain,
     user_id,
   });
-  console.log(email, name);
-
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
   return NextResponse.json({ message: "Email sent successfully" });
 };
