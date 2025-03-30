@@ -18,6 +18,7 @@ interface FoldersContextType {
   createFolder: (name: string) => Promise<void>;
   deleteFolderError: string | null;
   deleteFolder: (id: string) => Promise<void>;
+  renameFolder: (folderId: string, name: string) => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -134,6 +135,7 @@ export const FoldersProvider = ({
         createFolder,
         deleteFolderError,
         deleteFolder,
+        renameFolder
       }}
     >
       {children}

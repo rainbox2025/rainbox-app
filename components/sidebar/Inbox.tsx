@@ -78,11 +78,6 @@ export default function Inbox() {
     setFocusedCategory(categoryId);
   };
 
-  const handleCreateFolder = (folderName: string) => {
-    createFolder(folderName);
-    setIsFolderModalOpen(false);
-  };
-
   const openFolderCreationModal = () => {
     setIsFolderModalOpen(true);
   };
@@ -329,6 +324,7 @@ export default function Inbox() {
       <FolderModal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
+        onSave={(folderName) => { createFolder(folderName); setIsFolderModalOpen(false) }}
         title="Create New Folder"
       />
 

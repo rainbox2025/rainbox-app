@@ -30,7 +30,7 @@ export default function SortableCategory({
   onDeleteCategory,
   onMarkCategoryAsRead
 }: SortableCategoryProps) {
-  const { deleteFolder } = useFolders();
+  const { deleteFolder, renameFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
@@ -214,13 +214,13 @@ export default function SortableCategory({
       </div>
 
       {/* Rename Modal */}
-      {/* <FolderModal
+      <FolderModal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
-        onSave={(newName) => onRenameCategory(category.id, newName)}
+        onSave={(newName) => renameFolder(category.id, newName)}
         initialName={category.name}
         title="Rename Category"
-      /> */}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

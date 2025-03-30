@@ -1,10 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useFolders } from '@/context/foldersContext';
 
 interface FolderModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave: (folderName: string) => void;
   initialName?: string;
   title: string;
 }
@@ -12,10 +12,10 @@ interface FolderModalProps {
 export const FolderModal: React.FC<FolderModalProps> = ({
   isOpen,
   onClose,
+  onSave,
   initialName = '',
   title
 }) => {
-  const { createFolder } = useFolders();
   const [folderName, setFolderName] = React.useState(initialName);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -28,8 +28,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
 
   const handleSave = () => {
     if (folderName.trim()) {
-      console.log("handle save: ", folderName)
-      createFolder(folderName);
+      onSave(folderName.trim());
       onClose();
     }
   };
