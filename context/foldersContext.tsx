@@ -9,6 +9,7 @@ import {
 import { Folder } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
+import { AxiosResponse } from "axios";
 
 interface FoldersContextType {
   folders: Folder[];
@@ -18,6 +19,9 @@ interface FoldersContextType {
   createFolder: (name: string) => Promise<void>;
   deleteFolderError: string | null;
   deleteFolder: (id: string) => Promise<void>;
+  getSenders: (
+    folderId: string
+  ) => Promise<AxiosResponse<any, any> | undefined>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -37,6 +41,7 @@ export const FoldersProvider = ({
   const [deleteFolderError, setDeleteFolderError] = useState<string | null>(
     null
   );
+
   const api = useAxios();
 
   const fetchFolders = useCallback(async () => {
@@ -115,6 +120,17 @@ export const FoldersProvider = ({
     },
     [api, supabase]
   );
+  const getSenders = useCallback(
+    async (folderId: string) => {
+      try {
+        const data = await api.get(`/folders/getSenders/${folderId}`);
+        return data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api]
+  );
   useEffect(() => {
     fetchFolders();
   }, []);
@@ -129,6 +145,7 @@ export const FoldersProvider = ({
         createFolder,
         deleteFolderError,
         deleteFolder,
+        getSenders,
       }}
     >
       {children}
