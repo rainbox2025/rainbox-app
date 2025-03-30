@@ -6,6 +6,8 @@ import { FeedIcon } from "./FeedIcon";
 import { useState, useRef, useEffect } from 'react';
 import { BellSlashIcon, CheckIcon, EllipsisHorizontalIcon, FolderIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "./DeleteModal";
+import { FolderModal } from "./FolderModal";
+import { useSenders } from "@/context/sendersContext";
 
 interface SortableFeedProps {
   feed: Feed;
@@ -18,12 +20,11 @@ export default function SortableFeed({
   onRenameFeed,
   onUnfollowFeed
 }: SortableFeedProps) {
+  const { renameSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
-  const [newName, setNewName] = useState(feed.name);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const {
     attributes,
@@ -45,13 +46,6 @@ export default function SortableFeed({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [isRenaming]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,12 +71,15 @@ export default function SortableFeed({
     setIsRenaming(true);
   };
 
-  const saveRename = () => {
-    if (newName.trim() && newName !== feed.name && onRenameFeed) {
-      onRenameFeed(feed.id, newName);
-    } else {
-      setNewName(feed.name);
+  const handleRenameComplete = (newName: string) => {
+    if (newName.trim() && newName !== feed.name) {
+      if (onRenameFeed) {
+        onRenameFeed(feed.id, newName);
+      } else {
+        renameSender(feed.id, newName);
+      }
     }
+
     setIsRenaming(false);
   };
 
@@ -140,28 +137,9 @@ export default function SortableFeed({
       >
         <div className="flex items-center space-x-md overflow-hidden flex-1">
           <FeedIcon feed={feed} />
-          {isRenaming ? (
-            <input
-              ref={renameInputRef}
-              type="text"
-              className="text-sm bg-transparent border-none focus:ring-0 outline-none flex-1 text-foreground"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onBlur={saveRename}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  saveRename();
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm text-foreground truncate overflow-hidden mr-2">
-              {feed.name}
-            </span>
-          )}
+          <span className="text-sm text-foreground truncate overflow-hidden mr-2">
+            {feed.name}
+          </span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -234,6 +212,15 @@ export default function SortableFeed({
         onConfirm={confirmUnfollow}
         itemName={feed.name}
         itemType="feed"
+      />
+
+      {/* Rename Modal */}
+      <FolderModal
+        isOpen={isRenaming}
+        onClose={() => setIsRenaming(false)}
+        onSave={handleRenameComplete}
+        initialValue={feed.name}
+        title="Rename Category"
       />
     </>
   );

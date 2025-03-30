@@ -34,6 +34,25 @@ export const POST = async (
   }
   return NextResponse.json(data);
 };
+export const PATCH = async (
+  request: Request,
+  { params }: { params: { sender_id: string } }
+) => {
+    
+    const supabase = await createClient();
+    const { sender_id } = await params;
+    const {name} = await request.json();
+    const { data, error } = await supabase
+      .from("senders")
+      .update({ name: name })
+      .eq("id", sender_id)
+      .select('*'); 
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(data);
+}
+
 export const DELETE = async (
   request: Request,
   { params }: { params: { sender_id: string } }

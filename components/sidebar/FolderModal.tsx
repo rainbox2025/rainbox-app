@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface FolderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (folderName: string) => void;
-  initialName?: string;
+  onSave: (value: string) => void;
+  initialValue?: string;
   title: string;
 }
 
@@ -13,22 +13,22 @@ export const FolderModal: React.FC<FolderModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialName = '',
+  initialValue = '',
   title
 }) => {
-  const [folderName, setFolderName] = React.useState(initialName);
+  const [value, setvalue] = React.useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setFolderName(initialName);
+      setvalue(initialValue);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, initialName]);
+  }, [isOpen, initialValue]);
 
   const handleSave = () => {
-    if (folderName.trim()) {
-      onSave(folderName.trim());
+    if (value.trim()) {
+      onSave(value.trim());
       onClose();
     }
   };
@@ -73,8 +73,8 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             <input
               ref={inputRef}
               type="text"
-              value={folderName}
-              onChange={(e) => setFolderName(e.target.value)}
+              value={value}
+              onChange={(e) => setvalue(e.target.value)}
               placeholder="Folder Name"
               className="w-full px-3 py-2 border border-border dark:border-border rounded-md 
                          bg-background dark:bg-background 
@@ -97,7 +97,7 @@ export const FolderModal: React.FC<FolderModalProps> = ({
               </button>
               <button
                 onClick={handleSave}
-                disabled={!folderName.trim()}
+                disabled={!value.trim()}
                 className="px-4 py-2 bg-primary text-primary-foreground 
                            rounded-md hover:bg-primary/80 
                            disabled:opacity-50 disabled:cursor-not-allowed 

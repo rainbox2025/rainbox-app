@@ -75,7 +75,11 @@ export const SendersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
+
+        console.log("renaming..: ", name);
         await api.patch(`/senders/${id}`, { name });
+        console.log("renamed");
+        fetchSenders();
       } catch (error) {
         setRenameSenderError(
           error instanceof Error ? error.message : "Unknown error"

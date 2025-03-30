@@ -218,7 +218,7 @@ export default function SortableCategory({
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={(newName) => renameFolder(category.id, newName)}
-        initialName={category.name}
+        initialValue={category.name}
         title="Rename Category"
       />
 
