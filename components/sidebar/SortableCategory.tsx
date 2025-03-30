@@ -7,6 +7,7 @@ import SortableFeed from "./SortableFeed";
 import { FolderModal } from "./FolderModal";
 import { useState, useRef, useEffect } from 'react';
 import { DeleteConfirmationModal } from "./DeleteModal";
+import { useFolders } from "@/context/foldersContext";
 
 interface SortableCategoryProps {
   category: Category;
@@ -29,6 +30,7 @@ export default function SortableCategory({
   onDeleteCategory,
   onMarkCategoryAsRead
 }: SortableCategoryProps) {
+  const { deleteFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
@@ -100,11 +102,6 @@ export default function SortableCategory({
     setMenuOpen(false);
     // Add your mute notifications logic here
     console.log(`Muted notifications for ${category.name}`);
-  };
-
-  const confirmDelete = () => {
-    onDeleteCategory(category.id);
-    setIsDeletingModalOpen(false);
   };
 
   const confirmMarkAsRead = () => {
@@ -217,31 +214,31 @@ export default function SortableCategory({
       </div>
 
       {/* Rename Modal */}
-      <FolderModal
+      {/* <FolderModal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={(newName) => onRenameCategory(category.id, newName)}
         initialName={category.name}
         title="Rename Category"
-      />
+      /> */}
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeletingModalOpen}
         onClose={() => setIsDeletingModalOpen(false)}
-        onConfirm={() => onDeleteCategory(category.id)}
+        onConfirm={() => { setIsDeletingModalOpen(false); deleteFolder(category.id) }}
         itemName={category.name}
         itemType="category"
       />
 
       {/* Mark as Read Confirmation Modal */}
-      <FolderModal
+      {/* <FolderModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
         onSave={confirmMarkAsRead}
         initialName="Mark all items in this category as read?"
         title="Mark Category as Read"
-      />
+      /> */}
     </>
   );
 }

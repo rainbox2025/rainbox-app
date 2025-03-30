@@ -82,6 +82,7 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
         await api.delete(`/folders/${id}`);
+        setFolders(folders.filter((folder) => folder.id !== id));
       } catch (error) {
         setDeleteFolderError(
           error instanceof Error ? error.message : "Unknown error"
