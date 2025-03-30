@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface FolderModalProps {
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (value: string) => void;
@@ -9,7 +9,7 @@ interface FolderModalProps {
   title: string;
 }
 
-export const FolderModal: React.FC<FolderModalProps> = ({
+export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   onSave,

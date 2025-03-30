@@ -23,18 +23,17 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Feed, Category, Folder, Sender } from "@/types/data";
+import { Feed, Category, FolderType, SenderType } from "@/types/data";
 import { FeedIcon } from "./FeedIcon";
-import SortableCategory from "./SortableCategory";
-import SortableFeed from "./SortableFeed";
-import { FeedModal } from "./FeedModal";
+import Folder from "./Folder";
+import Sender from "./Sender";
 import { ConfirmModal } from "./ConfirmationModal";
-import { FolderModal } from "./FolderModal";
+import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
 export default function Inbox() {
-  const { folders, isFoldersLoading, createFolder, deleteFolder } = useFolders();
+  const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder } = useFolders();
   const { senders, isSendersLoading } = useSenders();
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
@@ -174,6 +173,8 @@ export default function Inbox() {
           `Moved ${feed.name} from ${feed.category || "root"} to ${targetCategory || "root"}`
         );
 
+        addSenderToFolder(feed.id, targetCategory);
+
         // Force re-render of the target category
         if (!expandedCategories[targetCategory]) {
           setExpandedCategories((prev) => ({
@@ -270,7 +271,7 @@ export default function Inbox() {
             strategy={verticalListSortingStrategy}
           >
             {folders.map((category) => (
-              <SortableCategory
+              <Folder
                 key={category.id}
                 category={category}
                 expanded={expandedCategories[category.id] || false}
@@ -299,7 +300,7 @@ export default function Inbox() {
               strategy={verticalListSortingStrategy}
             >
               {rootFeeds.map((feed) => (
-                <SortableFeed
+                <Sender
                   key={feed.id}
                   feed={feed}
                 // onUnfollow={(feedId) => {
@@ -321,7 +322,7 @@ export default function Inbox() {
       </div>
 
       {/* Folder Creation Modal */}
-      <FolderModal
+      <Modal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
         onSave={(folderName) => { createFolder(folderName); setIsFolderModalOpen(false) }}

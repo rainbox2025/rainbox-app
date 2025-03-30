@@ -3,13 +3,13 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import SortableFeed from "./SortableFeed";
-import { FolderModal } from "./FolderModal";
+import Sender from "./Sender";
+import { Modal } from "./Modal";
 import { useState, useRef, useEffect } from 'react';
 import { DeleteConfirmationModal } from "./DeleteModal";
 import { useFolders } from "@/context/foldersContext";
 
-interface SortableCategoryProps {
+interface FolderProps {
   category: Category;
   expanded: boolean;
   toggleExpanded: (id: string) => void;
@@ -20,7 +20,7 @@ interface SortableCategoryProps {
   onMarkCategoryAsRead?: (categoryId: string) => void;
 }
 
-export default function SortableCategory({
+export default function Folder({
   category,
   expanded,
   toggleExpanded,
@@ -29,7 +29,7 @@ export default function SortableCategory({
   onRenameCategory,
   onDeleteCategory,
   onMarkCategoryAsRead
-}: SortableCategoryProps) {
+}: FolderProps) {
   const { deleteFolder, renameFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
@@ -205,7 +205,7 @@ export default function SortableCategory({
             >
               <SortableContext items={feedIds} strategy={verticalListSortingStrategy}>
                 {feeds.map((feed) => (
-                  <SortableFeed key={feed.id} feed={feed} />
+                  <Sender key={feed.id} feed={feed} />
                 ))}
               </SortableContext>
             </motion.div>
@@ -214,7 +214,7 @@ export default function SortableCategory({
       </div>
 
       {/* Rename Modal */}
-      <FolderModal
+      <Modal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={(newName) => renameFolder(category.id, newName)}
@@ -232,7 +232,7 @@ export default function SortableCategory({
       />
 
       {/* Mark as Read Confirmation Modal */}
-      {/* <FolderModal
+      {/* <Modal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
         onSave={confirmMarkAsRead}

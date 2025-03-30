@@ -6,12 +6,12 @@ import {
   useContext,
   useCallback,
 } from "react";
-import { Sender, Folder, Mail } from "@/types/data";
+import { SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 
 interface SendersContextType {
-  senders: Sender[];
+  senders: SenderType[];
   isSendersLoading: boolean;
   sendersListError: string | null;
   unsubcribeSenderError: string | null;
@@ -28,7 +28,7 @@ export const SendersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const [senders, setSenders] = useState<Sender[]>([]);
+  const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
   const [sendersListError, setSendersListError] = useState<string | null>(null);
   const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<

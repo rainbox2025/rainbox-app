@@ -6,20 +6,20 @@ import { FeedIcon } from "./FeedIcon";
 import { useState, useRef, useEffect } from 'react';
 import { BellSlashIcon, CheckIcon, EllipsisHorizontalIcon, FolderIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "./DeleteModal";
-import { FolderModal } from "./FolderModal";
+import { Modal } from "./Modal";
 import { useSenders } from "@/context/sendersContext";
 
-interface SortableFeedProps {
+interface SenderProps {
   feed: Feed;
   onRenameFeed?: (feedId: string, newName: string) => void;
   onUnfollowFeed?: (feedId: string) => void;
 }
 
-export default function SortableFeed({
+export default function Sender({
   feed,
   onRenameFeed,
   onUnfollowFeed
-}: SortableFeedProps) {
+}: SenderProps) {
   const { renameSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -215,7 +215,7 @@ export default function SortableFeed({
       />
 
       {/* Rename Modal */}
-      <FolderModal
+      <Modal
         isOpen={isRenaming}
         onClose={() => setIsRenaming(false)}
         onSave={handleRenameComplete}

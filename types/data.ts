@@ -7,7 +7,7 @@ export interface User {
   usedFeeds: number;
   totalFeeds: number;
 }
-export interface Sender {
+export interface SenderType {
   id: string;
   name: string;
   email: string;
@@ -19,7 +19,7 @@ export interface Sender {
   count: number;
   category?: string;
 }
-export interface Folder {
+export interface FolderType {
   id: string;
   name: string;
   user_id?: string;

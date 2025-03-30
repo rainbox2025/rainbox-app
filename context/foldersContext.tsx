@@ -6,12 +6,12 @@ import {
   useContext,
   useCallback,
 } from "react";
-import { Folder } from "@/types/data";
+import { FolderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 
 interface FoldersContextType {
-  folders: Folder[];
+  folders: FolderType[];
   isFoldersLoading: boolean;
   foldersListError: string | null;
   createFolderError: string | null;
@@ -19,6 +19,7 @@ interface FoldersContextType {
   deleteFolderError: string | null;
   deleteFolder: (id: string) => Promise<void>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
+  addSenderToFolder: (folderId: string, senderId: string) => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -29,7 +30,7 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
   const [createFolderError, setCreateFolderError] = useState<string | null>(
@@ -94,11 +95,16 @@ export const FoldersProvider = ({
     [api, supabase]
   );
   const addSenderToFolder = useCallback(
-    async (folderId: string, senderId: string) => {
+    async (senderId: string, folderId: string) => {
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-        await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
+
+        console.log("Adding sender:", senderId, "to folder:", folderId);
+        const data = await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
+        console.log("Sender added to folder successfully.: ", data.data);
+
+        fetchFolders();
       } catch (error) {
         console.error(error);
       }
@@ -135,7 +141,8 @@ export const FoldersProvider = ({
         createFolder,
         deleteFolderError,
         deleteFolder,
-        renameFolder
+        renameFolder,
+        addSenderToFolder,
       }}
     >
       {children}
