@@ -16,6 +16,8 @@ interface SendersContextType {
   sendersListError: string | null;
   unsubcribeSenderError: string | null;
   unsubcribeSender: (id: string) => Promise<void>;
+  renameSenderError: string | null;
+  renameSender: (id: string, name: string) => Promise<void>;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -32,6 +34,9 @@ export const SendersProvider = ({
   const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<
     string | null
   >(null);
+  const [renameSenderError, setRenameSenderError] = useState<string | null>(
+    null
+  );
 
   const api = useAxios();
   const fetchSenders = useCallback(async () => {
@@ -65,6 +70,21 @@ export const SendersProvider = ({
     },
     [api, supabase]
   );
+  const renameSender = useCallback(
+    async (id: string, name: string) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+        await api.patch(`/senders/${id}`, { name });
+      } catch (error) {
+        setRenameSenderError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
 
   useEffect(() => {
     fetchSenders();
@@ -78,6 +98,8 @@ export const SendersProvider = ({
         sendersListError,
         unsubcribeSenderError,
         unsubcribeSender,
+        renameSenderError,
+        renameSender,
       }}
     >
       {children}

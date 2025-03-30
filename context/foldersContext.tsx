@@ -87,6 +87,34 @@ export const FoldersProvider = ({
     },
     [api, supabase]
   );
+  const addSenderToFolder = useCallback(
+    async (folderId: string, senderId: string) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+        await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
+  const renameFolder = useCallback(
+    async (folderId: string, name: string) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+        await api.patch(`/folders/${folderId}`, { name });
+        const updatedFolders = folders.map((folder) =>
+          folder.id === folderId ? { ...folder, name } : folder
+        );
+        setFolders(updatedFolders);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
   useEffect(() => {
     fetchFolders();
   }, []);
