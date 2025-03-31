@@ -85,6 +85,11 @@ export const FoldersProvider = ({
       const data = await api.get(`/folders/user/${user.user.id}`);
       let foldersData = data.data;
 
+      for (let folder of foldersData) {
+        const sendersResponse = await api.get(`/folders/getSenders/${folder.id}`);
+        folder.senders = sendersResponse.data || [];
+      }
+
       // Apply folder order from localStorage if available
       const savedOrder = getFolderOrderFromLocalStorage(user.user.id);
 

@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
+// get all senders for a specific folder that are in the folder
 export async function GET(
   request: Request,
   { params }: { params: { folder_id: string } }
@@ -15,7 +16,8 @@ export async function GET(
   const { data, error } = await supabase
     .from("senders")
     .select("*")
-    .eq("folder_id", folder_id);
+    .eq("folder_id", folder_id)
+    .eq("subscribed", true);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

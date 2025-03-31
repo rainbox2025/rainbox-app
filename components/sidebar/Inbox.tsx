@@ -324,7 +324,10 @@ export default function Inbox() {
                 return (
                   <FolderComponent
                     key={folder.id}
-                    folder={folder}
+                    folder={{
+                      ...folder,
+                      count: folder.senders ? folder.senders.length : 0, // Sum of senders
+                    }}
                     expanded={expandedFolders[folder.id] || false}
                     toggleExpanded={toggleFolder}
                     senders={getSendersForFolder(folder.id)}

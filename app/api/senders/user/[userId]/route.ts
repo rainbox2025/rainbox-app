@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
+// get all senders for a specific user that are not in a folder
 export const GET = async (
   request: Request,
   context: { params: { userId: string } }
@@ -13,7 +14,8 @@ export const GET = async (
     .from("senders")
     .select("*")
     .eq("user_id", userId)
-    .is("folder_id", null);
+    .is("folder_id", null)
+    .eq("subscribed", true);
 
   if (error) {
     console.error("Error fetching data:", error.message);

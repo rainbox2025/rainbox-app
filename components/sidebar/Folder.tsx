@@ -225,7 +225,11 @@ export default function Folder({
               </AnimatePresence>
             </div>
             <span className="text-xs text-muted-foreground font-medium">
-              {folder.count >= 1000 ? `${Math.floor(folder.count / 1000)}K+` : folder.count}
+              {folder.senders?.length
+                ? folder.senders.length >= 1000
+                  ? `${Math.floor(folder.senders.length / 1000)}K+`
+                  : folder.senders.length
+                : 0}
             </span>
           </div>
         </motion.div>
