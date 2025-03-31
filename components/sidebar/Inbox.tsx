@@ -32,31 +32,61 @@ import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
+// New interface to represent mixed items
+interface OrderedItem {
+  id: string;
+  type: 'folder' | 'sender';
+  originalId: string;
+  order: number;
+}
+
 export default function Inbox() {
   const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder, reorderFolders } = useFolders();
   const { senders, isSendersLoading } = useSenders();
-  const [expandedFolders, setExpandedFolders] = useState<
-    Record<string, boolean>
-  >({});
+
+  // New state for tracking the order of all items
+  const [orderedItems, setOrderedItems] = useState<OrderedItem[]>([]);
+
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeSender, setActiveSender] = useState<SenderType | null>(null);
   const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
-  const [focusedFolder, setFocusedFolder] = useState<string | null>(
-    "marketing"
-  ); // Default focus on Marketing
+  const [focusedFolder, setFocusedFolder] = useState<string | null>("marketing"); // Default focus on Marketing
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSenderModalOpen, setIsSenderModalOpen] = useState(false);
   const [selectedSender, setSelectedSender] = useState<SenderType | null>(null);
-  const [currentAction, setCurrentAction] = useState<
-    "delete" | "unfollow" | null
-  >(null);
+  const [currentAction, setCurrentAction] = useState<"delete" | "unfollow" | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
 
-  // Initialize expanded folders state when folders load
+  // Initialize ordered items when folders and senders load
   useEffect(() => {
-    if (!isFoldersLoading && folders.length > 0) {
+    if (!isFoldersLoading && !isSendersLoading && folders.length > 0 && senders.length > 0) {
+      // Get root senders (not in any folder)
+      const rootSenders = senders.filter((sender) => !sender.folder || sender.folder === "");
+
+      // Create initial ordered items
+      const initialOrderedItems: OrderedItem[] = [
+        // First add all folders
+        ...folders.map((folder, index) => ({
+          id: `folder-${folder.id}`,
+          type: 'folder' as const,
+          originalId: folder.id,
+          order: index
+        })),
+        // Then add all root senders
+        ...rootSenders.map((sender, index) => ({
+          id: `sender-${sender.id}`,
+          type: 'sender' as const,
+          originalId: sender.id,
+          order: folders.length + index
+        }))
+      ];
+
+      setOrderedItems(initialOrderedItems);
+
+      // Also initialize expanded folders state
       setExpandedFolders(
         folders.reduce(
           (acc, folder) => ({
@@ -67,7 +97,7 @@ export default function Inbox() {
         )
       );
     }
-  }, [folders, isFoldersLoading]);
+  }, [folders, senders, isFoldersLoading, isSendersLoading]);
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => ({
@@ -90,6 +120,11 @@ export default function Inbox() {
     if (targetId) {
       deleteFolder(targetId);
 
+      // Remove the folder from ordered items
+      setOrderedItems(prev =>
+        prev.filter(item => !(item.type === 'folder' && item.originalId === targetId))
+      );
+
       // Clean up expanded state
       setExpandedFolders((prev) => {
         const newState = { ...prev };
@@ -109,10 +144,18 @@ export default function Inbox() {
   };
 
   const handleUnfollowSender = () => {
-    console.log(`Unfollowing sender with ID: ${targetId}`);
-    setIsConfirmModalOpen(false);
-    setCurrentAction(null);
-    setTargetId(null);
+    if (targetId) {
+      console.log(`Unfollowing sender with ID: ${targetId}`);
+
+      // Remove the sender from ordered items
+      setOrderedItems(prev =>
+        prev.filter(item => !(item.type === 'sender' && item.originalId === targetId))
+      );
+
+      setIsConfirmModalOpen(false);
+      setCurrentAction(null);
+      setTargetId(null);
+    }
   };
 
   const sensors = useSensors(
@@ -155,49 +198,54 @@ export default function Inbox() {
       return;
     }
 
-    // Moving a sender
-    if (active.id.toString().startsWith("sender-") && over) {
-      const senderId = active.id.toString().replace("sender-", "");
-      const sender = senders.find((s) => s.id === senderId);
+    const activeItemId = active.id.toString();
+    const overItemId = over.id.toString();
 
-      if (!sender) return;
+    // If item is being moved to a new position in the ordered list
+    if (activeItemId !== overItemId) {
+      setOrderedItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === activeItemId);
+        const newIndex = items.findIndex((item) => item.id === overItemId);
 
-      let targetFolder = "";
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newItems = [...items];
+          const [removed] = newItems.splice(oldIndex, 1);
+          newItems.splice(newIndex, 0, removed);
 
-      // If dropped over a folder
-      if (over.id.toString().startsWith("folder-")) {
-        targetFolder = over.id.toString().replace("folder-", "");
-
-        console.log(
-          `Moved ${sender.name} from ${sender.folder || "root"} to ${targetFolder || "root"}`
-        );
-
-        addSenderToFolder(sender.id, targetFolder);
-
-        // Force re-render of the target folder
-        if (!expandedFolders[targetFolder]) {
-          setExpandedFolders((prev) => ({
-            ...prev,
-            [targetFolder]: true,
+          // Update order property
+          return newItems.map((item, index) => ({
+            ...item,
+            order: index
           }));
         }
 
-        // Focus the folder
-        setFocusedFolder(targetFolder);
-      }
-      // If dropped over another sender or root items
-      else {
-        console.log(`Reordering sender or moving to root area`);
-      }
+        return items;
+      });
     }
-    // Moving a folder
-    else if (
-      active.id.toString().startsWith("folder-") &&
-      over.id.toString().startsWith("folder-")
-    ) {
-      // Call the reorderFolders function from context
-      if (active.id !== over.id) {
-        reorderFolders(active.id.toString(), over.id.toString());
+
+    // Special case: Moving a sender to a folder
+    if (activeItemId.startsWith("sender-") && overItemId.startsWith("folder-")) {
+      const senderId = activeItemId.replace("sender-", "");
+      const folderId = overItemId.replace("folder-", "");
+      const sender = senders.find((s) => s.id === senderId);
+
+      if (sender) {
+        console.log(`Moved ${sender.name} to folder ${folderId}`);
+        addSenderToFolder(sender.id, folderId);
+
+        // Remove sender from root items in ordered list
+        setOrderedItems(prev =>
+          prev.filter(item => item.id !== activeItemId)
+        );
+
+        // Force expand the folder
+        setExpandedFolders((prev) => ({
+          ...prev,
+          [folderId]: true,
+        }));
+
+        // Focus the folder
+        setFocusedFolder(folderId);
       }
     }
 
@@ -208,9 +256,6 @@ export default function Inbox() {
       setActiveFolder(null);
     }, 50);
   };
-
-  // Get root items (not in any folder)
-  const rootSenders = senders.filter((sender) => !sender.folder || sender.folder === "");
 
   // Get senders for a specific folder
   const getSendersForFolder = (folderId: string) => {
@@ -225,19 +270,19 @@ export default function Inbox() {
       <div className="flex-1 bg-background text-foreground rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-6 w-6 rounded-full" />
         </div>
         {[1, 2, 3, 4, 5, 6].map((_, index) => (
           <div key={index} className="mb-3">
-            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-6 w-full" />
           </div>
         ))}
       </div>
     );
   }
 
-  const folderIds = folders.map((folder) => `folder-${folder.id}`);
-  const rootSenderIds = rootSenders.map((sender) => `sender-${sender.id}`);
+  // Create sortable item IDs in the correct order
+  const sortableIds = orderedItems.map(item => item.id);
 
   return (
     <DndContext
@@ -266,48 +311,46 @@ export default function Inbox() {
         </div>
 
         <div className="px-0 py-0">
-          {/* Folders */}
+          {/* Mixed Ordered Items (Folders and Senders) */}
           <SortableContext
-            items={folderIds}
+            items={sortableIds}
             strategy={verticalListSortingStrategy}
           >
-            {folders.map((folder) => (
-              <FolderComponent
-                key={folder.id}
-                folder={folder}
-                expanded={expandedFolders[folder.id] || false}
-                toggleExpanded={toggleFolder}
-                senders={getSendersForFolder(folder.id)}
-                activeFolder={focusedFolder}
-                onRenameFolder={handleRenameFolder}
-                onDeleteFolder={(folderId) => {
-                  setTargetId(folderId);
-                  setCurrentAction("delete");
-                  setIsConfirmModalOpen(true);
-                }}
-              />
-            ))}
-          </SortableContext>
+            {orderedItems.map((item) => {
+              if (item.type === 'folder') {
+                const folder = folders.find(f => f.id === item.originalId);
+                if (!folder) return null;
 
-          {/* Root Items (not in any folder) */}
-          <motion.div
-            id="root-items"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <SortableContext
-              items={rootSenderIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {rootSenders.map((sender) => (
-                <SenderComponent
-                  key={sender.id}
-                  sender={sender}
-                />
-              ))}
-            </SortableContext>
-          </motion.div>
+                return (
+                  <FolderComponent
+                    key={folder.id}
+                    folder={folder}
+                    expanded={expandedFolders[folder.id] || false}
+                    toggleExpanded={toggleFolder}
+                    senders={getSendersForFolder(folder.id)}
+                    activeFolder={focusedFolder}
+                    onRenameFolder={handleRenameFolder}
+                    onDeleteFolder={(folderId) => {
+                      setTargetId(folderId);
+                      setCurrentAction("delete");
+                      setIsConfirmModalOpen(true);
+                    }}
+                  />
+                );
+              } else if (item.type === 'sender') {
+                const sender = senders.find(s => s.id === item.originalId);
+                if (!sender) return null;
+
+                return (
+                  <SenderComponent
+                    key={sender.id}
+                    sender={sender}
+                  />
+                );
+              }
+              return null;
+            })}
+          </SortableContext>
         </div>
 
         {/* Footer */}
@@ -321,7 +364,22 @@ export default function Inbox() {
       <Modal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
-        onSave={(folderName) => { createFolder(folderName); setIsFolderModalOpen(false) }}
+        onSave={(folderName) => {
+          createFolder(folderName);
+
+          // Add new folder to ordered items when created
+          setOrderedItems(prev => [
+            ...prev,
+            {
+              id: `folder-${folders.length + 1}`, // Placeholder ID until actual ID is known
+              type: 'folder',
+              originalId: (folders.length + 1).toString(), // Placeholder ID until actual ID is known
+              order: prev.length
+            }
+          ]);
+
+          setIsFolderModalOpen(false);
+        }}
         title="Create New Folder"
       />
 
