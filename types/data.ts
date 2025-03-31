@@ -26,6 +26,7 @@ export interface FolderType {
   created_at?: string;
   count: number;
   isExpanded: boolean;
+  senders: SenderType[];
 }
 export interface Mail {
   id: string;

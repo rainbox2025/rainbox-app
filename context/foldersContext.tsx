@@ -87,6 +87,8 @@ export const FoldersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
+
+        console.log("Deleting folder:", id);
         await api.delete(`/folders/${id}`);
         setFolders(folders.filter((folder) => folder.id !== id));
       } catch (error) {
@@ -118,6 +120,8 @@ export const FoldersProvider = ({
   const getSenders = useCallback(
     async (folderId: string): Promise<SenderType[]> => {
       setIsLoadingSenders(true);
+
+      console.log(" folderId from getSenders", folderId);
       try {
         const response: AxiosResponse<SenderType[]> = await api.get(`/folders/getSenders/${folderId}`);
         setIsLoadingSenders(false);
@@ -135,6 +139,8 @@ export const FoldersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
+
+        console.log("Renaming folder:", folderId, "to:", name);
         await api.patch(`/folders/${folderId}`, { name });
         const updatedFolders = folders.map((folder) =>
           folder.id === folderId ? { ...folder, name } : folder

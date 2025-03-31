@@ -1,21 +1,26 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export const GET = async (
+export async function GET(
   request: Request,
-  { params }: { params: { folderId: string } }
-) => {
-  const supabase = await createClient();
-  const { folderId } = await params;
-  console.log(" folderId", folderId);
+  { params }: { params: { folder_id: string } }
+) {
+  console.log("came here");
+
+  const supabase = await createClient(); 
+  const { folder_id } = params;
+
+  console.log("folder_id:", folder_id);
+
   const { data, error } = await supabase
     .from("senders")
     .select("*")
-    .eq("folder_id", folderId);
+    .eq("folder_id", folder_id);
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(data)
+  console.log(data);
   return NextResponse.json(data);
-};
+}

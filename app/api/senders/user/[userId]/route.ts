@@ -12,7 +12,8 @@ export const GET = async (
   const { data, error } = await supabase
     .from("senders")
     .select("*")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("folder_id", null);
 
   if (error) {
     console.error("Error fetching data:", error.message);

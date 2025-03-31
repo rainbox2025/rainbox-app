@@ -18,6 +18,7 @@ interface FolderProps {
   onRenameFolder: (folderId: string, newName: string) => void;
   onDeleteFolder: (folderId: string) => void;
   onMarkFolderAsRead?: (folderId: string) => void;
+  senders: SenderType[]
 }
 
 export default function Folder({
@@ -27,7 +28,8 @@ export default function Folder({
   activeFolder,
   onRenameFolder,
   onDeleteFolder,
-  onMarkFolderAsRead
+  onMarkFolderAsRead,
+  senders
 }: FolderProps) {
   const { deleteFolder, renameFolder, getSenders } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -133,11 +135,11 @@ export default function Folder({
 
   // Skeleton loader component for senders
   const SkeletonLoader = () => (
-    <div className="space-y-2 ml-6 mt-2">
+    <div className="space-y-2 ml-10 mt-2">
       {[1, 2, 3].map((index) => (
         <div key={index} className="flex items-center animate-pulse">
-          <div className="w-4 h-5 rounded-full bg-secondary mr-3"></div>
-          <div className="h-5 bg-secondary rounded w-full"></div>
+          <div className="w-6 h-6 rounded-md bg-secondary mr-2"></div>
+          <div className="h-6 bg-secondary rounded-md w-full"></div>
         </div>
       ))}
     </div>
@@ -247,7 +249,7 @@ export default function Folder({
                   </SortableContext>
                 </div>
               ) : (
-                <div className="ml-6 mt-1.25 text-sm text-muted-foreground">
+                <div className="ml-6 m-md text-sm text-muted-foreground">
                   No senders in this folder
                 </div>
               )}
