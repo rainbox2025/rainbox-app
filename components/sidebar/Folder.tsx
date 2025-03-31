@@ -3,17 +3,17 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import SenderComponent from "./Sender";
+import Sender from "./Sender";
 import { Modal } from "./Modal";
 import { useState, useRef, useEffect } from 'react';
 import { DeleteConfirmationModal } from "./DeleteModal";
 import { useFolders } from "@/context/foldersContext";
+import { useSenders } from "@/context/sendersContext";
 
 interface FolderProps {
   folder: FolderType;
   expanded: boolean;
   toggleExpanded: (id: string) => void;
-  senders: SenderType[];
   activeFolder: string | null;
   onRenameFolder: (folderId: string, newName: string) => void;
   onDeleteFolder: (folderId: string) => void;
@@ -24,17 +24,18 @@ export default function Folder({
   folder,
   expanded,
   toggleExpanded,
-  senders,
   activeFolder,
   onRenameFolder,
   onDeleteFolder,
   onMarkFolderAsRead
 }: FolderProps) {
-  const { deleteFolder, renameFolder } = useFolders();
+  const { deleteFolder, renameFolder, getSenders } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
+  const [folderSenders, setFolderSenders] = useState<SenderType[]>([]);
+  const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -58,7 +59,28 @@ export default function Folder({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const senderIds = senders.map(sender => `sender-${sender.id}`);
+  // Fetch senders when folder is expanded
+  useEffect(() => {
+    if (expanded) {
+      const fetchFolderSenders = async () => {
+        setIsLoadingSenders(true);
+        try {
+          const data = await getSenders(folder.id);
+          if (data) {
+            setFolderSenders(data);
+          }
+        } catch (error) {
+          console.error("Error fetching senders for folder:", error);
+        } finally {
+          setIsLoadingSenders(false);
+        }
+      };
+
+      fetchFolderSenders();
+    }
+  }, [expanded]);
+
+  const senderIds = folderSenders.map(sender => `sender-${sender.id}`);
   const isFolderActive = activeFolder === folder.id;
 
   useEffect(() => {
@@ -108,6 +130,18 @@ export default function Folder({
     onMarkFolderAsRead?.(folder.id);
     setIsMarkAsReadModalOpen(false);
   };
+
+  // Skeleton loader component for senders
+  const SkeletonLoader = () => (
+    <div className="space-y-2 ml-6 mt-2">
+      {[1, 2, 3].map((index) => (
+        <div key={index} className="flex items-center animate-pulse">
+          <div className="w-4 h-5 rounded-full bg-secondary mr-3"></div>
+          <div className="h-5 bg-secondary rounded w-full"></div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -193,21 +227,30 @@ export default function Folder({
           </div>
         </motion.div>
 
-        {/* Senders for this folder with animation */}
+        {/* Show skeleton loader or senders for this folder with animation */}
         <AnimatePresence>
-          {expanded && senders.length > 0 && (
+          {expanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="ml-6 mt-1.25 space-y-md-1.25"
             >
-              <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
-                {senders.map((sender) => (
-                  <SenderComponent key={sender.id} sender={sender} />
-                ))}
-              </SortableContext>
+              {isLoadingSenders ? (
+                <SkeletonLoader />
+              ) : folderSenders.length > 0 ? (
+                <div className="ml-6 mt-1.25 space-y-md-1.25">
+                  <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+                    {folderSenders.map((sender) => (
+                      <Sender key={sender.id} sender={sender} />
+                    ))}
+                  </SortableContext>
+                </div>
+              ) : (
+                <div className="ml-6 mt-1.25 text-sm text-muted-foreground">
+                  No senders in this folder
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -235,13 +278,13 @@ export default function Folder({
       />
 
       {/* Mark as Read Confirmation Modal */}
-      {/* <Modal
+      <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onSave={confirmMarkAsRead}
-        initialName="Mark all items in this folder as read?"
-        title="Mark Folder as Read"
-      /> */}
+        onConfirm={confirmMarkAsRead}
+        itemName={folder.name}
+        itemType="markasread"
+      />
     </>
   );
 }

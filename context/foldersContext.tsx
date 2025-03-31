@@ -6,9 +6,10 @@ import {
   useContext,
   useCallback,
 } from "react";
-import { FolderType } from "@/types/data";
+import { FolderType, SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
+import { AxiosResponse } from "axios";
 
 interface FoldersContextType {
   folders: FolderType[];
@@ -20,6 +21,8 @@ interface FoldersContextType {
   deleteFolder: (id: string) => Promise<void>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
   addSenderToFolder: (folderId: string, senderId: string) => Promise<void>;
+  getSenders: (folderId: string) => Promise<SenderType[]>;
+  isLoadingSenders: boolean;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -33,6 +36,7 @@ export const FoldersProvider = ({
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
+  const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
   const [createFolderError, setCreateFolderError] = useState<string | null>(
     null
   );
@@ -111,6 +115,21 @@ export const FoldersProvider = ({
     },
     [api, supabase]
   );
+  const getSenders = useCallback(
+    async (folderId: string): Promise<SenderType[]> => {
+      setIsLoadingSenders(true);
+      try {
+        const response: AxiosResponse<SenderType[]> = await api.get(`/folders/getSenders/${folderId}`);
+        setIsLoadingSenders(false);
+        return response.data;
+      } catch (error) {
+        console.error(error);
+        setIsLoadingSenders(false);
+        return [];
+      }
+    },
+    [api]
+  );
   const renameFolder = useCallback(
     async (folderId: string, name: string) => {
       try {
@@ -143,6 +162,8 @@ export const FoldersProvider = ({
         deleteFolder,
         renameFolder,
         addSenderToFolder,
+        getSenders,
+        isLoadingSenders,
       }}
     >
       {children}

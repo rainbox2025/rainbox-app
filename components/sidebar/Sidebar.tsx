@@ -102,7 +102,7 @@ const Sidebar = () => {
                 alt="User Avatar"
                 width={50}
                 height={50}
-                className="rounded-full w-6 h-6 hover:cursor-pointer"
+                className="rounded-full w-8 h-8 hover:cursor-pointer"
                 aria-label="Account"
                 onMouseEnter={() => setShowUserModal(true)}
                 onMouseLeave={() => setShowUserModal(false)}
@@ -196,13 +196,13 @@ const Sidebar = () => {
               <AnimatePresence>
                 {showInfoMessage && (
                   <motion.div
-                    className="absolute left-0 -translate-x-1/2 top-full mt-md bg-popover text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10 w-40"
+                    className="absolute right-0 translate-x-1/2 top-full mt-md bg-popover text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10 w-40"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {user?.plan ? `Current Plan: ${user.plan}` : 'Account Information'}
+                    {`You are currently on the ${user?.plan} plan. Upgrade anytime for more benefits!`}
                   </motion.div>
                 )}
               </AnimatePresence>

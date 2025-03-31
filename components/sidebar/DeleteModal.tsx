@@ -6,7 +6,7 @@ interface DeleteConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   itemName: string;
-  itemType: 'folder' | 'sender';
+  itemType: 'folder' | 'sender' | 'markasread';
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -25,11 +25,11 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card dark:bg-card rounded-lg shadow-xl w-full max-w-md mx-4 border border-gray-100/80"
+          className="bg-card dark:bg-card rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80"
         >
-          <div className="p-6">
+          <div className="p-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-card-foreground">
+              <h2 className="text-sm font-semibold">
                 {itemType === 'folder' ? 'Delete Folder' : 'Unfollow Sender'}
               </h2>
               <button
@@ -53,7 +53,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
               </button>
             </div>
 
-            <p className="text-muted-foreground mb-4">
+            <p className="text-sm mb-4">
               Are you sure you want to delete "{itemName}"?
               This action cannot be undone.
             </p>
@@ -63,7 +63,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                 onClick={onClose}
                 className="px-4 py-2 text-muted-foreground 
                            hover:bg-accent 
-                           rounded-md transition-colors"
+                           rounded-md transition-colors text-sm"
               >
                 Cancel
               </button>
@@ -71,7 +71,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                 onClick={onConfirm}
                 className="px-4 py-2 bg-destructive text-destructive-foreground 
                            rounded-md hover:bg-destructive/80 
-                           transition-colors"
+                           transition-colors text-sm"
               >
                 Delete
               </button>
