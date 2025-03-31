@@ -10,6 +10,7 @@ import { FolderType, SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 import { AxiosResponse } from "axios";
+import { useSenders } from "./sendersContext";
 
 interface FoldersContextType {
   folders: FolderType[];
@@ -51,6 +52,7 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
+  const { removeSender } = useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
@@ -226,16 +228,32 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("Adding sender:", senderId, "to folder:", folderId);
-        const data = await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
+        const response = await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
 
-        fetchFolders();
+        if (!response?.data?.sender) {
+          console.error("No sender returned from API");
+          return;
+        }
+
+        removeSender(senderId);
+
+        setFolders(prevFolders =>
+          prevFolders.map(folder =>
+            folder.id === folderId
+              ? {
+                ...folder,
+                senders: [...(folder.senders || []), response.data.sender],
+              }
+              : folder
+          )
+        );
       } catch (error) {
         console.error(error);
       }
     },
     [api, supabase]
   );
+
   const getSenders = useCallback(
     async (folderId: string): Promise<SenderType[]> => {
       setIsLoadingSenders(true);

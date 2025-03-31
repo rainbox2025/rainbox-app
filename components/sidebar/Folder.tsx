@@ -137,7 +137,7 @@ export default function Folder({
   // Skeleton loader component for senders
   const SkeletonLoader = () => (
     <div className="space-y-2 ml-10 mt-2">
-      {[1, 2, 3].map((index) => (
+      {[1, 2].map((index) => (
         <div key={index} className="flex items-center animate-pulse">
           <div className="w-6 h-6 rounded-md bg-secondary mr-2"></div>
           <div className="h-6 bg-secondary rounded-md w-full"></div>

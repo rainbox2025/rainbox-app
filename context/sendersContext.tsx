@@ -19,6 +19,7 @@ interface SendersContextType {
   renameSenderError: string | null;
   renameSender: (id: string, name: string) => Promise<void>;
   toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
+  removeSender: (senderId: string) => void;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -123,6 +124,10 @@ export const SendersProvider = ({
     [api, supabase]
   );
 
+  const removeSender = (senderId: string) => {
+    setSenders(prevSenders => prevSenders.filter(sender => sender.id !== senderId));
+  };
+
   useEffect(() => {
     fetchSenders();
   }, []);
@@ -137,7 +142,8 @@ export const SendersProvider = ({
         unsubcribeSender,
         renameSenderError,
         renameSender,
-        toggleReadSender
+        toggleReadSender,
+        removeSender
       }}
     >
       {children}

@@ -26,7 +26,7 @@ import {
 import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./SenderIcon";
 import FolderComponent from "./Folder";
-import SenderComponent from "./Sender";
+import Sender from "./Sender";
 import { ConfirmModal } from "./ConfirmationModal";
 import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
@@ -342,7 +342,7 @@ export default function Inbox() {
                 if (!sender) return null;
 
                 return (
-                  <SenderComponent
+                  <Sender
                     key={sender.id}
                     sender={sender}
                   />
