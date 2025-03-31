@@ -6,7 +6,7 @@ interface DeleteConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   itemName: string;
-  itemType: 'folder' | 'sender' | 'markasread';
+  itemType: 'folder' | 'sender' | 'markasread' | 'markasunread';
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -30,7 +30,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           <div className="p-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-semibold">
-                {itemType === 'folder' ? 'Delete Folder' : 'Unfollow Sender'}
+                {itemType === 'folder' && 'Delete Folder'}
+                {itemType === 'sender' && 'Unfollow Sender'}
+                {itemType === 'markasread' && 'Mark as Read'}
+                {itemType === 'markasunread' && 'Mark as Unread'}
               </h2>
               <button
                 onClick={onClose}
@@ -73,7 +76,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                            rounded-md hover:bg-destructive/80 
                            transition-colors text-sm"
               >
-                Delete
+                {itemType === 'folder' && 'Delete Folder'}
+                {itemType === 'sender' && 'Unfollow Sender'}
+                {itemType === 'markasread' && 'Mark as Read'}
+                {itemType === 'markasunread' && 'Mark as Unread'}
               </button>
             </div>
           </div>

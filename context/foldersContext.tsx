@@ -227,7 +227,6 @@ export const FoldersProvider = ({
 
         console.log("Adding sender:", senderId, "to folder:", folderId);
         const data = await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
-        console.log("Sender added to folder successfully.: ", data.data);
 
         fetchFolders();
       } catch (error) {

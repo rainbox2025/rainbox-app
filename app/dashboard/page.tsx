@@ -16,7 +16,6 @@ const page = () => {
   useEffect(() => {
     const checkOnboarding = async () => {
       const isOnboardingCompletes = await isOnboardingComplete();
-      console.log(isOnboardingCompletes);
       if (!isOnboardingCompletes) {
         setShowOnboardingModal(true);
       }

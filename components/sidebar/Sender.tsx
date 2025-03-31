@@ -12,17 +12,16 @@ import { useSenders } from "@/context/sendersContext";
 interface SenderProps {
   sender: SenderType;
   onRenameSender?: (senderId: string, newName: string) => void;
-  onUnfollowSender?: (senderId: string) => void;
 }
 
 export default function Sender({
   sender,
   onRenameSender,
-  onUnfollowSender
 }: SenderProps) {
   const { renameSender, unsubcribeSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -108,15 +107,6 @@ export default function Sender({
     e.stopPropagation();
     setMenuOpen(false);
     setIsUnfollowModalOpen(true);
-  };
-
-  const confirmUnfollow = () => {
-    if (onUnfollowSender) {
-      onUnfollowSender(sender.id);
-    } else {
-      console.log(`Unfollowed ${sender.name}`);
-    }
-    ;
   };
 
   const cancelUnfollow = () => {
@@ -212,6 +202,15 @@ export default function Sender({
         onConfirm={() => { setIsUnfollowModalOpen(false); console.log("unsubcribeSender: ", sender.id); unsubcribeSender(sender.id) }}
         itemName={sender.name}
         itemType="sender"
+      />
+
+      {/* Mark as Read Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isMarkAsReadModalOpen}
+        onClose={() => setIsMarkAsReadModalOpen(false)}
+        onConfirm={() => { console.log("mark as read clicked"); setIsMarkAsReadModalOpen(false); }}
+        itemName={sender.name}
+        itemType="markasread"
       />
 
       {/* Rename Modal */}

@@ -83,7 +83,13 @@ const Sidebar = () => {
       {/* Header */}
       <div className="px-md py-xs flex items-center justify-between border-b border-border">
         <div className="flex items-center space-x-md">
-          <Image src="/RainboxLogo.png" alt="Logo" width={32} height={32} />
+          <Image
+            src="/RainboxLogo.png"
+            alt="Logo"
+            className="w-8 h-8"
+            width={32}
+            height={32}
+          />
           <span className="font-bold text-xl tracking-tight text-foreground">
             Rainbox
           </span>

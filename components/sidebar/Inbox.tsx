@@ -304,11 +304,6 @@ export default function Inbox() {
                 <SenderComponent
                   key={sender.id}
                   sender={sender}
-                // onUnfollow={(senderId) => {
-                //   setTargetId(senderId);
-                //   setCurrentAction("unfollow");
-                //   setIsConfirmModalOpen(true);
-                // }}
                 />
               ))}
             </SortableContext>
