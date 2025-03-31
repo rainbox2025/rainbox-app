@@ -33,7 +33,7 @@ import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
 export default function Inbox() {
-  const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder } = useFolders();
+  const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder, reorderFolders } = useFolders();
   const { senders, isSendersLoading } = useSenders();
   const [expandedFolders, setExpandedFolders] = useState<
     Record<string, boolean>
@@ -168,9 +168,8 @@ export default function Inbox() {
       if (over.id.toString().startsWith("folder-")) {
         targetFolder = over.id.toString().replace("folder-", "");
 
-        // Update the sender's folder would be handled by the context
         console.log(
-          `Moved ${sender.name} from ${sender.category || "root"} to ${targetFolder || "root"}`
+          `Moved ${sender.name} from ${sender.folder || "root"} to ${targetFolder || "root"}`
         );
 
         addSenderToFolder(sender.id, targetFolder);
@@ -196,8 +195,10 @@ export default function Inbox() {
       active.id.toString().startsWith("folder-") &&
       over.id.toString().startsWith("folder-")
     ) {
-      // Folder reordering would be handled by context
-      console.log(`Reordering folders`);
+      // Call the reorderFolders function from context
+      if (active.id !== over.id) {
+        reorderFolders(active.id.toString(), over.id.toString());
+      }
     }
 
     // Clear drag state
@@ -209,11 +210,11 @@ export default function Inbox() {
   };
 
   // Get root items (not in any folder)
-  const rootSenders = senders.filter((sender) => !sender.category || sender.category === "");
+  const rootSenders = senders.filter((sender) => !sender.folder || sender.folder === "");
 
   // Get senders for a specific folder
   const getSendersForFolder = (folderId: string) => {
-    return senders.filter((sender) => sender.category === folderId);
+    return senders.filter((sender) => sender.folder === folderId);
   };
 
   // Calculate total count for display

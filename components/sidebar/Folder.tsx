@@ -249,7 +249,7 @@ export default function Folder({
                   </SortableContext>
                 </div>
               ) : (
-                <div className="ml-6 m-md text-sm text-muted-foreground">
+                <div className="ml-10 m-md text-sm text-muted-foreground">
                   No senders in this folder
                 </div>
               )}

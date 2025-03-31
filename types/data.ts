@@ -17,7 +17,8 @@ export interface SenderType {
   folder_id?: string;
   icon?: string;
   count: number;
-  category?: string;
+  folder?: string;
+  order?: number;
 }
 export interface FolderType {
   id: string;
@@ -25,8 +26,9 @@ export interface FolderType {
   user_id?: string;
   created_at?: string;
   count: number;
-  isExpanded: boolean;
-  senders: SenderType[];
+  isExpanded?: boolean;
+  senders?: SenderType[];
+  order?: number;
 }
 export interface Mail {
   id: string;

@@ -8,7 +8,7 @@ export async function GET(
   console.log("came here");
 
   const supabase = await createClient(); 
-  const { folder_id } = params;
+  const { folder_id } = await params;
 
   console.log("folder_id:", folder_id);
 

@@ -23,9 +23,26 @@ interface FoldersContextType {
   addSenderToFolder: (folderId: string, senderId: string) => Promise<void>;
   getSenders: (folderId: string) => Promise<SenderType[]>;
   isLoadingSenders: boolean;
+  reorderFolders: (activeId: string, overId: string) => void;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
+
+// Add this function at the top level before the context definition
+const FOLDER_ORDER_KEY = "folder_order";
+
+const getFolderOrderFromLocalStorage = (userId: string): Record<string, number> => {
+  if (typeof window === "undefined") return {};
+  const key = `${FOLDER_ORDER_KEY}_${userId}`;
+  const savedOrder = localStorage.getItem(key);
+  return savedOrder ? JSON.parse(savedOrder) : {};
+};
+
+const saveFolderOrderToLocalStorage = (userId: string, orderMap: Record<string, number>) => {
+  if (typeof window === "undefined") return;
+  const key = `${FOLDER_ORDER_KEY}_${userId}`;
+  localStorage.setItem(key, JSON.stringify(orderMap));
+};
 
 export const FoldersProvider = ({
   children,
@@ -44,14 +61,50 @@ export const FoldersProvider = ({
     null
   );
   const api = useAxios();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (user.user) {
+        setUserId(user.user.id);
+      }
+    };
+    getUserId();
+  }, [supabase]);
 
   const fetchFolders = useCallback(async () => {
     try {
       setIsFoldersLoading(true);
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
+
       const data = await api.get(`/folders/user/${user.user.id}`);
-      setFolders(data.data);
+      let foldersData = data.data;
+
+      // Apply folder order from localStorage if available
+      const savedOrder = getFolderOrderFromLocalStorage(user.user.id);
+
+      if (Object.keys(savedOrder).length > 0) {
+        // Add order property to folders based on localStorage
+        foldersData = foldersData.map((folder: FolderType) => ({
+          ...folder,
+          order: savedOrder[folder.id] || Number.MAX_SAFE_INTEGER,
+        }));
+
+        // Sort folders based on the order property
+        foldersData.sort((a: FolderType, b: FolderType) =>
+          (a.order || Number.MAX_SAFE_INTEGER) - (b.order || Number.MAX_SAFE_INTEGER)
+        );
+      } else {
+        // If no saved order, assign default order
+        foldersData = foldersData.map((folder: FolderType, index: number) => ({
+          ...folder,
+          order: index
+        }));
+      }
+
+      setFolders(foldersData);
     } catch (error) {
       setFoldersListError(
         error instanceof Error ? error.message : "Unknown error"
@@ -61,6 +114,47 @@ export const FoldersProvider = ({
       setIsFoldersLoading(false);
     }
   }, [api, supabase]);
+
+  const reorderFolders = useCallback((activeId: string, overId: string) => {
+    if (!userId || activeId === overId) return;
+
+    // Extract folder IDs from activeId and overId (remove "folder-" prefix)
+    const activeFolderId = activeId.replace("folder-", "");
+    const overFolderId = overId.replace("folder-", "");
+
+    setFolders(prevFolders => {
+      // Find indices of the folders
+      const oldIndex = prevFolders.findIndex(folder => folder.id === activeFolderId);
+      const newIndex = prevFolders.findIndex(folder => folder.id === overFolderId);
+
+      if (oldIndex === -1 || newIndex === -1) return prevFolders;
+
+      // Create a copy of the folders array
+      const newFolders = [...prevFolders];
+
+      // Remove the active folder from its position
+      const [movedFolder] = newFolders.splice(oldIndex, 1);
+
+      // Insert it at the new position
+      newFolders.splice(newIndex, 0, movedFolder);
+
+      // Update order properties
+      const updatedFolders = newFolders.map((folder, index) => ({
+        ...folder,
+        order: index
+      }));
+
+      // Save the new order to localStorage
+      const orderMap: Record<string, number> = {};
+      updatedFolders.forEach((folder, index) => {
+        orderMap[folder.id] = index;
+      });
+
+      saveFolderOrderToLocalStorage(userId, orderMap);
+
+      return updatedFolders;
+    });
+  }, [userId]);
 
   const createFolder = useCallback(
     async (name: string) => {
@@ -72,7 +166,23 @@ export const FoldersProvider = ({
         console.log("folder name:", name);
         const data = await api.post(`/folders`, { name, user_id: user.user.id });
         console.log("New folder created:", data.data);
-        setFolders([...folders, data.data]);
+
+        // Add order to the new folder (highest order + 1)
+        const newFolder = {
+          ...data.data,
+          order: folders.length > 0
+            ? Math.max(...folders.map(f => f.order || 0)) + 1
+            : 0
+        };
+
+        // Update local storage with the new order
+        if (user.user.id) {
+          const savedOrder = getFolderOrderFromLocalStorage(user.user.id);
+          savedOrder[newFolder.id] = newFolder.order;
+          saveFolderOrderToLocalStorage(user.user.id, savedOrder);
+        }
+
+        setFolders([...folders, newFolder]);
       } catch (error) {
         setCreateFolderError(
           error instanceof Error ? error.message : "Unknown error"
@@ -90,7 +200,16 @@ export const FoldersProvider = ({
 
         console.log("Deleting folder:", id);
         await api.delete(`/folders/${id}`);
+
+        // Remove folder from state
         setFolders(folders.filter((folder) => folder.id !== id));
+
+        // Update localStorage by removing this folder's order
+        if (user.user.id) {
+          const savedOrder = getFolderOrderFromLocalStorage(user.user.id);
+          delete savedOrder[id];
+          saveFolderOrderToLocalStorage(user.user.id, savedOrder);
+        }
       } catch (error) {
         setDeleteFolderError(
           error instanceof Error ? error.message : "Unknown error"
@@ -98,7 +217,7 @@ export const FoldersProvider = ({
         console.error(error);
       }
     },
-    [api, supabase]
+    [api, supabase, folders]
   );
   const addSenderToFolder = useCallback(
     async (senderId: string, folderId: string) => {
@@ -170,6 +289,7 @@ export const FoldersProvider = ({
         addSenderToFolder,
         getSenders,
         isLoadingSenders,
+        reorderFolders,
       }}
     >
       {children}
