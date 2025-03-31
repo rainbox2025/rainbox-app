@@ -18,6 +18,7 @@ interface SendersContextType {
   unsubcribeSender: (id: string) => Promise<void>;
   renameSenderError: string | null;
   renameSender: (id: string, name: string) => Promise<void>;
+  toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -103,6 +104,25 @@ export const SendersProvider = ({
     [api, supabase]
   );
 
+  const toggleReadSender = useCallback(
+    async (senderId: string, isRead: boolean) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+
+        console.log("toggleSender:", senderId, "to:", isRead);
+        await api.patch(`/senders/read`, { sender_id: senderId, isRead: isRead });
+        const updatedSenders = senders.map((sender) =>
+          sender.id === senderId ? { ...sender, isRead } : sender
+        );
+        setSenders(updatedSenders);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
+
   useEffect(() => {
     fetchSenders();
   }, []);
@@ -117,6 +137,7 @@ export const SendersProvider = ({
         unsubcribeSender,
         renameSenderError,
         renameSender,
+        toggleReadSender
       }}
     >
       {children}

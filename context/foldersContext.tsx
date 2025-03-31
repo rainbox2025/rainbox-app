@@ -24,6 +24,7 @@ interface FoldersContextType {
   getSenders: (folderId: string) => Promise<SenderType[]>;
   isLoadingSenders: boolean;
   reorderFolders: (activeId: string, overId: string) => void;
+  toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -270,6 +271,24 @@ export const FoldersProvider = ({
     },
     [api, supabase]
   );
+  const toggleReadFolder = useCallback(
+    async (folderId: string, isRead: boolean) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+
+        console.log("toggleFolder:", folderId, "to:", isRead);
+        await api.patch(`/folders/read`, { folder_id: folderId, isRead: isRead });
+        const updatedFolders = folders.map((folder) =>
+          folder.id === folderId ? { ...folder, isRead } : folder
+        );
+        setFolders(updatedFolders);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
   useEffect(() => {
     fetchFolders();
   }, []);
@@ -289,6 +308,7 @@ export const FoldersProvider = ({
         getSenders,
         isLoadingSenders,
         reorderFolders,
+        toggleReadFolder,
       }}
     >
       {children}

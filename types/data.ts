@@ -19,6 +19,7 @@ export interface SenderType {
   count: number;
   folder?: string;
   order?: number;
+  isRead?: boolean;
 }
 export interface FolderType {
   id: string;
@@ -29,6 +30,7 @@ export interface FolderType {
   isExpanded?: boolean;
   senders?: SenderType[];
   order?: number;
+  isRead?: boolean;
 }
 export interface Mail {
   id: string;

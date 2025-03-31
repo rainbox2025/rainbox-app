@@ -18,7 +18,7 @@ export default function Sender({
   sender,
   onRenameSender,
 }: SenderProps) {
-  const { renameSender, unsubcribeSender } = useSenders();
+  const { renameSender, unsubcribeSender, toggleReadSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
@@ -70,23 +70,16 @@ export default function Sender({
     setIsRenaming(true);
   };
 
-  const handleRenameComplete = (newName: string) => {
-    if (newName.trim() && newName !== sender.name) {
-      if (onRenameSender) {
-        onRenameSender(sender.id, newName);
-      } else {
-        ;
-      }
-    }
-
-    setIsRenaming(false);
-  };
-
   const handleMarkAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // Add your mark as read logic here
-    console.log(`Marked ${sender.name} as read`);
+    setIsMarkAsReadModalOpen(true);
+  };
+
+  const confirmMarkAsRead = () => {
+    // Toggle the current isRead status
+    toggleReadSender(sender.id, !sender.isRead);
+    setIsMarkAsReadModalOpen(false);
   };
 
   const handleMoveToFolder = (e: React.MouseEvent) => {
@@ -107,10 +100,6 @@ export default function Sender({
     e.stopPropagation();
     setMenuOpen(false);
     setIsUnfollowModalOpen(true);
-  };
-
-  const cancelUnfollow = () => {
-    setIsUnfollowModalOpen(false);
   };
 
   return (
@@ -155,7 +144,7 @@ export default function Sender({
                     onClick={handleMarkAsRead}
                   >
                     <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Mark as read</span>
+                    <span className="text-sm">{sender.isRead ? "Mark as unread" : "Mark as read"}</span>
                   </button>
                   <button
                     className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -179,7 +168,7 @@ export default function Sender({
                     <span className="text-sm">Mute notifications</span>
                   </button>
                   <button
-                    className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary  transition-all duration-300 ease-in-out hover:cursor-pointer"
+                    className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
                     onClick={handleUnfollow}
                   >
                     <TrashIcon className="w-4 h-4 text-muted-foreground" />
@@ -196,10 +185,11 @@ export default function Sender({
         </div>
       </motion.div>
 
+      {/* Unfollow Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
-        onClose={cancelUnfollow}
-        onConfirm={() => { setIsUnfollowModalOpen(false); console.log("unsubcribeSender: ", sender.id); unsubcribeSender(sender.id) }}
+        onClose={() => setIsUnfollowModalOpen(false)}
+        onConfirm={() => { setIsUnfollowModalOpen(false); unsubcribeSender(sender.id) }}
         itemName={sender.name}
         itemType="sender"
       />
@@ -208,9 +198,9 @@ export default function Sender({
       <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onConfirm={() => { console.log("mark as read clicked"); setIsMarkAsReadModalOpen(false); }}
+        onConfirm={confirmMarkAsRead}
         itemName={sender.name}
-        itemType="markasread"
+        itemType={sender.isRead ? "markasunread" : "markasread"}
       />
 
       {/* Rename Modal */}
@@ -218,8 +208,7 @@ export default function Sender({
         isOpen={isRenaming}
         onClose={() => setIsRenaming(false)}
         onSave={(newName) => {
-          console.log("in modal, name is", newName);
-          renameSender(sender.id, newName)
+          renameSender(sender.id, newName);
         }}
         initialValue={sender.name}
         title="Rename Sender"

@@ -31,7 +31,7 @@ export default function Folder({
   onMarkFolderAsRead,
   senders
 }: FolderProps) {
-  const { deleteFolder, renameFolder, getSenders } = useFolders();
+  const { deleteFolder, renameFolder, getSenders, toggleReadFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
@@ -129,7 +129,8 @@ export default function Folder({
   };
 
   const confirmMarkAsRead = () => {
-    onMarkFolderAsRead?.(folder.id);
+    // Toggle the current isRead status
+    toggleReadFolder(folder.id, !folder.isRead);
     setIsMarkAsReadModalOpen(false);
   };
 
@@ -196,7 +197,7 @@ export default function Folder({
                       onClick={handleMarkAsRead}
                     >
                       <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Mark as read</span>
+                      <span className="text-sm">{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
                     </button>
                     <button
                       className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -285,7 +286,7 @@ export default function Folder({
         onClose={() => setIsMarkAsReadModalOpen(false)}
         onConfirm={confirmMarkAsRead}
         itemName={folder.name}
-        itemType="markasread"
+        itemType={folder.isRead ? "markasunread" : "markasread"}
       />
     </>
   );
