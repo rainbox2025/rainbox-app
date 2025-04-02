@@ -1,34 +1,34 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface FolderModalProps {
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (folderName: string) => void;
-  initialName?: string;
+  onSave: (value: string) => void;
+  initialValue?: string;
   title: string;
 }
 
-export const FolderModal: React.FC<FolderModalProps> = ({
+export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialName = '',
+  initialValue = '',
   title
 }) => {
-  const [folderName, setFolderName] = React.useState(initialName);
+  const [value, setvalue] = React.useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setFolderName(initialName);
+      setvalue(initialValue);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, initialName]);
+  }, [isOpen, initialValue]);
 
   const handleSave = () => {
-    if (folderName.trim()) {
-      onSave(folderName.trim());
+    if (value.trim()) {
+      onSave(value.trim());
       onClose();
     }
   };
@@ -42,16 +42,16 @@ export const FolderModal: React.FC<FolderModalProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card dark:bg-card rounded-lg shadow-xl w-full max-w-md mx-4 border border-gray-100/80"
+          className="bg-card dark:bg-card rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80"
         >
-          <div className="p-6">
+          <div className="p-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-card-foreground">
+              <h2 className="text-sm font-semibold">
                 {title}
               </h2>
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-secondary-foreground"
+                className="text-sm hover:text-secondary-foreground"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -73,13 +73,12 @@ export const FolderModal: React.FC<FolderModalProps> = ({
             <input
               ref={inputRef}
               type="text"
-              value={folderName}
-              onChange={(e) => setFolderName(e.target.value)}
+              value={value}
+              onChange={(e) => setvalue(e.target.value)}
               placeholder="Folder Name"
-              className="w-full px-3 py-2 border border-border dark:border-border rounded-md 
+              className="w-full p-sm border border-border dark:border-border rounded-md 
                          bg-background dark:bg-background 
-                         text-foreground 
-                         focus:outline-none focus:ring-2 focus:ring-ring"
+                         focus:outline-none focus:ring-2 focus:ring-ring text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSave();
                 if (e.key === 'Escape') onClose();
@@ -91,17 +90,17 @@ export const FolderModal: React.FC<FolderModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-muted-foreground 
                            hover:bg-accent 
-                           rounded-md transition-colors"
+                           rounded-md transition-colors text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                disabled={!folderName.trim()}
+                disabled={!value.trim()}
                 className="px-4 py-2 bg-primary text-primary-foreground 
                            rounded-md hover:bg-primary/80 
                            disabled:opacity-50 disabled:cursor-not-allowed 
-                           transition-colors"
+                           transition-colors text-sm"
               >
                 Done
               </button>

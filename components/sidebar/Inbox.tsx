@@ -23,127 +23,138 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Feed, Category, Folder, Sender } from "@/types/data";
-import { initialCategories, initialFeeds } from "@/mock/data";
-import { FeedIcon } from "./FeedIcon";
-import SortableCategory from "./SortableCategory";
-import SortableFeed from "./SortableFeed";
-import { FeedModal } from "./FeedModal";
+import { FolderType, SenderType } from "@/types/data";
+import { SenderIcon } from "./SenderIcon";
+import FolderComponent from "./Folder";
+import Sender from "./Sender";
 import { ConfirmModal } from "./ConfirmationModal";
-import { FolderModal } from "./FolderModal";
+import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
+// New interface to represent mixed items
+interface OrderedItem {
+  id: string;
+  type: 'folder' | 'sender';
+  originalId: string;
+  order: number;
+}
+
 export default function Inbox() {
-  const { folders, isFoldersLoading } = useFolders();
+  const { folders, isFoldersLoading, createFolder, deleteFolder, addSenderToFolder, reorderFolders } = useFolders();
   const { senders, isSendersLoading } = useSenders();
-  const [categories, setCategories] = useState<Folder[]>(
-    isFoldersLoading ? [] : folders.map(folder => ({
-      id: folder.id,
-      name: folder.name,
-      count: folder.count || 0,
-      isExpanded: false
-    }))
-  );
-  const [feeds, setFeeds] = useState<Sender[]>(senders);
-  const [expandedCategories, setExpandedCategories] = useState<
-    Record<string, boolean>
-  >(
-    folders.reduce(
-      (acc, category) => ({
-        ...acc,
-        [category.id]: category.isExpanded,
-      }),
-      {}
-    )
-  );
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
+
+  // New state for tracking the order of all items
+  const [orderedItems, setOrderedItems] = useState<OrderedItem[]>([]);
+
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeFeed, setActiveFeed] = useState<Feed | null>(null);
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
-  const [focusedCategory, setFocusedCategory] = useState<string | null>(
-    "marketing"
-  ); // Default focus on Marketing
-  const newFolderInputRef = useRef<HTMLInputElement>(null);
+  const [activeSender, setActiveSender] = useState<SenderType | null>(null);
+  const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
+  const [focusedFolder, setFocusedFolder] = useState<string | null>("marketing"); // Default focus on Marketing
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
-  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
-  const [currentAction, setCurrentAction] = useState<
-    "delete" | "unfollow" | null
-  >(null);
+  const [isSenderModalOpen, setIsSenderModalOpen] = useState(false);
+  const [selectedSender, setSelectedSender] = useState<SenderType | null>(null);
+  const [currentAction, setCurrentAction] = useState<"delete" | "unfollow" | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [categoryId]: !prev[categoryId],
-    }));
-    setFocusedCategory(categoryId);
-  };
 
-  const handleCreateFolder = (folderName: string) => {
-    const newFolder: Category = {
-      id: folderName.toLowerCase().replace(/\s+/g, "-"),
-      name: folderName,
-      count: 0,
-      isExpanded: true,
-    };
+  // Initialize ordered items when folders and senders load
+  useEffect(() => {
+    if (!isFoldersLoading && !isSendersLoading && folders.length > 0 && senders.length > 0) {
+      // Get root senders (not in any folder)
+      const rootSenders = senders.filter((sender) => !sender.folder || sender.folder === "");
 
-    setCategories((prev) => [newFolder, ...prev]);
-    setExpandedCategories((prev) => ({
+      // Create initial ordered items
+      const initialOrderedItems: OrderedItem[] = [
+        // First add all folders
+        ...folders.map((folder, index) => ({
+          id: `folder-${folder.id}`,
+          type: 'folder' as const,
+          originalId: folder.id,
+          order: index
+        })),
+        // Then add all root senders
+        ...rootSenders.map((sender, index) => ({
+          id: `sender-${sender.id}`,
+          type: 'sender' as const,
+          originalId: sender.id,
+          order: folders.length + index
+        }))
+      ];
+
+      setOrderedItems(initialOrderedItems);
+
+      // Also initialize expanded folders state
+      setExpandedFolders(
+        folders.reduce(
+          (acc, folder) => ({
+            ...acc,
+            [folder.id]: folder.isExpanded || false,
+          }),
+          {}
+        )
+      );
+    }
+  }, [folders, senders, isFoldersLoading, isSendersLoading]);
+
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders((prev) => ({
       ...prev,
-      [newFolder.id]: true,
+      [folderId]: !prev[folderId],
     }));
-    setFocusedCategory(newFolder.id);
-    setIsFolderModalOpen(false);
+    setFocusedFolder(folderId);
   };
 
   const openFolderCreationModal = () => {
     setIsFolderModalOpen(true);
   };
 
-  const handleRenameCategory = (categoryId: string, newName: string) => {
-    setCategories((prev) =>
-      prev.map((category) =>
-        category.id === categoryId ? { ...category, name: newName } : category
-      )
-    );
+  const handleRenameFolder = (folderId: string, newName: string) => {
+    // This would need to be implemented in the folder context
+    console.log(`Rename folder ${folderId} to ${newName}`);
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteFolder = () => {
     if (targetId) {
-      // Remove the category
-      setCategories((prev) =>
-        prev.filter((category) => category.id !== targetId)
-      );
+      deleteFolder(targetId);
 
-      // Remove all feeds in that category or move them to root
-      setFeeds((prev) =>
-        prev.map((feed) =>
-          feed.category === targetId ? { ...feed, category: "" } : feed
-        )
+      // Remove the folder from ordered items
+      setOrderedItems(prev =>
+        prev.filter(item => !(item.type === 'folder' && item.originalId === targetId))
       );
 
       // Clean up expanded state
-      setExpandedCategories((prev) => {
+      setExpandedFolders((prev) => {
         const newState = { ...prev };
         delete newState[targetId];
         return newState;
       });
 
       // Reset focus if needed
-      if (focusedCategory === targetId) {
-        setFocusedCategory(null);
+      if (focusedFolder === targetId) {
+        setFocusedFolder(null);
       }
+
+      setIsConfirmModalOpen(false);
+      setCurrentAction(null);
+      setTargetId(null);
     }
   };
 
-  const handleUnfollowFeed = () => {
+  const handleUnfollowSender = () => {
     if (targetId) {
-      // Remove the feed or mark as unfollowed
-      setFeeds((prev) => prev.filter((feed) => feed.id !== targetId));
+      console.log(`Unfollowing sender with ID: ${targetId}`);
+
+      // Remove the sender from ordered items
+      setOrderedItems(prev =>
+        prev.filter(item => !(item.type === 'sender' && item.originalId === targetId))
+      );
+
+      setIsConfirmModalOpen(false);
+      setCurrentAction(null);
+      setTargetId(null);
     }
   };
 
@@ -158,99 +169,21 @@ export default function Inbox() {
     })
   );
 
-  const handleSaveFolder = () => {
-    if (newFolderName.trim()) {
-      const newFolder: Category = {
-        id: newFolderName.toLowerCase().replace(/\s+/g, "-"),
-        name: newFolderName,
-        count: 0,
-        isExpanded: true,
-      };
-
-      setCategories((prev) => [newFolder, ...prev]);
-      setExpandedCategories((prev) => ({
-        ...prev,
-        [newFolder.id]: true,
-      }));
-      setFocusedCategory(newFolder.id);
-
-      console.log(`Created new folder: ${newFolderName}`);
-    }
-
-    setIsCreatingFolder(false);
-    setNewFolderName("");
-  };
-
-  // Update category counts when feeds are moved
-  const updateCategoryCounts = (updatedFeeds: Feed[]) => {
-    const newCategories = [...categories];
-
-    // Reset all counts first
-    newCategories.forEach((category) => {
-      category.count = 0;
-    });
-
-    // Calculate new counts based on feeds
-    updatedFeeds.forEach((feed) => {
-      if (feed.category) {
-        const categoryIndex = newCategories.findIndex(
-          (c) => c.id === feed.category
-        );
-        if (categoryIndex !== -1) {
-          newCategories[categoryIndex].count += feed.count;
-        }
-      }
-    });
-
-    setCategories(newCategories);
-  };
-
-  // Update counts whenever feeds change
-  // Update useEffect to update categories when folders load
-  useEffect(() => {
-    if (!isFoldersLoading) {
-      setCategories(
-        folders.map(folder => ({
-          id: folder.id,
-          name: folder.name,
-          count: folder.count || 0,
-          isExpanded: false
-        }))
-      );
-    }
-  }, [folders, isFoldersLoading]);
-
-  if (isFoldersLoading) {
-    return (
-      <div className="flex-1 bg-background text-foreground rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-8 w-8 rounded-full" />
-        </div>
-        {[1, 2, 3, 4, 5, 6].map((_, index) => (
-          <div key={index} className="mb-3">
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveId(active.id as string);
 
-    if (active.id.toString().startsWith("feed-")) {
-      const feedId = active.id.toString().replace("feed-", "");
-      const feed = feeds.find((f) => f.id === feedId);
-      if (feed) {
-        setActiveFeed(feed);
+    if (active.id.toString().startsWith("sender-")) {
+      const senderId = active.id.toString().replace("sender-", "");
+      const sender = senders.find((s) => s.id === senderId);
+      if (sender) {
+        setActiveSender(sender);
       }
-    } else if (active.id.toString().startsWith("category-")) {
-      const categoryId = active.id.toString().replace("category-", "");
-      const category = categories.find((c) => c.id === categoryId);
-      if (category) {
-        setActiveCategory(category);
+    } else if (active.id.toString().startsWith("folder-")) {
+      const folderId = active.id.toString().replace("folder-", "");
+      const folder = folders.find((f) => f.id === folderId);
+      if (folder) {
+        setActiveFolder(folder);
       }
     }
   };
@@ -260,156 +193,96 @@ export default function Inbox() {
 
     if (!over) {
       setActiveId(null);
-      setActiveFeed(null);
-      setActiveCategory(null);
+      setActiveSender(null);
+      setActiveFolder(null);
       return;
     }
 
-    // Moving a feed
-    if (active.id.toString().startsWith("feed-") && over) {
-      const feedId = active.id.toString().replace("feed-", "");
-      const feed = feeds.find((f) => f.id === feedId);
+    const activeItemId = active.id.toString();
+    const overItemId = over.id.toString();
 
-      if (!feed) return;
+    // If item is being moved to a new position in the ordered list
+    if (activeItemId !== overItemId) {
+      setOrderedItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === activeItemId);
+        const newIndex = items.findIndex((item) => item.id === overItemId);
 
-      let targetCategory = "";
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newItems = [...items];
+          const [removed] = newItems.splice(oldIndex, 1);
+          newItems.splice(newIndex, 0, removed);
 
-      // If dropped over a category
-      if (over.id.toString().startsWith("category-")) {
-        targetCategory = over.id.toString().replace("category-", "");
-
-        // Update the feed's category
-        const updatedFeeds = feeds.map((f) =>
-          f.id === feedId ? { ...f, category: targetCategory } : f
-        );
-
-        setFeeds(updatedFeeds);
-
-        // Force re-render of the target category
-        if (!expandedCategories[targetCategory]) {
-          setExpandedCategories((prev) => ({
-            ...prev,
-            [targetCategory]: true,
+          // Update order property
+          return newItems.map((item, index) => ({
+            ...item,
+            order: index
           }));
-        } else {
-          // Force re-render if already expanded
-          const newExpandedState = { ...expandedCategories };
-          setExpandedCategories(newExpandedState);
         }
 
-        // Focus the category
-        setFocusedCategory(targetCategory);
+        return items;
+      });
+    }
 
-        console.log(
-          `Moved ${feed.name} from ${feed.category || "root"} to ${targetCategory || "root"}`
-        );
-      }
-      // If dropped over another feed
-      else if (over.id.toString().startsWith("feed-")) {
-        const overFeedId = over.id.toString().replace("feed-", "");
-        const overFeed = feeds.find((f) => f.id === overFeedId);
+    // Special case: Moving a sender to a folder
+    if (activeItemId.startsWith("sender-") && overItemId.startsWith("folder-")) {
+      const senderId = activeItemId.replace("sender-", "");
+      const folderId = overItemId.replace("folder-", "");
+      const sender = senders.find((s) => s.id === senderId);
 
-        if (overFeed) {
-          targetCategory = overFeed.category || "";
+      if (sender) {
+        console.log(`Moved ${sender.name} to folder ${folderId}`);
+        addSenderToFolder(sender.id, folderId);
 
-          // Reorder within the same category or move to another category
-          const currentIndex = feeds.findIndex((f) => f.id === feedId);
-          const newIndex = feeds.findIndex((f) => f.id === overFeedId);
-
-          if (currentIndex !== -1 && newIndex !== -1) {
-            const updatedFeeds = [...feeds];
-            const [movedFeed] = updatedFeeds.splice(currentIndex, 1);
-            movedFeed.category = targetCategory;
-            updatedFeeds.splice(newIndex, 0, movedFeed);
-
-            setFeeds(updatedFeeds);
-
-            // Force re-render by updating state even if not changing values
-            if (targetCategory) {
-              const newExpandedState = { ...expandedCategories };
-              if (!newExpandedState[targetCategory]) {
-                newExpandedState[targetCategory] = true;
-              }
-              setExpandedCategories(newExpandedState);
-              setFocusedCategory(targetCategory);
-            } else {
-              // Force re-render for root items
-              setFocusedCategory((prev) => {
-                // Toggle to force re-render, then back to null for root
-                return prev === "force-update" ? null : "force-update";
-              });
-            }
-
-            console.log(
-              `Moved ${feed.name} from ${feed.category || "root"} to ${targetCategory || "root"} and reordered`
-            );
-          }
-        }
-      }
-      // If dropped over root
-      else if (over.id === "root-items") {
-        const updatedFeeds = feeds.map((f) =>
-          f.id === feedId ? { ...f, category: "" } : f
+        // Remove sender from root items in ordered list
+        setOrderedItems(prev =>
+          prev.filter(item => item.id !== activeItemId)
         );
 
-        setFeeds(updatedFeeds);
+        // Force expand the folder
+        setExpandedFolders((prev) => ({
+          ...prev,
+          [folderId]: true,
+        }));
 
-        // Force re-render of root items
-        setFocusedCategory((prev) => {
-          // Toggle to force re-render, then back to null for root
-          return prev === "force-update" ? null : "force-update";
-        });
-
-        console.log(
-          `Moved ${feed.name} from ${feed.category || "root"} to root`
-        );
+        // Focus the folder
+        setFocusedFolder(folderId);
       }
     }
 
-    // Moving a category (folder)
-    else if (
-      active.id.toString().startsWith("category-") &&
-      over.id.toString().startsWith("category-")
-    ) {
-      const categoryId = active.id.toString().replace("category-", "");
-      const overCategoryId = over.id.toString().replace("category-", "");
-
-      const activeIndex = categories.findIndex((c) => c.id === categoryId);
-      const overIndex = categories.findIndex((c) => c.id === overCategoryId);
-
-      if (activeIndex !== -1 && overIndex !== -1) {
-        const updatedCategories = [...categories];
-        const [movedCategory] = updatedCategories.splice(activeIndex, 1);
-        updatedCategories.splice(overIndex, 0, movedCategory);
-
-        setCategories(updatedCategories);
-
-        // Force re-render after category reordering
-        const newExpandedState = { ...expandedCategories };
-        setExpandedCategories(newExpandedState);
-
-        console.log(`Reordered folder: ${movedCategory.name}`);
-      }
-    }
-
-    // Clear drag state after a short delay to allow animations to complete
+    // Clear drag state
     setTimeout(() => {
       setActiveId(null);
-      setActiveFeed(null);
-      setActiveCategory(null);
+      setActiveSender(null);
+      setActiveFolder(null);
     }, 50);
   };
 
-  // Get root items (not in any category)
-  const rootFeeds = feeds.filter((feed) => feed.category === "");
-
-  // Get feeds for a specific category
-  const getFeedsForCategory = (categoryId: string) => {
-    return feeds.filter((feed) => feed.category === categoryId);
+  // Get senders for a specific folder
+  const getSendersForFolder = (folderId: string) => {
+    return senders.filter((sender) => sender.folder === folderId);
   };
 
-  const categoryIds = categories.map((category) => `category-${category.id}`);
-  const rootFeedIds = rootFeeds.map((feed) => `feed-${feed.id}`);
+  // Calculate total count for display
+  const totalCount = senders.reduce((total, sender) => total + (sender.count || 0), 0);
+
+  if (isFoldersLoading || isSendersLoading) {
+    return (
+      <div className="flex-1 bg-background text-foreground rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-6 w-6 rounded-full" />
+        </div>
+        {[1, 2, 3, 4, 5, 6].map((_, index) => (
+          <div key={index} className="mb-3">
+            <Skeleton className="h-6 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Create sortable item IDs in the correct order
+  const sortableIds = orderedItems.map(item => item.id);
 
   return (
     <DndContext
@@ -434,72 +307,53 @@ export default function Inbox() {
             <FolderIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium">All</span>
           </div>
-          <span className="text-xs text-muted-foreground">{850}</span>
+          <span className="text-xs text-muted-foreground">{totalCount}</span>
         </div>
 
         <div className="px-0 py-0">
-          {/* New Folder Input */}
-          <AnimatePresence>
-            {isCreatingFolder && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="px-md py-2 mb-2 bg-blue-50 rounded-md border border-blue-200"
-              >
-                <div className="flex items-center space-x-md">
-                  <ChevronDownIcon className="w-4 h-4 text-blue-500" />
-                  <input
-                    ref={newFolderInputRef}
-                    type="text"
-                    className="text-sm font-medium bg-transparent border-none focus:ring-0 outline-none flex-1"
-                    placeholder="New Folder"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onBlur={handleSaveFolder}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveFolder()}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Categories */}
+          {/* Mixed Ordered Items (Folders and Senders) */}
           <SortableContext
-            items={categoryIds}
+            items={sortableIds}
             strategy={verticalListSortingStrategy}
           >
-            {categories.map((category) => (
-              <SortableCategory
-                key={category.id}
-                category={category}
-                expanded={expandedCategories[category.id]}
-                toggleExpanded={toggleCategory}
-                feeds={getFeedsForCategory(category.id)}
-                activeCategory={focusedCategory}
-                onRenameCategory={handleRenameCategory}
-                onDeleteCategory={handleDeleteCategory}
-              />
-            ))}
-          </SortableContext>
+            {orderedItems.map((item) => {
+              if (item.type === 'folder') {
+                const folder = folders.find(f => f.id === item.originalId);
+                if (!folder) return null;
 
-          {/* Root Items (not in any category) */}
-          <motion.div
-            id="root-items"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <SortableContext
-              items={rootFeedIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {rootFeeds.map((feed) => (
-                <SortableFeed key={feed.id} feed={feed} />
-              ))}
-            </SortableContext>
-          </motion.div>
+                return (
+                  <FolderComponent
+                    key={folder.id}
+                    folder={{
+                      ...folder,
+                      count: folder.senders ? folder.senders.length : 0, // Sum of senders
+                    }}
+                    expanded={expandedFolders[folder.id] || false}
+                    toggleExpanded={toggleFolder}
+                    senders={getSendersForFolder(folder.id)}
+                    activeFolder={focusedFolder}
+                    onRenameFolder={handleRenameFolder}
+                    onDeleteFolder={(folderId) => {
+                      setTargetId(folderId);
+                      setCurrentAction("delete");
+                      setIsConfirmModalOpen(true);
+                    }}
+                  />
+                );
+              } else if (item.type === 'sender') {
+                const sender = senders.find(s => s.id === item.originalId);
+                if (!sender) return null;
+
+                return (
+                  <Sender
+                    key={sender.id}
+                    sender={sender}
+                  />
+                );
+              }
+              return null;
+            })}
+          </SortableContext>
         </div>
 
         {/* Footer */}
@@ -510,10 +364,25 @@ export default function Inbox() {
       </div>
 
       {/* Folder Creation Modal */}
-      <FolderModal
+      <Modal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
-        onSave={handleCreateFolder}
+        onSave={(folderName) => {
+          createFolder(folderName);
+
+          // Add new folder to ordered items when created
+          setOrderedItems(prev => [
+            ...prev,
+            {
+              id: `folder-${folders.length + 1}`, // Placeholder ID until actual ID is known
+              type: 'folder',
+              originalId: (folders.length + 1).toString(), // Placeholder ID until actual ID is known
+              order: prev.length
+            }
+          ]);
+
+          setIsFolderModalOpen(false);
+        }}
         title="Create New Folder"
       />
 
@@ -526,41 +395,41 @@ export default function Inbox() {
           setTargetId(null);
         }}
         onConfirm={() => {
-          if (currentAction === "delete") handleDeleteCategory();
-          if (currentAction === "unfollow") handleUnfollowFeed();
+          if (currentAction === "delete") handleDeleteFolder();
+          if (currentAction === "unfollow") handleUnfollowSender();
         }}
-        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Feed"}
+        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Sender"}
         description={
           currentAction === "delete"
             ? "Are you sure you want to delete this folder? This operation cannot be undone."
-            : "Are you sure you want to unfollow this feed?"
+            : "Are you sure you want to unfollow this sender?"
         }
         showUnfollowOption={currentAction === "delete"}
       />
 
       <DragOverlay>
-        {activeId && activeFeed && (
+        {activeId && activeSender && (
           <div className="px-md py-1.5 flex items-center justify-between rounded-md bg-secondary dark:bg-secondary text-foreground shadow-md">
             <div className="flex items-center space-x-3">
-              <FeedIcon feed={activeFeed} />
-              <span className="text-sm">{activeFeed.name}</span>
+              <SenderIcon sender={activeSender} />
+              <span className="text-sm">{activeSender.name}</span>
             </div>
             <span className="text-sm text-muted-foreground font-medium">
-              {activeFeed.count >= 1000
-                ? `${Math.floor(activeFeed.count / 1000)}K+`
-                : activeFeed.count}
+              {activeSender.count >= 1000
+                ? `${Math.floor(activeSender.count / 1000)}K+`
+                : activeSender.count}
             </span>
           </div>
         )}
 
-        {activeId && activeCategory && (
+        {activeId && activeFolder && (
           <div className="px-md py-2 flex items-center justify-between rounded-md bg-secondary dark:bg-secondary text-foreground shadow-md">
             <div className="flex items-center space-x-3">
               <ChevronRightIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{activeCategory.name}</span>
+              <span className="text-sm font-medium">{activeFolder.name}</span>
             </div>
             <span className="text-sm text-muted-foreground font-medium">
-              {activeCategory.count}
+              {activeFolder.count}
             </span>
           </div>
         )}

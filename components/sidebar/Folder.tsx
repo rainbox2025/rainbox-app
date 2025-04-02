@@ -1,38 +1,43 @@
-import { Category, Feed } from "@/types/data";
+import { FolderType, SenderType } from "@/types/data";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import SortableFeed from "./SortableFeed";
-import { FolderModal } from "./FolderModal";
+import Sender from "./Sender";
+import { Modal } from "./Modal";
 import { useState, useRef, useEffect } from 'react';
 import { DeleteConfirmationModal } from "./DeleteModal";
+import { useFolders } from "@/context/foldersContext";
+import { useSenders } from "@/context/sendersContext";
 
-interface SortableCategoryProps {
-  category: Category;
+interface FolderProps {
+  folder: FolderType;
   expanded: boolean;
   toggleExpanded: (id: string) => void;
-  feeds: Feed[];
-  activeCategory: string | null;
-  onRenameCategory: (categoryId: string, newName: string) => void;
-  onDeleteCategory: (categoryId: string) => void;
-  onMarkCategoryAsRead?: (categoryId: string) => void;
+  activeFolder: string | null;
+  onRenameFolder: (folderId: string, newName: string) => void;
+  onDeleteFolder: (folderId: string) => void;
+  onMarkFolderAsRead?: (folderId: string) => void;
+  senders: SenderType[]
 }
 
-export default function SortableCategory({
-  category,
+export default function Folder({
+  folder,
   expanded,
   toggleExpanded,
-  feeds,
-  activeCategory,
-  onRenameCategory,
-  onDeleteCategory,
-  onMarkCategoryAsRead
-}: SortableCategoryProps) {
+  activeFolder,
+  onRenameFolder,
+  onDeleteFolder,
+  onMarkFolderAsRead,
+  senders
+}: FolderProps) {
+  const { deleteFolder, renameFolder, getSenders, toggleReadFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
+  const [folderSenders, setFolderSenders] = useState<SenderType[]>([]);
+  const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -43,10 +48,10 @@ export default function SortableCategory({
     transition,
     isDragging,
   } = useSortable({
-    id: `category-${category.id}`,
+    id: `folder-${folder.id}`,
     data: {
-      type: 'category',
-      category
+      type: 'folder',
+      folder
     }
   });
 
@@ -56,8 +61,29 @@ export default function SortableCategory({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const feedIds = feeds.map(feed => `feed-${feed.id}`);
-  const isCategoryActive = activeCategory === category.id;
+  // Fetch senders when folder is expanded
+  useEffect(() => {
+    if (expanded) {
+      const fetchFolderSenders = async () => {
+        setIsLoadingSenders(true);
+        try {
+          const data = await getSenders(folder.id);
+          if (data) {
+            setFolderSenders(data);
+          }
+        } catch (error) {
+          console.error("Error fetching senders for folder:", error);
+        } finally {
+          setIsLoadingSenders(false);
+        }
+      };
+
+      fetchFolderSenders();
+    }
+  }, [expanded]);
+
+  const senderIds = folderSenders.map(sender => `sender-${sender.id}`);
+  const isFolderActive = activeFolder === folder.id;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -99,27 +125,35 @@ export default function SortableCategory({
     e.stopPropagation();
     setMenuOpen(false);
     // Add your mute notifications logic here
-    console.log(`Muted notifications for ${category.name}`);
-  };
-
-  const confirmDelete = () => {
-    onDeleteCategory(category.id);
-    setIsDeletingModalOpen(false);
+    console.log(`Muted notifications for ${folder.name}`);
   };
 
   const confirmMarkAsRead = () => {
-    onMarkCategoryAsRead?.(category.id);
+    // Toggle the current isRead status
+    toggleReadFolder(folder.id, !folder.isRead);
     setIsMarkAsReadModalOpen(false);
   };
+
+  // Skeleton loader component for senders
+  const SkeletonLoader = () => (
+    <div className="space-y-2 ml-10 mt-2">
+      {[1, 2].map((index) => (
+        <div key={index} className="flex items-center animate-pulse">
+          <div className="w-6 h-6 rounded-md bg-secondary mr-2"></div>
+          <div className="h-6 bg-secondary rounded-md w-full"></div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
       <div ref={setNodeRef} style={style} className={`mb-0 ${isDragging ? 'z-10' : ''}`}>
         <motion.div
           whileTap={{ scale: 0.98 }}
-          onClick={() => toggleExpanded(category.id)}
+          onClick={() => toggleExpanded(folder.id)}
           className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer
-    ${isCategoryActive
+    ${isFolderActive
               ? 'bg-primary/10 text-primary'
               : isDragging
                 ? 'bg-secondary'
@@ -137,7 +171,7 @@ export default function SortableCategory({
             </div>
 
             <span className="text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-foreground">
-              {category.name}
+              {folder.name}
             </span>
           </div>
 
@@ -163,7 +197,7 @@ export default function SortableCategory({
                       onClick={handleMarkAsRead}
                     >
                       <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Mark as read</span>
+                      <span className="text-sm">{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
                     </button>
                     <button
                       className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -191,56 +225,72 @@ export default function SortableCategory({
               </AnimatePresence>
             </div>
             <span className="text-xs text-muted-foreground font-medium">
-              {category.count >= 1000 ? `${Math.floor(category.count / 1000)}K+` : category.count}
+              {folder.senders?.length
+                ? folder.senders.length >= 1000
+                  ? `${Math.floor(folder.senders.length / 1000)}K+`
+                  : folder.senders.length
+                : 0}
             </span>
           </div>
         </motion.div>
 
-        {/* Feeds for this category with animation */}
+        {/* Show skeleton loader or senders for this folder with animation */}
         <AnimatePresence>
-          {expanded && feeds.length > 0 && (
+          {expanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="ml-6 mt-1.25 space-y-md-1.25"
             >
-              <SortableContext items={feedIds} strategy={verticalListSortingStrategy}>
-                {feeds.map((feed) => (
-                  <SortableFeed key={feed.id} feed={feed} />
-                ))}
-              </SortableContext>
+              {isLoadingSenders ? (
+                <SkeletonLoader />
+              ) : folderSenders.length > 0 ? (
+                <div className="ml-6 mt-1.25 space-y-md-1.25">
+                  <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+                    {folderSenders.map((sender) => (
+                      <Sender key={sender.id} sender={sender} />
+                    ))}
+                  </SortableContext>
+                </div>
+              ) : (
+                <div className="ml-10 m-md text-sm text-muted-foreground">
+                  No senders in this folder
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Rename Modal */}
-      <FolderModal
+      <Modal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
-        onSave={(newName) => onRenameCategory(category.id, newName)}
-        initialName={category.name}
-        title="Rename Category"
+        onSave={(newName) => {
+          console.log("in modal, name is", newName);
+          renameFolder(folder.id, newName)
+        }}
+        initialValue={folder.name}
+        title="Rename Folder"
       />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isDeletingModalOpen}
         onClose={() => setIsDeletingModalOpen(false)}
-        onConfirm={() => onDeleteCategory(category.id)}
-        itemName={category.name}
-        itemType="category"
+        onConfirm={() => { setIsDeletingModalOpen(false); deleteFolder(folder.id) }}
+        itemName={folder.name}
+        itemType="folder"
       />
 
       {/* Mark as Read Confirmation Modal */}
-      <FolderModal
+      <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onSave={confirmMarkAsRead}
-        initialName="Mark all items in this category as read?"
-        title="Mark Category as Read"
+        onConfirm={confirmMarkAsRead}
+        itemName={folder.name}
+        itemType={folder.isRead ? "markasunread" : "markasread"}
       />
     </>
   );

@@ -30,20 +30,49 @@ export const DELETE = async (
   }
   return NextResponse.json(data);
 };
+
+// Update name and count
 export const PATCH = async (
   request: Request,
   { params }: { params: { folder_id: string } }
 ) => {
   const supabase = await createClient();
   const { folder_id } = await params;
-  const body = await request.json();
-  const { name } = body;
+  const { name, count } = await request.json();
+
+  const updateData: any = {};
+  if (name !== undefined) updateData.name = name;
+  if (count !== undefined) updateData.count = count; 
+
   const { data, error } = await supabase
     .from("folders")
-    .update({ name: name })
+    .update(updateData)
     .eq("id", folder_id);
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
   return NextResponse.json(data);
+};
+
+// Get count
+export const GET = async (
+  request: Request,
+  { params }: { params: { folder_id: string } }
+) => {
+  const supabase = await createClient();
+  const { folder_id } = await params;
+
+  const { data, error } = await supabase
+    .from("folders")
+    .select("count")
+    .eq("id", folder_id)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ count: data.count });
 };

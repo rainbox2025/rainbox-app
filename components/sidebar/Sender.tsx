@@ -1,29 +1,29 @@
-import { Feed } from "@/types/data";
+import { SenderType } from "@/types/data";
 import { useSortable } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
-import { FeedIcon } from "./FeedIcon";
+import { SenderIcon } from "./SenderIcon";
 import { useState, useRef, useEffect } from 'react';
 import { BellSlashIcon, CheckIcon, EllipsisHorizontalIcon, FolderIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "./DeleteModal";
+import { Modal } from "./Modal";
+import { useSenders } from "@/context/sendersContext";
 
-interface SortableFeedProps {
-  feed: Feed;
-  onRenameFeed?: (feedId: string, newName: string) => void;
-  onUnfollowFeed?: (feedId: string) => void;
+interface SenderProps {
+  sender: SenderType;
+  onRenameSender?: (senderId: string, newName: string) => void;
 }
 
-export default function SortableFeed({
-  feed,
-  onRenameFeed,
-  onUnfollowFeed
-}: SortableFeedProps) {
+export default function Sender({
+  sender,
+  onRenameSender,
+}: SenderProps) {
+  const { renameSender, unsubcribeSender, toggleReadSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
-  const [newName, setNewName] = useState(feed.name);
+  const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const {
     attributes,
@@ -33,10 +33,10 @@ export default function SortableFeed({
     transition,
     isDragging,
   } = useSortable({
-    id: `feed-${feed.id}`,
+    id: `sender-${sender.id}`,
     data: {
-      type: 'feed',
-      feed
+      type: 'sender',
+      sender
     }
   });
 
@@ -45,13 +45,6 @@ export default function SortableFeed({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [isRenaming]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,53 +70,36 @@ export default function SortableFeed({
     setIsRenaming(true);
   };
 
-  const saveRename = () => {
-    if (newName.trim() && newName !== feed.name && onRenameFeed) {
-      onRenameFeed(feed.id, newName);
-    } else {
-      setNewName(feed.name);
-    }
-    setIsRenaming(false);
-  };
-
   const handleMarkAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // Add your mark as read logic here
-    console.log(`Marked ${feed.name} as read`);
+    setIsMarkAsReadModalOpen(true);
+  };
+
+  const confirmMarkAsRead = () => {
+    // Toggle the current isRead status
+    toggleReadSender(sender.id, !sender.isRead);
+    setIsMarkAsReadModalOpen(false);
   };
 
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
     // Add your move to folder logic here
-    console.log(`Move ${feed.name} to folder`);
+    console.log(`Move ${sender.name} to folder`);
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
     // Add your mute notifications logic here
-    console.log(`Muted notifications for ${feed.name}`);
+    console.log(`Muted notifications for ${sender.name}`);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
     setIsUnfollowModalOpen(true);
-  };
-
-  const confirmUnfollow = () => {
-    if (onUnfollowFeed) {
-      onUnfollowFeed(feed.id);
-    } else {
-      console.log(`Unfollowed ${feed.name}`);
-    }
-    setIsUnfollowModalOpen(false);
-  };
-
-  const cancelUnfollow = () => {
-    setIsUnfollowModalOpen(false);
   };
 
   return (
@@ -139,29 +115,10 @@ export default function SortableFeed({
             : 'hover:bg-accent'}`}
       >
         <div className="flex items-center space-x-md overflow-hidden flex-1">
-          <FeedIcon feed={feed} />
-          {isRenaming ? (
-            <input
-              ref={renameInputRef}
-              type="text"
-              className="text-sm bg-transparent border-none focus:ring-0 outline-none flex-1 text-foreground"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onBlur={saveRename}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  saveRename();
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm text-foreground truncate overflow-hidden mr-2">
-              {feed.name}
-            </span>
-          )}
+          <SenderIcon sender={sender} />
+          <span className="text-sm text-foreground truncate overflow-hidden mr-2">
+            {sender.name}
+          </span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -187,7 +144,7 @@ export default function SortableFeed({
                     onClick={handleMarkAsRead}
                   >
                     <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Mark as read</span>
+                    <span className="text-sm">{sender.isRead ? "Mark as unread" : "Mark as read"}</span>
                   </button>
                   <button
                     className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -211,7 +168,7 @@ export default function SortableFeed({
                     <span className="text-sm">Mute notifications</span>
                   </button>
                   <button
-                    className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary  transition-all duration-300 ease-in-out hover:cursor-pointer"
+                    className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
                     onClick={handleUnfollow}
                   >
                     <TrashIcon className="w-4 h-4 text-muted-foreground" />
@@ -223,17 +180,38 @@ export default function SortableFeed({
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {feed.count >= 1000 ? `${Math.floor(feed.count / 1000)}K+` : feed.count}
+            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
           </span>
         </div>
       </motion.div>
 
+      {/* Unfollow Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
-        onClose={cancelUnfollow}
-        onConfirm={confirmUnfollow}
-        itemName={feed.name}
-        itemType="feed"
+        onClose={() => setIsUnfollowModalOpen(false)}
+        onConfirm={() => { setIsUnfollowModalOpen(false); unsubcribeSender(sender.id) }}
+        itemName={sender.name}
+        itemType="sender"
+      />
+
+      {/* Mark as Read Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isMarkAsReadModalOpen}
+        onClose={() => setIsMarkAsReadModalOpen(false)}
+        onConfirm={confirmMarkAsRead}
+        itemName={sender.name}
+        itemType={sender.isRead ? "markasunread" : "markasread"}
+      />
+
+      {/* Rename Modal */}
+      <Modal
+        isOpen={isRenaming}
+        onClose={() => setIsRenaming(false)}
+        onSave={(newName) => {
+          renameSender(sender.id, newName);
+        }}
+        initialValue={sender.name}
+        title="Rename Sender"
       />
     </>
   );

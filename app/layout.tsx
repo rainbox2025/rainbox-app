@@ -49,11 +49,11 @@ export default function RootLayout({
             <div className="flex-1 w-full flex flex-col items-center">
               <MailsProvider>
                 <AuthProvider>
-                  <FoldersProvider>
-                    <SendersProvider>
+                  <SendersProvider>
+                    <FoldersProvider>
                       <OnboardingProvider>{children}</OnboardingProvider>
-                    </SendersProvider>
-                  </FoldersProvider>
+                    </FoldersProvider>
+                  </SendersProvider>
                 </AuthProvider>
               </MailsProvider>
 

@@ -6,18 +6,20 @@ import {
   useContext,
   useCallback,
 } from "react";
-import { Sender, Folder, Mail } from "@/types/data";
+import { SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 
 interface SendersContextType {
-  senders: Sender[];
+  senders: SenderType[];
   isSendersLoading: boolean;
   sendersListError: string | null;
   unsubcribeSenderError: string | null;
   unsubcribeSender: (id: string) => Promise<void>;
   renameSenderError: string | null;
   renameSender: (id: string, name: string) => Promise<void>;
+  toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
+  removeSender: (senderId: string) => void;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -28,7 +30,7 @@ export const SendersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const [senders, setSenders] = useState<Sender[]>([]);
+  const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
   const [sendersListError, setSendersListError] = useState<string | null>(null);
   const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<
@@ -58,9 +60,17 @@ export const SendersProvider = ({
   const unsubcribeSender = useCallback(
     async (id: string) => {
       try {
+        console.log("came insdie unsubscribe");
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-        await api.delete(`/senders/${id}`);
+
+        console.log("unsubscribed to : ", id);
+        await api.patch(`/senders/${id}`, { subscribed: false });
+        console.log("unsubscribed");
+
+        setSenders((prevSenders) =>
+          prevSenders.filter((sender) => sender.id !== id)
+        );
       } catch (error) {
         setUnsubcribeSenderError(
           error instanceof Error ? error.message : "Unknown error"
@@ -75,7 +85,16 @@ export const SendersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
+
+
         await api.patch(`/senders/${id}`, { name });
+        console.log("renamed");
+
+        setSenders((prevSenders) =>
+          prevSenders.map((sender) =>
+            sender.id === id ? { ...sender, name } : sender
+          )
+        );
       } catch (error) {
         setRenameSenderError(
           error instanceof Error ? error.message : "Unknown error"
@@ -85,6 +104,29 @@ export const SendersProvider = ({
     },
     [api, supabase]
   );
+
+  const toggleReadSender = useCallback(
+    async (senderId: string, isRead: boolean) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+
+        console.log("toggleSender:", senderId, "to:", isRead);
+        await api.patch(`/senders/read`, { sender_id: senderId, isRead: isRead });
+        const updatedSenders = senders.map((sender) =>
+          sender.id === senderId ? { ...sender, isRead } : sender
+        );
+        setSenders(updatedSenders);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api, supabase]
+  );
+
+  const removeSender = (senderId: string) => {
+    setSenders(prevSenders => prevSenders.filter(sender => sender.id !== senderId));
+  };
 
   useEffect(() => {
     fetchSenders();
@@ -100,6 +142,8 @@ export const SendersProvider = ({
         unsubcribeSender,
         renameSenderError,
         renameSender,
+        toggleReadSender,
+        removeSender
       }}
     >
       {children}
