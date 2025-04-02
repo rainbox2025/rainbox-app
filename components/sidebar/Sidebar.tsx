@@ -12,16 +12,20 @@ import {
 import Image from "next/image";
 import Inbox from "./Inbox";
 import { useAuth } from "@/context/authContext";
-
+import { useMode } from "@/context/modeContext";
+import { useSenders } from "@/context/sendersContext";
+import { useMails } from "@/context/mailsContext";
 const Sidebar = () => {
-  const { user, logout } = useAuth(); // Use the auth context
+  const { user, logout } = useAuth();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [showInfoMessage, setShowInfoMessage] = useState(false);
   const [width, setWidth] = useState(320); // Default width in pixels
   const [showUserModal, setShowUserModal] = useState(false);
   const sidebarRef = useRef(null);
   const isDraggingRef = useRef(false);
-
+  const { setMode } = useMode();
+  const { setSelectedSender } = useSenders();
+  const { setSelectedMail } = useMails();
   const MIN_WIDTH = 240; // Minimum width in pixels
   const MAX_WIDTH = 480; // Maximum width in pixels
 
@@ -67,7 +71,11 @@ const Sidebar = () => {
   }, []);
 
   const handleCopyEmail = () => {
-    if (user?.email && typeof navigator !== "undefined" && navigator.clipboard) {
+    if (
+      user?.email &&
+      typeof navigator !== "undefined" &&
+      navigator.clipboard
+    ) {
       navigator.clipboard.writeText(user.email);
       setShowCopiedMessage(true);
       setTimeout(() => setShowCopiedMessage(false), 1000);
@@ -143,7 +151,7 @@ const Sidebar = () => {
 
                     <div className="text-center">
                       <h2 className="text-sm font-semibold">
-                        {user?.user_name || 'User Profile'}
+                        {user?.user_name || "User Profile"}
                       </h2>
                       <p className="text-xs text-muted-foreground truncate max-w-full">
                         {user?.email}
@@ -154,13 +162,13 @@ const Sidebar = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-xs">Plan</span>
                         <span className="text-xs font-medium capitalize">
-                          {user?.plan || 'Free'}
+                          {/* {user?.plan || "Free"} */}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs">Feeds</span>
                         <span className="text-xs font-medium">
-                          {user?.usedFeeds || 0} / {user?.totalFeeds || 10}
+                          {/* {user?.usedFeeds || 0} / {user?.totalFeeds || 10} */}
                         </span>
                       </div>
                     </div>
@@ -179,7 +187,6 @@ const Sidebar = () => {
         </div>
       </div>
 
-
       <div className="flex-1 overflow-y-auto">
         {/* Email Info */}
         <div className="px-md py-sm pr-md flex items-center justify-between border-b border-border">
@@ -188,7 +195,7 @@ const Sidebar = () => {
               @
             </span>
             <span className="text-sm font-medium truncate text-foreground">
-              {user?.email || 'Not logged in'}
+              {user?.email || "Not logged in"}
             </span>
           </div>
 
@@ -208,7 +215,7 @@ const Sidebar = () => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {`You are currently on the ${user?.plan} plan. Upgrade anytime for more benefits!`}
+                    {`You are currently on the free plan. Upgrade anytime for more benefits!`}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -240,20 +247,28 @@ const Sidebar = () => {
         {/* Navigation */}
         <div className="border-b border-border">
           <nav className="">
-            <a
-              href="#"
+            <button
+              onClick={() => {
+                setMode("discover");
+                setSelectedSender(null);
+                setSelectedMail(null);
+              }}
               className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
             >
               <SquaresPlusIcon className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Discover</span>
-            </a>
-            <a
-              href="#"
+            </button>
+            <button
+              onClick={() => {
+                setMode("bookmarks");
+                setSelectedSender(null);
+                setSelectedMail(null);
+              }}
               className="flex items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
             >
               <BookmarkIcon className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Bookmarks</span>
-            </a>
+            </button>
           </nav>
         </div>
 

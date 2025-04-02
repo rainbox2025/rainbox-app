@@ -20,6 +20,10 @@ interface SendersContextType {
   renameSender: (id: string, name: string) => Promise<void>;
   toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
   removeSender: (senderId: string) => void;
+  fetchSenders: () => Promise<void>;
+  selectedSender: SenderType | null;
+  setSelectedSender: (sender: SenderType | null) => void;
+  setSenders: (senders: SenderType[]) => void;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -30,6 +34,7 @@ export const SendersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
+  const [selectedSender, setSelectedSender] = useState<SenderType | null>(null);
   const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
   const [sendersListError, setSendersListError] = useState<string | null>(null);
@@ -86,7 +91,6 @@ export const SendersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-
         await api.patch(`/senders/${id}`, { name });
         console.log("renamed");
 
@@ -112,7 +116,10 @@ export const SendersProvider = ({
         if (!user.user) return;
 
         console.log("toggleSender:", senderId, "to:", isRead);
-        await api.patch(`/senders/read`, { sender_id: senderId, isRead: isRead });
+        await api.patch(`/senders/read`, {
+          sender_id: senderId,
+          isRead: isRead,
+        });
         const updatedSenders = senders.map((sender) =>
           sender.id === senderId ? { ...sender, isRead } : sender
         );
@@ -125,7 +132,9 @@ export const SendersProvider = ({
   );
 
   const removeSender = (senderId: string) => {
-    setSenders(prevSenders => prevSenders.filter(sender => sender.id !== senderId));
+    setSenders((prevSenders) =>
+      prevSenders.filter((sender) => sender.id !== senderId)
+    );
   };
 
   useEffect(() => {
@@ -143,7 +152,11 @@ export const SendersProvider = ({
         renameSenderError,
         renameSender,
         toggleReadSender,
-        removeSender
+        removeSender,
+        fetchSenders,
+        selectedSender,
+        setSelectedSender,
+        setSenders,
       }}
     >
       {children}

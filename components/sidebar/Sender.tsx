@@ -1,10 +1,17 @@
 import { SenderType } from "@/types/data";
 import { useSortable } from "@dnd-kit/sortable";
-import { motion, AnimatePresence } from 'framer-motion';
-import { CSS } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from "framer-motion";
+import { CSS } from "@dnd-kit/utilities";
 import { SenderIcon } from "./SenderIcon";
-import { useState, useRef, useEffect } from 'react';
-import { BellSlashIcon, CheckIcon, EllipsisHorizontalIcon, FolderIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useState, useRef, useEffect } from "react";
+import {
+  BellSlashIcon,
+  CheckIcon,
+  EllipsisHorizontalIcon,
+  FolderIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "./DeleteModal";
 import { Modal } from "./Modal";
 import { useSenders } from "@/context/sendersContext";
@@ -14,17 +21,14 @@ interface SenderProps {
   onRenameSender?: (senderId: string, newName: string) => void;
 }
 
-export default function Sender({
-  sender,
-  onRenameSender,
-}: SenderProps) {
+export default function Sender({ sender, onRenameSender }: SenderProps) {
   const { renameSender, unsubcribeSender, toggleReadSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
+  const { setSelectedSender } = useSenders();
   const {
     attributes,
     listeners,
@@ -35,9 +39,9 @@ export default function Sender({
   } = useSortable({
     id: `sender-${sender.id}`,
     data: {
-      type: 'sender',
-      sender
-    }
+      type: "sender",
+      sender,
+    },
   });
 
   const style = {
@@ -53,9 +57,9 @@ export default function Sender({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -110,11 +114,19 @@ export default function Sender({
         {...attributes}
         {...listeners}
         className={`group p-xs px-md flex items-center justify-between rounded-md cursor-grab 
-    ${isDragging
-            ? 'bg-secondary/30 dark:bg-secondary/50 text-foreground dark:text-foreground shadow-sm z-10'
-            : 'hover:bg-accent'}`}
+    ${
+      isDragging
+        ? "bg-secondary/30 dark:bg-secondary/50 text-foreground dark:text-foreground shadow-sm z-10"
+        : "hover:bg-accent"
+    }`}
       >
-        <div className="flex items-center space-x-md overflow-hidden flex-1">
+        <div
+          className="flex items-center space-x-md overflow-hidden flex-1"
+          onClick={() => {
+            setSelectedSender(sender);
+            console.log(sender);
+          }}
+        >
           <SenderIcon sender={sender} />
           <span className="text-sm text-foreground truncate overflow-hidden mr-2">
             {sender.name}
@@ -144,7 +156,9 @@ export default function Sender({
                     onClick={handleMarkAsRead}
                   >
                     <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{sender.isRead ? "Mark as unread" : "Mark as read"}</span>
+                    <span className="text-sm">
+                      {sender.isRead ? "Mark as unread" : "Mark as read"}
+                    </span>
                   </button>
                   <button
                     className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -180,7 +194,9 @@ export default function Sender({
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
+            {sender.count >= 1000
+              ? `${Math.floor(sender.count / 1000)}K+`
+              : sender.count}
           </span>
         </div>
       </motion.div>
@@ -189,7 +205,10 @@ export default function Sender({
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={() => setIsUnfollowModalOpen(false)}
-        onConfirm={() => { setIsUnfollowModalOpen(false); unsubcribeSender(sender.id) }}
+        onConfirm={() => {
+          setIsUnfollowModalOpen(false);
+          unsubcribeSender(sender.id);
+        }}
         itemName={sender.name}
         itemType="sender"
       />

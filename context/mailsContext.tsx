@@ -6,26 +6,35 @@ import {
   useContext,
   useCallback,
 } from "react";
-import { Mail } from "@/types/data";
+import { Mail, SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
+import { useSenders } from "./sendersContext";
 
 interface MailsContextType {
   mails: Mail[];
   isMailsLoading: boolean;
   mailsListError: string | null;
   markAsReadError: string | null;
-  markAsRead: (id: string) => Promise<void>;
+  markAsRead: (id: string, read?: boolean) => Promise<void>;
   bookmarkError: string | null;
-  bookmark: (id: string) => Promise<void>;
+  bookmark: (id: string, bookmark?: boolean) => Promise<void>;
   summarizeError: string | null;
-  summarize: (id: string) => Promise<void>;
+  summarize: (id: string) => Promise<string>;
+  getMailsBySender: (senderId: string) => Promise<Mail[]>;
+  selectedMail: Mail | null;
+  setSelectedMail: (mail: Mail | null) => void;
+  summarizeLoading: boolean;
+  refreshMails: () => Promise<void>;
+  markAsReadAllBySenderId: (senderId: string) => Promise<void>;
 }
 
 const MailsContext = createContext<MailsContextType | null>(null);
 
 export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
+  const { selectedSender, setSenders, senders } = useSenders();
+  const [selectedMail, setSelectedMail] = useState<Mail | null>(null);
   const [mails, setMails] = useState<Mail[]>([]);
   const [isMailsLoading, setIsMailsLoading] = useState(false);
   const [mailsListError, setMailsListError] = useState<string | null>(null);
@@ -33,6 +42,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const [bookmarkError, setBookmarkError] = useState<string | null>(null);
   const api = useAxios();
   const [summarizeError, setSummarizeError] = useState<string | null>(null);
+  const [summarizeLoading, setSummarizeLoading] = useState(false);
   const fetchMails = useCallback(async () => {
     try {
       setIsMailsLoading(true);
@@ -52,7 +62,16 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const markAsRead = useCallback(
     async (id: string, read = true) => {
       try {
-        await api.put(`/mails/read/${id}`, { read });
+        await api.patch(`/mails/read/${id}`, { read });
+        setMails((prev) =>
+          prev.map((mail) => (mail.id === id ? { ...mail, read } : mail))
+        );
+        const newSenders = senders.map((sender) =>
+          sender.id === selectedSender?.id
+            ? { ...sender, count: read ? sender.count - 1 : sender.count + 1 }
+            : sender
+        );
+        setSenders(newSenders);
       } catch (error) {
         setMarkAsReadError(
           error instanceof Error ? error.message : "Unknown error"
@@ -62,10 +81,34 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
     },
     [api]
   );
+  const markAsReadAllBySenderId = useCallback(
+    async (senderId: string) => {
+      try {
+        await api.patch(`/mails/read/sender/${senderId}`);
+        setMails((prev) =>
+          prev.map((mail) =>
+            mail.sender_id === senderId ? { ...mail, read: true } : mail
+          )
+        );
+        const newSenders = senders.map((sender) =>
+          sender.id === selectedSender?.id ? { ...sender, count: 0 } : sender
+        );
+        setSenders(newSenders);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [api]
+  );
   const bookmark = useCallback(
     async (id: string, bookmark = true) => {
       try {
-        await api.put(`/mails/bookmark/${id}`, { bookmark });
+        await api.patch(`/mails/bookmark/${id}`, { bookmark });
+        setMails((prev) =>
+          prev.map((mail) =>
+            mail.id === id ? { ...mail, bookmarked: bookmark } : mail
+          )
+        );
       } catch (error) {
         setBookmarkError(
           error instanceof Error ? error.message : "Unknown error"
@@ -78,6 +121,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const summarize = useCallback(
     async (id: string) => {
       try {
+        setSummarizeLoading(true);
         const response = await api.get(`/mails/summarize/${id}`);
         return response.data;
       } catch (error) {
@@ -85,10 +129,59 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
           error instanceof Error ? error.message : "Unknown error"
         );
         console.error(error);
+      } finally {
+        setSummarizeLoading(false);
       }
     },
     [api]
   );
+  const getMailsBySender = useCallback(
+    async (senderId: string) => {
+      try {
+        const response = await api.get(`/mails/sender/${senderId}`);
+        return response.data;
+      } catch (error) {
+        setMailsListError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error(error);
+      }
+    },
+    [api]
+  );
+  const refreshMails = useCallback(async () => {
+    if (selectedSender) {
+      try {
+        setIsMailsLoading(true);
+        const mails = await getMailsBySender(selectedSender.id);
+        setMails(mails);
+        setIsMailsLoading(false);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsMailsLoading(false);
+      }
+    }
+  }, [selectedSender]);
+
+  useEffect(() => {
+    const fetchMails = async () => {
+      if (selectedSender) {
+        try {
+          setIsMailsLoading(true);
+          const mails = await getMailsBySender(selectedSender.id);
+          setMails(mails);
+          setIsMailsLoading(false);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsMailsLoading(false);
+        }
+      }
+    };
+    fetchMails();
+  }, [selectedSender]);
+
   useEffect(() => {
     fetchMails();
   }, []);
@@ -105,6 +198,12 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
         bookmark,
         summarizeError,
         summarize,
+        getMailsBySender,
+        selectedMail,
+        setSelectedMail,
+        summarizeLoading,
+        refreshMails,
+        markAsReadAllBySenderId,
       }}
     >
       {children}

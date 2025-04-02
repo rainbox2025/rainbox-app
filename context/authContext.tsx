@@ -9,9 +9,6 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
-  plan: 'free' | 'pro' | 'enterprise';
-  usedFeeds: number;
-  totalFeeds: number;
 }
 
 interface AuthContextType {
@@ -34,26 +31,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchUser = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
-
         if (userData.user) {
-          // Fetch additional user details from your database
-          const { data: userProfile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('plan, used_feeds, total_feeds')
-            .eq('user_id', userData.user.id)
-            .single();
-
-          const userObject: User = {
+          setUser({
             id: userData.user.id,
             email: userData.user.email || "",
             avatar_url: userData.user.user_metadata?.avatar_url || "",
             user_name: userData.user.user_metadata?.user_name || "",
-            plan: userProfile?.plan || 'free',
-            usedFeeds: userProfile?.used_feeds || 0,
-            totalFeeds: userProfile?.total_feeds || 10 // Default to a base number if not set
-          };
-
-          setUser(userObject);
+          });
 
           const { data: sessionData } = await supabase.auth.getSession();
           setAccessToken(sessionData.session?.access_token || null);
@@ -63,31 +47,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN') {
-          await fetchUser();
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setAccessToken(null);
-        }
-      }
-    );
+    // const { data: authListener } = supabase.auth.onAuthStateChange(
+    //   async (event, session) => {
+    //     if (event === "SIGNED_IN") {
+    //       await fetchUser();
+    //     } else if (event === "SIGNED_OUT") {
+    //       setUser(null);
+    //       setAccessToken(null);
+    //     }
+    //   }
+    // );
 
     fetchUser();
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    // return () => {
+    //   authListener.subscription.unsubscribe();
+    // };
   }, []);
 
   const logout = async () => {
     try {
-      console.log("logout clicked")
+      console.log("logout clicked");
       await supabase.auth.signOut();
       setUser(null);
       setAccessToken(null);
-      router.push('/sign-in');
+      router.push("/sign-in");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -100,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         accessToken,
         setUser,
         setAccessToken,
-        logout
+        logout,
       }}
     >
       {children}

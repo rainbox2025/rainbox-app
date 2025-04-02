@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
   const { data: user } = await supabase.auth.getUser();
+  console.log("user", user);
   if (user) {
     //check if user exists in users table
     const { data: userData, error: userError } = await supabase

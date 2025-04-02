@@ -3,7 +3,7 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: "free" | "pro" | "enterprise";
   usedFeeds: number;
   totalFeeds: number;
 }
@@ -59,7 +59,7 @@ export interface Category {
 
 export interface User {
   email: string;
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: "free" | "pro" | "enterprise";
   usedFeeds: number;
   totalFeeds: number;
 }

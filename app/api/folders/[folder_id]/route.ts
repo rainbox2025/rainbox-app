@@ -14,17 +14,15 @@ export const DELETE = async (
     .eq("folder_id", folder_id);
 
   if (senders_in_folder && senders_in_folder.length > 0) {
-    senders_in_folder.map(async () => {
-      await supabase
-        .from("senders")
-        .update({ folder_id: null })
-        .eq("folder_id", folder_id);
-    });
+    await supabase
+      .from("senders")
+      .update({ folder_id: null })
+      .eq("folder_id", folder_id);
   }
   const { data, error } = await supabase
     .from("folders")
     .delete()
-    .eq("id", params.folder_id);
+    .eq("id", folder_id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -42,7 +40,7 @@ export const PATCH = async (
 
   const updateData: any = {};
   if (name !== undefined) updateData.name = name;
-  if (count !== undefined) updateData.count = count; 
+  if (count !== undefined) updateData.count = count;
 
   const { data, error } = await supabase
     .from("folders")

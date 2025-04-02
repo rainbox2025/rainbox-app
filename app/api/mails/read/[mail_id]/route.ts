@@ -22,6 +22,21 @@ export const PATCH = async (
       read: read,
     })
     .eq("id", mail_id);
+  // decrease the count of unread mails for the sender
+  const sender = await supabase
+    .from("senders")
+    .select("count")
+    .eq("id", mail.data.sender_id)
+    .single();
+  console.log("sender", sender);
+  sender &&
+    sender.data &&
+    (await supabase
+      .from("senders")
+      .update({
+        count: read ? sender.data.count + 1 : sender.data.count - 1,
+      })
+      .eq("id", mail.data.sender_id));
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

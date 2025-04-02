@@ -12,7 +12,6 @@ import { useAxios } from "@/hooks/useAxios";
 import { AxiosResponse } from "axios";
 import { useSenders } from "./sendersContext";
 
-
 interface FoldersContextType {
   folders: FolderType[];
   isFoldersLoading: boolean;
@@ -27,7 +26,6 @@ interface FoldersContextType {
   isLoadingSenders: boolean;
   reorderFolders: (activeId: string, overId: string) => void;
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
-
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -35,14 +33,19 @@ const FoldersContext = createContext<FoldersContextType | null>(null);
 // Add this function at the top level before the context definition
 const FOLDER_ORDER_KEY = "folder_order";
 
-const getFolderOrderFromLocalStorage = (userId: string): Record<string, number> => {
+const getFolderOrderFromLocalStorage = (
+  userId: string
+): Record<string, number> => {
   if (typeof window === "undefined") return {};
   const key = `${FOLDER_ORDER_KEY}_${userId}`;
   const savedOrder = localStorage.getItem(key);
   return savedOrder ? JSON.parse(savedOrder) : {};
 };
 
-const saveFolderOrderToLocalStorage = (userId: string, orderMap: Record<string, number>) => {
+const saveFolderOrderToLocalStorage = (
+  userId: string,
+  orderMap: Record<string, number>
+) => {
   if (typeof window === "undefined") return;
   const key = `${FOLDER_ORDER_KEY}_${userId}`;
   localStorage.setItem(key, JSON.stringify(orderMap));
@@ -54,6 +57,7 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
+  const { fetchSenders } = useSenders();
   const { removeSender } = useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
@@ -89,7 +93,9 @@ export const FoldersProvider = ({
       let foldersData = data.data;
 
       for (let folder of foldersData) {
-        const sendersResponse = await api.get(`/folders/getSenders/${folder.id}`);
+        const sendersResponse = await api.get(
+          `/folders/getSenders/${folder.id}`
+        );
         folder.senders = sendersResponse.data || [];
       }
 
@@ -104,14 +110,16 @@ export const FoldersProvider = ({
         }));
 
         // Sort folders based on the order property
-        foldersData.sort((a: FolderType, b: FolderType) =>
-          (a.order || Number.MAX_SAFE_INTEGER) - (b.order || Number.MAX_SAFE_INTEGER)
+        foldersData.sort(
+          (a: FolderType, b: FolderType) =>
+            (a.order || Number.MAX_SAFE_INTEGER) -
+            (b.order || Number.MAX_SAFE_INTEGER)
         );
       } else {
         // If no saved order, assign default order
         foldersData = foldersData.map((folder: FolderType, index: number) => ({
           ...folder,
-          order: index
+          order: index,
         }));
       }
 
@@ -126,46 +134,53 @@ export const FoldersProvider = ({
     }
   }, [api, supabase]);
 
-  const reorderFolders = useCallback((activeId: string, overId: string) => {
-    if (!userId || activeId === overId) return;
+  const reorderFolders = useCallback(
+    (activeId: string, overId: string) => {
+      if (!userId || activeId === overId) return;
 
-    // Extract folder IDs from activeId and overId (remove "folder-" prefix)
-    const activeFolderId = activeId.replace("folder-", "");
-    const overFolderId = overId.replace("folder-", "");
+      // Extract folder IDs from activeId and overId (remove "folder-" prefix)
+      const activeFolderId = activeId.replace("folder-", "");
+      const overFolderId = overId.replace("folder-", "");
 
-    setFolders(prevFolders => {
-      // Find indices of the folders
-      const oldIndex = prevFolders.findIndex(folder => folder.id === activeFolderId);
-      const newIndex = prevFolders.findIndex(folder => folder.id === overFolderId);
+      setFolders((prevFolders) => {
+        // Find indices of the folders
+        const oldIndex = prevFolders.findIndex(
+          (folder) => folder.id === activeFolderId
+        );
+        const newIndex = prevFolders.findIndex(
+          (folder) => folder.id === overFolderId
+        );
 
-      if (oldIndex === -1 || newIndex === -1) return prevFolders;
+        if (oldIndex === -1 || newIndex === -1) return prevFolders;
 
-      // Create a copy of the folders array
-      const newFolders = [...prevFolders];
+        // Create a copy of the folders array
+        const newFolders = [...prevFolders];
 
-      // Remove the active folder from its position
-      const [movedFolder] = newFolders.splice(oldIndex, 1);
+        // Remove the active folder from its position
+        const [movedFolder] = newFolders.splice(oldIndex, 1);
 
-      // Insert it at the new position
-      newFolders.splice(newIndex, 0, movedFolder);
+        // Insert it at the new position
+        newFolders.splice(newIndex, 0, movedFolder);
 
-      // Update order properties
-      const updatedFolders = newFolders.map((folder, index) => ({
-        ...folder,
-        order: index
-      }));
+        // Update order properties
+        const updatedFolders = newFolders.map((folder, index) => ({
+          ...folder,
+          order: index,
+        }));
 
-      // Save the new order to localStorage
-      const orderMap: Record<string, number> = {};
-      updatedFolders.forEach((folder, index) => {
-        orderMap[folder.id] = index;
+        // Save the new order to localStorage
+        const orderMap: Record<string, number> = {};
+        updatedFolders.forEach((folder, index) => {
+          orderMap[folder.id] = index;
+        });
+
+        saveFolderOrderToLocalStorage(userId, orderMap);
+
+        return updatedFolders;
       });
-
-      saveFolderOrderToLocalStorage(userId, orderMap);
-
-      return updatedFolders;
-    });
-  }, [userId]);
+    },
+    [userId]
+  );
 
   const createFolder = useCallback(
     async (name: string) => {
@@ -175,15 +190,19 @@ export const FoldersProvider = ({
 
         console.log("User ID:", user.user.id);
         console.log("folder name:", name);
-        const data = await api.post(`/folders`, { name, user_id: user.user.id });
+        const data = await api.post(`/folders`, {
+          name,
+          user_id: user.user.id,
+        });
         console.log("New folder created:", data.data);
 
         // Add order to the new folder (highest order + 1)
         const newFolder = {
           ...data.data,
-          order: folders.length > 0
-            ? Math.max(...folders.map(f => f.order || 0)) + 1
-            : 0
+          order:
+            folders.length > 0
+              ? Math.max(...folders.map((f) => f.order || 0)) + 1
+              : 0,
         };
 
         // Update local storage with the new order
@@ -208,14 +227,9 @@ export const FoldersProvider = ({
       try {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
-
-        console.log("Deleting folder:", id);
         await api.delete(`/folders/${id}`);
-
-        // Remove folder from state
         setFolders(folders.filter((folder) => folder.id !== id));
-
-        // Update localStorage by removing this folder's order
+        await fetchSenders();
         if (user.user.id) {
           const savedOrder = getFolderOrderFromLocalStorage(user.user.id);
           delete savedOrder[id];
@@ -236,7 +250,9 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        const response = await api.post(`/folders/sender/${senderId}`, { folder_id: folderId });
+        const response = await api.post(`/folders/sender/${senderId}`, {
+          folder_id: folderId,
+        });
 
         if (!response?.data?.sender) {
           console.error("No sender returned from API");
@@ -245,13 +261,13 @@ export const FoldersProvider = ({
 
         removeSender(senderId);
 
-        setFolders(prevFolders =>
-          prevFolders.map(folder =>
+        setFolders((prevFolders) =>
+          prevFolders.map((folder) =>
             folder.id === folderId
               ? {
-                ...folder,
-                senders: [...(folder.senders || []), response.data.sender],
-              }
+                  ...folder,
+                  senders: [...(folder.senders || []), response.data.sender],
+                }
               : folder
           )
         );
@@ -268,7 +284,9 @@ export const FoldersProvider = ({
 
       console.log(" folderId from getSenders", folderId);
       try {
-        const response: AxiosResponse<SenderType[]> = await api.get(`/folders/getSenders/${folderId}`);
+        const response: AxiosResponse<SenderType[]> = await api.get(
+          `/folders/getSenders/${folderId}`
+        );
         setIsLoadingSenders(false);
         return response.data;
       } catch (error) {
@@ -305,18 +323,19 @@ export const FoldersProvider = ({
         if (!user.user) return;
 
         console.log("toggleFolder:", folderId, "to:", isRead);
-        await api.patch(`/folders/read`, { folder_id: folderId, isRead: isRead });
+        await api.patch(`/folders/read`, {
+          folder_id: folderId,
+          isRead: isRead,
+        });
         const updatedFolders = folders.map((folder) =>
           folder.id === folderId ? { ...folder, isRead } : folder
         );
         setFolders(updatedFolders);
-
       } catch (error) {
         console.error(error);
       }
     },
     [api, supabase]
-
   );
   useEffect(() => {
     fetchFolders();
@@ -338,7 +357,6 @@ export const FoldersProvider = ({
         isLoadingSenders,
         reorderFolders,
         toggleReadFolder,
-
       }}
     >
       {children}
