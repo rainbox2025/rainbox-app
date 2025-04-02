@@ -12,6 +12,7 @@ import { useAxios } from "@/hooks/useAxios";
 import { AxiosResponse } from "axios";
 import { useSenders } from "./sendersContext";
 
+
 interface FoldersContextType {
   folders: FolderType[];
   isFoldersLoading: boolean;
@@ -26,6 +27,7 @@ interface FoldersContextType {
   isLoadingSenders: boolean;
   reorderFolders: (activeId: string, overId: string) => void;
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
+
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -63,6 +65,7 @@ export const FoldersProvider = ({
   const [deleteFolderError, setDeleteFolderError] = useState<string | null>(
     null
   );
+
   const api = useAxios();
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -294,6 +297,7 @@ export const FoldersProvider = ({
     },
     [api, supabase]
   );
+
   const toggleReadFolder = useCallback(
     async (folderId: string, isRead: boolean) => {
       try {
@@ -306,11 +310,13 @@ export const FoldersProvider = ({
           folder.id === folderId ? { ...folder, isRead } : folder
         );
         setFolders(updatedFolders);
+
       } catch (error) {
         console.error(error);
       }
     },
     [api, supabase]
+
   );
   useEffect(() => {
     fetchFolders();
@@ -332,6 +338,7 @@ export const FoldersProvider = ({
         isLoadingSenders,
         reorderFolders,
         toggleReadFolder,
+
       }}
     >
       {children}
