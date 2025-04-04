@@ -18,25 +18,26 @@ const MailReaderHeader = ({
   return (
     selectedMail &&
     selectedSender && (
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-4 flex justify-between items-center">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-xs flex items-center justify-between gap-2">
+
         <button
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="p-sm rounded-full hover:bg-muted transition-colors"
           onClick={() => setSelectedMail(null)}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <h1 className="text-xl font-semibold line-clamp-1">
+        <h1 className="text-lg font-semibold truncate max-w-[40%] sm:max-w-[60%]">
           {selectedMail?.subject}
         </h1>
-        <div>
+        <div className="flex items-center gap-1 shrink-0">
           <button
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-sm rounded-full hover:bg-muted transition-colors"
             onClick={() => setSummaryDialogOpen(true)}
           >
             <Sparkles className="w-4 h-4" />
           </button>
           <button
-            className="p-1.5 rounded-full hover:bg-background/80 transition-colors"
+            className="p-sm rounded-full hover:bg-background/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               bookmark(selectedMail.id, !selectedMail.bookmarked);
@@ -52,7 +53,7 @@ const MailReaderHeader = ({
             />
           </button>
           <button
-            className="p-1.5 rounded-full hover:bg-background/80 transition-colors"
+            className="p-sm rounded-full hover:bg-background/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               markAsRead(selectedMail.id, !selectedMail.read);
@@ -64,15 +65,14 @@ const MailReaderHeader = ({
               <EnvelopeOpenIcon className="w-4 h-4" />
             )}
           </button>
-
           <button
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-sm rounded-full hover:bg-muted transition-colors"
             onClick={() => setTextToAudioOpen(true)}
           >
             <Volume2 className="w-4 h-4" />
           </button>
           <button
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-sm rounded-full hover:bg-muted transition-colors"
             onClick={() => setSelectedMail(null)}
           >
             <Share2 className="w-4 h-4" />

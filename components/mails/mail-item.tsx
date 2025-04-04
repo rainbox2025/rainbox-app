@@ -20,13 +20,13 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         }
       }}
       className={cn(
-        "flex flex-col border-b border-border p-4 cursor-pointer hover:bg-muted/30 transition-all duration-200 relative group",
+        "flex flex-col border-b border-border p-sm px-md cursor-pointer hover:bg-muted/30 transition-all duration-200 relative group",
         selectedMail?.id === mail.id && "bg-muted/50"
       )}
     >
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 flex space-x-1 z-10">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 flex  z-10">
         <button
-          className="p-1.5 rounded-full hover:bg-background/80 transition-colors"
+          className="p-sm rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             markAsRead(mail.id, !mail.read);
@@ -40,7 +40,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         </button>
 
         <button
-          className="p-1.5 rounded-full hover:bg-background/80 transition-colors"
+          className="p-sm rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             bookmark(mail.id, !mail.bookmarked);
@@ -52,7 +52,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           />
         </button>
         <button
-          className="p-1.5 rounded-full hover:bg-background/80 transition-colors"
+          className="p-sm rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal className="w-4 h-4" />
@@ -61,7 +61,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
       <div className="pr-12">
         <h2
           className={cn(
-            "text-base font-medium line-clamp-1 mb-1",
+            " line-clamp-1 mb-1 text-sm",
             mail.read ? "text-muted-foreground" : "font-semibold"
           )}
         >
