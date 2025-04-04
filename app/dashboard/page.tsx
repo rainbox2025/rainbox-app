@@ -11,6 +11,7 @@ import { SenderHeader } from "@/components/sender/sender-header";
 import { MailItem } from "@/components/mails/mail-item";
 import MailReader from "@/components/mails/mail-reader";
 import { useMode } from "@/context/modeContext";
+import { InboxIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
   const { isOnboardingComplete } = useOnboarding();
@@ -76,8 +77,11 @@ const Page = () => {
                 <MailItem key={mail.id} mail={mail} />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <p>No emails found</p>
+              <div className="mt-50 flex flex-col items-center justify-center h-full py-12 space-y-4 text-muted-foreground">
+                <div className="rounded-full bg-muted p-sm w-16 h-16 flex items-center justify-center">
+                  <InboxIcon className="w-8 h-8" />
+                </div>
+                <p className="text-muted-foreground">No emails found</p>
               </div>
             )}
           </div>

@@ -74,8 +74,8 @@ export const MailReader = ({
             setSummaryDialogOpen={setSummaryDialogOpen}
             setTextToAudioOpen={setTextToAudioOpen}
           />
-          <div className="p-6">
-            <div className="flex items-center mb-6 text-sm">
+          <div className="p-md">
+            <div className="flex items-center mb-2 text-sm">
               <SenderAvatar
                 domain={selectedSender.domain || ""}
                 alt={selectedMail.subject || ""}
@@ -90,7 +90,7 @@ export const MailReader = ({
               </div>
             </div>
             <div
-              className="prose prose-sm dark:prose-invert max-w-none"
+              className="prose text-sm prose-sm dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: selectedMail.body }}
             />
           </div>
