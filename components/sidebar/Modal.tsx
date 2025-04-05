@@ -33,9 +33,11 @@ export const Modal: React.FC<ModalProps> = ({
       setIsLoading(true);
       try {
         await onSave(value.trim());
+        onClose();
+      } catch (error) {
+        console.error("Error saving:", error);
       } finally {
         setIsLoading(false);
-        onClose();
       }
     }
   };

@@ -399,26 +399,6 @@ export default function Inbox() {
         title="Create New Folder"
       />
 
-      {/* Confirmation Modal (for delete/unfollow) */}
-      <ConfirmModal
-        isOpen={isConfirmModalOpen}
-        onClose={() => {
-          setIsConfirmModalOpen(false);
-          setCurrentAction(null);
-          setTargetId(null);
-        }}
-        onConfirm={() => {
-          if (currentAction === "delete") handleDeleteFolder();
-          if (currentAction === "unfollow") handleUnfollowSender();
-        }}
-        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Sender"}
-        description={
-          currentAction === "delete"
-            ? "Are you sure you want to delete this folder? This operation cannot be undone."
-            : "Are you sure you want to unfollow this sender?"
-        }
-        showUnfollowOption={currentAction === "delete"}
-      />
 
       <DragOverlay>
         {activeId && activeSender && (

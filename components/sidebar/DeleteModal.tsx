@@ -68,9 +68,11 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
     setIsLoading(true);
     try {
       await onConfirm();
+      onClose();
+    } catch (error) {
+      console.error("Error confirming action:", error);
     } finally {
       setIsLoading(false);
-      onClose();
     }
   };
 
@@ -127,7 +129,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                   <>
                     <span className="opacity-0">{confirmText}</span>
                     <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <ArrowPathIcon className="animate-spin h-4 w-4 text-white" />
+                      <ArrowPathIcon className="animate-spin h-4 w-4 text-sm" />
                     </span>
                   </>
                 ) : confirmText}
