@@ -15,6 +15,7 @@ import { useAuth } from "@/context/authContext";
 import { useMode } from "@/context/modeContext";
 import { useSenders } from "@/context/sendersContext";
 import { useMails } from "@/context/mailsContext";
+import { ThemeSwitcher } from "../theme-switcher";
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
@@ -101,8 +102,11 @@ const Sidebar = () => {
           <span className="font-bold text-xl tracking-tight text-foreground">
             Rainbox
           </span>
+
         </div>
+
         <div className="flex items-center space-x-md">
+          <ThemeSwitcher />
           <button
             className="text-muted-foreground hover:text-foreground rounded-full hover:bg-accent cursor-pointer transition-transform duration-300 ease-in-out hover:rotate-60"
             aria-label="Settings"
@@ -156,21 +160,6 @@ const Sidebar = () => {
                       <p className="text-xs text-muted-foreground truncate max-w-full">
                         {user?.email}
                       </p>
-                    </div>
-
-                    <div className="w-full space-y-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs">Plan</span>
-                        <span className="text-xs font-medium capitalize">
-                          {/* {user?.plan || "Free"} */}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs">Feeds</span>
-                        <span className="text-xs font-medium">
-                          {/* {user?.usedFeeds || 0} / {user?.totalFeeds || 10} */}
-                        </span>
-                      </div>
                     </div>
 
                     <button
