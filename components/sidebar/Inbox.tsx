@@ -58,9 +58,7 @@ export default function Inbox() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeSender, setActiveSender] = useState<SenderType | null>(null);
   const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
-  const [focusedFolder, setFocusedFolder] = useState<string | null>(
-    "marketing"
-  ); // Default focus on Marketing
+  const [focusedFolder, setFocusedFolder] = useState<string | null>("");
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -314,7 +312,7 @@ export default function Inbox() {
       onDragEnd={handleDragEnd}
     >
       <div className="flex-1 bg-background text-foreground rounded-lg">
-        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
+        <div className="px-4 w-full p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
@@ -384,8 +382,8 @@ export default function Inbox() {
       <Modal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
-        onSave={(folderName) => {
-          createFolder(folderName);
+        onSave={async (folderName) => {
+          await createFolder(folderName);
 
           // Add new folder to ordered items when created
           setOrderedItems((prev) => [
@@ -397,8 +395,6 @@ export default function Inbox() {
               order: prev.length,
             },
           ]);
-
-          setIsFolderModalOpen(false);
         }}
         title="Create New Folder"
       />
