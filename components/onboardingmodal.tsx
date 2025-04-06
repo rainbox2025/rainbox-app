@@ -85,7 +85,7 @@ export const Onboardingmodal = () => {
                   name="username"
                   value={userName}
                   onChange={handleUsernameChange}
-                  className={`text-black focus:outline-none text-sm text-gray-800 focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-destructive" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-primaryBlue" : ""}`}
+                  className={`text-black focus:outline-none text-sm focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-destructive" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-primaryBlue" : ""}`}
                   disabled={isCheckingUsername}
                 />
                 <div className="bg-gray-100 flex items-center px-3 rounded-r-md">
@@ -103,7 +103,7 @@ export const Onboardingmodal = () => {
                 )}
               </div>
               {isCheckingUsername && (
-                <p className="text-primaryBlue text-sm text-gray-800">
+                <p className="text-primaryBlue text-sm ">
                   Checking username availability...
                 </p>
               )}
@@ -111,7 +111,7 @@ export const Onboardingmodal = () => {
                 <p className="text-destructive text-sm text-gray-800">{userNameError}</p>
               )}
               {!isUsernameValid && userName.trim() && !isCheckingUsername ? (
-                <p className="text-sm text-gray-800 text-amber-600">
+                <p className="text-sm  text-amber-600">
                   <span className="font-medium">Already taken.</span> Please try
                   a different email address
                 </p>

@@ -23,6 +23,7 @@ const Sidebar = () => {
   const [width, setWidth] = useState(320); // Default width in pixels
   const [showUserModal, setShowUserModal] = useState(false);
   const sidebarRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const { setMode } = useMode();
   const { setSelectedSender } = useSenders();
@@ -33,11 +34,11 @@ const Sidebar = () => {
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingRef.current = true;
+    setIsDragging(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    // Add a class to the body to change cursor during resize
-    document.body.style.cursor = "ew-resize";
-    document.body.style.userSelect = "none"; // Prevent text selection during resize
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = "none";
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -45,7 +46,6 @@ const Sidebar = () => {
 
     let newWidth = e.clientX;
 
-    // Apply constraints
     if (newWidth < MIN_WIDTH) newWidth = MIN_WIDTH;
     if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
 
@@ -54,9 +54,9 @@ const Sidebar = () => {
 
   const handleMouseUp = () => {
     isDraggingRef.current = false;
+    setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-    // Reset cursor and user-select
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
   };
@@ -86,7 +86,7 @@ const Sidebar = () => {
   return (
     <div
       ref={sidebarRef}
-      className="h-screen flex flex-col bg-background shadow-sm relative "
+      className="h-screen  flex flex-col bg-background shadow-sm relative "
       style={{ width: `${width}px` }}
     >
       {/* Header */}
@@ -176,7 +176,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Email Info */}
         <div className="px-md py-sm pr-md flex items-center justify-between border-b border-border">
           <div className="flex items-center space-x-md overflow-hidden mr-md flex-shrink min-w-0">
@@ -266,7 +266,7 @@ const Sidebar = () => {
       </div>
 
       <div
-        className="absolute top-0 right-0 w-[2px] h-full bg-muted-foreground hover:bg-primary cursor-ew-resize transform translate-x-0.5"
+        className={`absolute top-0 right-0 w-[2px] h-full ${isDraggingRef.current ? 'bg-primary/50' : 'bg-primary/25'} cursor-col-resize transform translate-x-0`}
         onMouseDown={handleMouseDown}
         title="Drag to resize"
       />

@@ -65,7 +65,23 @@
          dark:hover:bg-muted/70 
          focus:outline-none focus:ring-2 focus:ring-ring;
 }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
 
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(199, 199, 199);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:focus {
+  background: blue;
+}
 @layer base {
   * {
     @apply border-border;

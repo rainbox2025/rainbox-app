@@ -312,7 +312,7 @@ export default function Inbox() {
       onDragEnd={handleDragEnd}
     >
       <div className="flex-1 bg-background text-foreground rounded-lg">
-        <div className="px-4 w-full p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
+        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"

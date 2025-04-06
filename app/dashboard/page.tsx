@@ -81,7 +81,7 @@ const Page = () => {
                 <div className="rounded-full bg-muted p-sm w-16 h-16 flex items-center justify-center">
                   <InboxIcon className="w-8 h-8" />
                 </div>
-                <p className="text-muted-foreground">No emails found</p>
+                <p className="text-sm">No emails found</p>
               </div>
             )}
           </div>

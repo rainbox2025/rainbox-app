@@ -24,9 +24,9 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         selectedMail?.id === mail.id && "bg-muted/50"
       )}
     >
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 flex  z-10">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex  z-10">
         <button
-          className="p-sm rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             markAsRead(mail.id, !mail.read);
@@ -40,7 +40,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         </button>
 
         <button
-          className="p-sm rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             bookmark(mail.id, !mail.bookmarked);
@@ -52,7 +52,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           />
         </button>
         <button
-          className="p-sm rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-background/80 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal className="w-4 h-4" />
@@ -61,7 +61,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
       <div className="pr-12">
         <h2
           className={cn(
-            " line-clamp-1 mb-1 text-sm",
+            " line-clamp-2 mb-1 text-sm",
             mail.read ? "text-muted-foreground" : "font-semibold"
           )}
         >
