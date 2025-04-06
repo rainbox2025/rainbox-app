@@ -63,7 +63,7 @@ const Page = () => {
             unreadCount={unreadCount}
           />
 
-          <div className="flex-grow overflow-y-auto">
+          <div className="flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar" style={{ height: "calc(100vh - 64px)" }}>
             {isMailsLoading ? (
               <div className="flex flex-col">
                 {Array(6)

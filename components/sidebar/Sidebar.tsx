@@ -90,7 +90,7 @@ const Sidebar = () => {
       style={{ width: `${width}px` }}
     >
       {/* Header */}
-      <div className="px-md py-xs flex items-center justify-between border-b border-border">
+      <div className="px-md py-sm h-header flex items-center justify-between border-b border-border">
         <div className="flex items-center space-x-md">
           <Image
             src="/RainboxLogo.png"
@@ -176,7 +176,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-[10px]">
         {/* Email Info */}
         <div className="px-md py-sm pr-md flex items-center justify-between border-b border-border">
           <div className="flex items-center space-x-md overflow-hidden mr-md flex-shrink min-w-0">
@@ -266,7 +266,7 @@ const Sidebar = () => {
       </div>
 
       <div
-        className={`absolute top-0 right-0 w-[2px] h-full ${isDraggingRef.current ? 'bg-primary/50' : 'bg-primary/25'} cursor-col-resize transform translate-x-0`}
+        className={`absolute top-0 right-[-2px] w-[2px] h-full ${isDraggingRef.current ? 'bg-primary/50' : 'bg-primary/25'} cursor-col-resize transform translate-x-0`}
         onMouseDown={handleMouseDown}
         title="Drag to resize"
       />

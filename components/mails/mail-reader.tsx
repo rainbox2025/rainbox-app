@@ -70,7 +70,7 @@ export const MailReader = ({
           <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
         </div>
 
-        <div className="flex-1 h-screen bg-background border-l border-border overflow-auto transition-all duration-300 animate-in slide-in-from-right">
+        <div className="flex-1 h-screen  custom-scrollbar bg-background border-l border-border overflow-auto transition-all duration-300 animate-in slide-in-from-right">
           <MailReaderHeader
             setSummaryDialogOpen={setSummaryDialogOpen}
             setTextToAudioOpen={setTextToAudioOpen}
