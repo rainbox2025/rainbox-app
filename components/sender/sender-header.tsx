@@ -82,10 +82,12 @@ export const SenderHeader = ({
   return (
     <>
       <div className="flex flex-row ml-[2px] items-center justify-between p-sm h-header border-b border-border sticky top-0 bg-content/95 backdrop-blur-sm z-10">
-        <h1 className="text-lg font-semibold pl-3">{selectedSender?.name}</h1>
+        <h1 className="text-lg font-semibold pl-3 truncate max-w-[40%] flex-1">
+          {selectedSender?.name}
+        </h1>
         <div className="flex flex-row items-center gap-1">
           <Select onValueChange={setFilter} value={filter}>
-            <SelectTrigger className="h-7 w-[140px] border-none bg-muted/50 text-muted-foreground">
+            <SelectTrigger className="h-7 w-[120px] md:w-[140px] border-none bg-muted/50 text-muted-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

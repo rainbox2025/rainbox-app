@@ -20,8 +20,8 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         }
       }}
       className={cn(
-        "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer transition-all duration-200 relative group",
-        selectedMail?.id === mail.id && "bg-blue-300/20 border-[1px] border-blue-300 ",
+        "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer  relative group",
+        selectedMail?.id === mail.id && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300 ",
       )}
     >
       <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex  z-10">
@@ -51,12 +51,6 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
             fill={mail.bookmarked ? "currentColor" : "none"}
             className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
           />
-        </button>
-        <button
-          className="p-xs rounded-full hover:bg-content/80 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreHorizontal className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
         </button>
       </div>
       <div className="pr-12">

@@ -17,7 +17,7 @@ import { useSenders } from "@/context/sendersContext";
 import { useMails } from "@/context/mailsContext";
 import { ThemeSwitcher } from "../theme-switcher";
 import SettingsModal from "./SettingsModal";
-const Sidebar = () => {
+const Sidebar = ({ onClose }: { onClose: () => void }) => {
   const { user, logout } = useAuth();
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [showInfoMessage, setShowInfoMessage] = useState(false);
@@ -34,6 +34,8 @@ const Sidebar = () => {
   const MAX_WIDTH = 480; // Maximum width in pixels
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (window.innerWidth < 768) return;
+
     e.preventDefault();
     isDraggingRef.current = true;
     setIsDragging(true);
@@ -83,6 +85,13 @@ const Sidebar = () => {
       setShowCopiedMessage(true);
       setTimeout(() => setShowCopiedMessage(false), 1000);
     }
+  };
+
+  const handleNavigationClick = (newMode: "discover" | "bookmarks") => {
+    setMode(newMode);
+    setSelectedSender(null);
+    setSelectedMail(null);
+    onClose(); // Close sidebar on mobile after navigation
   };
 
   return (
@@ -240,22 +249,15 @@ const Sidebar = () => {
           {/* Navigation */}
           <div className="border-b border-border">
             <button
-              onClick={() => {
-                setMode("discover");
-                setSelectedSender(null);
-                setSelectedMail(null);
-              }}
+              onClick={() => handleNavigationClick("discover")}
               className="flex w-full items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
             >
               <SquaresPlusIcon className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium ">Discover</span>
             </button>
+
             <button
-              onClick={() => {
-                setMode("bookmarks");
-                setSelectedSender(null);
-                setSelectedMail(null);
-              }}
+              onClick={() => handleNavigationClick("bookmarks")}
               className="flex w-full items-center space-x-md px-md py-sm hover:bg-accent rounded text-sm text-foreground"
             >
               <BookmarkIcon className="w-5 h-5 text-muted-foreground" />
@@ -268,7 +270,8 @@ const Sidebar = () => {
         </div>
 
         <div
-          className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0`}
+          className={`absolute top-0 right-[-2px] w-[3px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''
+            }`}
           onMouseDown={handleMouseDown}
           title="Drag to resize"
         />

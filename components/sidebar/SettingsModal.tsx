@@ -86,7 +86,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-hovered flex items-center justify-center">
                 <UserCircleIcon className="h-14 w-14 text-gray-500" />
               </div>
               <button className="absolute bottom-0 right-0 bg-primary rounded-full p-1 text-primary-foreground">
@@ -153,7 +153,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setIsChangingPassword(false)}
-                    className="px-4 py-2 text-sm text-muted-foreground hover:bg-accent rounded-md transition-colors"
+                    className="px-4 py-2 text-sm text-muted-foreground hover:bg-hovered rounded-md transition-colors"
                   >
                     Cancel
                   </button>
@@ -167,7 +167,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             ) : (
               <button
                 onClick={() => setIsChangingPassword(true)}
-                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-accent transition-colors"
+                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-hovered transition-colors"
               >
                 Change password
               </button>
@@ -277,7 +277,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 onChange={() => setGlobalNotifications(!globalNotifications)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+              <div className="w-11 h-6 bg-hovered peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
             </label>
           </div>
 
@@ -297,7 +297,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       disabled={!globalNotifications}
                       className="sr-only peer"
                     />
-                    <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary ${!globalNotifications ? 'opacity-50' : ''}`}></div>
+                    <div className={`w-11 h-6 bg-hovered peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary ${!globalNotifications ? 'opacity-50' : ''}`}></div>
                   </label>
                 </div>
               ))}
@@ -313,7 +313,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">Help us improve by reporting any issues you encounter</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>We use Canny to track and manage issues. You'll be redirected to our feedback portal.</p>
           <button
             onClick={() => redirectToExternalLink('https://feedback.example.com/issues')}
@@ -331,7 +331,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">Have an idea for a new feature? Let us know!</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>We love hearing your ideas. You'll be redirected to our feature request portal.</p>
           <button
             onClick={() => redirectToExternalLink('https://feedback.example.com/suggestions')}
@@ -349,7 +349,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">Get help from our support team</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>Need help? Our support team is ready to assist you.</p>
           <button
             onClick={() => redirectToExternalLink('https://support.example.com')}
@@ -367,7 +367,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">See what's coming next</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>Check out our public roadmap to see what features we're working on.</p>
           <button
             onClick={() => redirectToExternalLink('https://roadmap.example.com')}
@@ -385,7 +385,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">See what's new and what's changed</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>Keep up with the latest updates and improvements to our platform.</p>
           <button
             onClick={() => redirectToExternalLink('https://changelog.example.com')}
@@ -403,7 +403,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">Manage your subscription</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>View and manage your current plan or upgrade to access more features.</p>
           <button
             onClick={() => redirectToExternalLink('https://plans.example.com')}
@@ -421,7 +421,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p className="text-muted-foreground text-sm">Explore our website</p>
         </div>
 
-        <div className="bg-accent/50 rounded-lg p-md space-y-4">
+        <div className="bg-hovered rounded-lg p-md space-y-4">
           <p>Learn more about our products and services on our website.</p>
           <button
             onClick={() => redirectToExternalLink('https://www.example.com')}
@@ -445,7 +445,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
-            <div className="w-64 border-r border-border overflow-y-auto bg-sidebar">
+            <div className="w-56 border-r border-border overflow-y-auto bg-sidebar">
               <div className="p-sm">
                 <div className="">
                   {/* <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Account</h3> */}
@@ -453,7 +453,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('account')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'account' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'account' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
                         <span className='text-sm'>Account</span>
@@ -468,7 +468,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('preferences')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'preferences' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'preferences' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <Cog6ToothIcon className="h-5 w-5" />
                         <span className='text-sm'>Preferences</span>
@@ -477,7 +477,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('notifications')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'notifications' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'notifications' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <BellIcon className="h-5 w-5" />
                         <span className='text-sm'>Notifications</span>
@@ -492,7 +492,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('reportIssues')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'reportIssues' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'reportIssues' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <ExclamationTriangleIcon className="h-5 w-5" />
                         <span className='text-sm'>Report Issues</span>
@@ -501,7 +501,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('suggestFeature')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'suggestFeature' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'suggestFeature' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <LightBulbIcon className="h-5 w-5" />
                         <span className='text-sm'>Suggest Feature</span>
@@ -510,7 +510,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('contactSupport')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'contactSupport' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'contactSupport' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
                         <span className='text-sm'>Contact Support</span>
@@ -525,7 +525,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('roadmap')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'roadmap' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'roadmap' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <MapIcon className="h-5 w-5" />
                         <span className='text-sm'>Roadmap</span>
@@ -534,7 +534,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('changelog')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'changelog' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'changelog' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <ClockIcon className="h-5 w-5" />
                         <span className='text-sm'>Changelog</span>
@@ -543,7 +543,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('plans')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'plans' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'plans' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <CreditCardIcon className="h-5 w-5" />
                         <span className='text-sm'>Plans</span>
@@ -552,7 +552,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab('visitWebsite')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'visitWebsite' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'visitWebsite' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                         <span className='text-sm'>Visit Website</span>

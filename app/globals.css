@@ -36,6 +36,7 @@
     /* --sidebar: #f8f8f7; */
     --sidebar: #f8f8f7;
     --content: #ffffff;
+    --hovered: #EBEBEB;
   }
 
   .dark {
@@ -60,6 +61,7 @@
     --ring: 0 0% 83.1%;
     --sidebar: #202020;
     --content: #191919;
+    --hovered: #333333;
   }
 }
 
@@ -78,11 +80,15 @@
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--hovered);
+}
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgb(199, 199, 199);
   border-radius: 4px;
 }
+
 
 @layer base {
   * {

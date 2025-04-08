@@ -17,20 +17,31 @@ import {
 const MailReaderHeader = ({
   setSummaryDialogOpen,
   setTextToAudioOpen,
+  onBack
 }: {
   setSummaryDialogOpen: (open: boolean) => void;
   setTextToAudioOpen: (open: boolean) => void;
+  onBack: () => void;
 }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const { selectedSender } = useSenders();
+
+  const handleBack = () => {
+    if (window.innerWidth < 768 && onBack) {
+      onBack();
+    } else {
+      // On desktop, close the mail
+      setSelectedMail(null);
+    }
+  };
 
   return (
     selectedMail &&
     selectedSender && (
       <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-2">
         <button
-          className="p-xs rounded-full hover:bg-muted transition-colors"
-          onClick={() => setSelectedMail(null)}
+          className="p-xs rounded-full hover:bg-muted transition-colors relative left-10 md:left-0"
+          onClick={handleBack}
           title="Go back"
         >
           <ChevronLeft className="w-5 h-5" />

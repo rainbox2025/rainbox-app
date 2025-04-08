@@ -32,6 +32,7 @@ const config = {
         foreground: "hsl(var(--foreground))",
         sidebar: "var(--sidebar)",
         content: "var(--content)",
+        hovered: "var(--hovered)",
         
         // Primary color variations
         primary: {
