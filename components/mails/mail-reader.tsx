@@ -35,8 +35,8 @@ export const MailReader = ({
       const newWidth =
         ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-      // Constrain between 30% and 70%
-      const constrainedWidth = Math.max(45, Math.min(70, newWidth));
+      // Constrain between 
+      const constrainedWidth = Math.max(45, Math.min(60, newWidth));
       setMailReaderWidth(constrainedWidth);
     };
 
@@ -64,13 +64,13 @@ export const MailReader = ({
       <>
         <div
           ref={resizeRef}
-          className="w-[2px] h-screen cursor-col-resize flex items-center justify-center bg-border hover:bg-primary/50 group"
+          className="w-[2px] h-screen cursor-col-resize flex items-center justify-center bg-border/80 hover:bg-primary/30  group"
           onMouseDown={() => setIsResizing(true)}
         >
           <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
         </div>
 
-        <div className="flex-1 h-screen  custom-scrollbar bg-background border-l border-border overflow-auto transition-all duration-300 animate-in slide-in-from-right">
+        <div className="flex-1 h-screen  custom-scrollbar bg-content  border-border overflow-auto transition-all duration-300 animate-in slide-in-from-right">
           <MailReaderHeader
             setSummaryDialogOpen={setSummaryDialogOpen}
             setTextToAudioOpen={setTextToAudioOpen}

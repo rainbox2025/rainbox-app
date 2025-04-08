@@ -46,7 +46,7 @@ export default async function SignIn(props: {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-background px-md text-muted-foreground">OR</span>
+            <span className="bg-content px-md text-muted-foreground">OR</span>
           </div>
         </div>
 

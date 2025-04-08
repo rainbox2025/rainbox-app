@@ -20,13 +20,13 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         }
       }}
       className={cn(
-        "flex flex-col border-b right-[-3px]  border-border p-sm px-md cursor-pointer hover:bg-muted/30 transition-all duration-200 relative group",
-        selectedMail?.id === mail.id && "bg-muted/50"
+        "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer transition-all duration-200 relative group",
+        selectedMail?.id === mail.id && "bg-blue-300/20 border-[1px] border-blue-300 ",
       )}
     >
       <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex  z-10">
         <button
-          className="p-xs rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-content/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             markAsRead(mail.id, !mail.read);
@@ -34,14 +34,14 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           title={mail.read ? "Mark as unread" : "Mark as read"}
         >
           {!mail.read ? (
-            <CheckIcon className="w-4 h-4" />
+            <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           ) : (
-            <CheckIcon className="w-4 h-4" />
+            <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           )}
         </button>
 
         <button
-          className="p-xs rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-content/80 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             bookmark(mail.id, !mail.bookmarked);
@@ -49,21 +49,21 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         >
           <Bookmark
             fill={mail.bookmarked ? "currentColor" : "none"}
-            className="w-4 h-4"
+            className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
           />
         </button>
         <button
-          className="p-xs rounded-full hover:bg-background/80 transition-colors"
+          className="p-xs rounded-full hover:bg-content/80 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          <MoreHorizontal className="w-4 h-4" />
+          <MoreHorizontal className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
         </button>
       </div>
       <div className="pr-12">
         <h2
           className={cn(
-            "line-clamp-2 mb-1 text-md min-h-[2.5rem]",
-            mail.read ? "text-muted-foreground" : "font-medium"
+            "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold",
+            mail.read ? "text-muted-foreground " : "font-bold"
           )}
         >
           {mail.subject}

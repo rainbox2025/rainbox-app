@@ -24,11 +24,14 @@ const config = {
       colors: {
         // Base color palette
         border: "hsl(var(--border))",
+        dragger: "hsl(var(--dragger))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         primaryBlue: "#0779d1",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        sidebar: "var(--sidebar)",
+        content: "var(--content)",
         
         // Primary color variations
         primary: {
@@ -87,10 +90,14 @@ const config = {
       fontSize: {
         'xs': '0.75rem',
         'sm': '0.800rem',
-        'base': '1rem',
+        'base': '0.825rem',
         'lg': '1.125rem',
         'xl': '1.25rem',
         '2xl': '1.5rem',
+      },
+
+      fontWeight: {
+        'bold': '700',
       },
 
       padding: {

@@ -8,6 +8,7 @@ interface DeleteConfirmationModalProps {
   onConfirm: () => Promise<void> | void;
   itemName: string;
   itemType: 'folder' | 'sender' | 'markasread' | 'markasunread';
+  showUnfollowOption?: boolean;
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -15,9 +16,11 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   onClose,
   onConfirm,
   itemName,
-  itemType
+  itemType,
+  showUnfollowOption
 }) => {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isUnfollowChecked, setIsUnfollowChecked] = React.useState(false);
 
   if (!isOpen) return null;
 
@@ -27,28 +30,28 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
       case 'folder':
         return {
           title: "Delete Folder",
-          description: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+          description: `Are you sure you want to delete "${itemName}"? This operation cannot be undone.`,
           confirmText: "Delete Folder",
           confirmClass: "bg-destructive text-destructive-foreground hover:bg-destructive/80"
         };
       case 'sender':
         return {
-          title: "Unfollow Sender",
-          description: `Are you sure you want to unfollow "${itemName}"? This action cannot be undone.`,
-          confirmText: "Unfollow Sender",
+          title: "Unfollow Feed",
+          description: `Are you sure you want to unfollow "${itemName}"? This feed and it's content will be deleted. This action cannot be undone.`,
+          confirmText: "Unfollow Feed",
           confirmClass: "bg-destructive text-destructive-foreground hover:bg-destructive/80"
         };
       case 'markasread':
         return {
           title: "Mark as Read",
-          description: `Are you sure you want to mark all emails in "${itemName}" as read?`,
+          description: `Are you sure you want to mark all posts in "${itemName}" as Read?`,
           confirmText: "Mark as Read",
           confirmClass: "bg-primary text-primary-foreground hover:bg-primary/80"
         };
       case 'markasunread':
         return {
           title: "Mark as Unread",
-          description: `Are you sure you want to mark all emails in "${itemName}" as unread?`,
+          description: `Are you sure you want to mark all posts in "${itemName}" as Unread?`,
           confirmText: "Mark as Unread",
           confirmClass: "bg-primary text-primary-foreground hover:bg-primary/80"
         };
@@ -111,6 +114,25 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             </div>
 
             <p className="text-sm mb-4">{description}</p>
+
+            {showUnfollowOption && (
+              <div className="mb-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={isUnfollowChecked}
+                    onChange={() => setIsUnfollowChecked(!isUnfollowChecked)}
+                    className="form-checkbox h-3 w-3 text-blue-600 
+                               bg-gray-100 border-gray-300 rounded 
+                               dark:bg-gray-700 dark:border-gray-600 
+                               dark:checked:bg-blue-500"
+                  />
+                  <span className="ml-2 text-muted-foreground text-sm cursor-pointer">
+                    Unfollow all feeds
+                  </span>
+                </label>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-2">
               <button

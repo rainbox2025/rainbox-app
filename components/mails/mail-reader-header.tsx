@@ -27,7 +27,7 @@ const MailReaderHeader = ({
   return (
     selectedMail &&
     selectedSender && (
-      <div className="sticky top-0 z-10 bg-background/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-2">
         <button
           className="p-xs rounded-full hover:bg-muted transition-colors"
           onClick={() => setSelectedMail(null)}
@@ -42,7 +42,7 @@ const MailReaderHeader = ({
             onClick={() => setSummaryDialogOpen(true)}
             title="Summarize"
           >
-            <SparklesIcon className="w-4 h-4" />
+            <SparklesIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
 
           <button
@@ -50,11 +50,11 @@ const MailReaderHeader = ({
             onClick={() => setTextToAudioOpen(true)}
             title="Text to Audio"
           >
-            <Volume2 className="w-4 h-4" />
+            <Volume2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
 
           <button
-            className="p-xs rounded-full hover:bg-background/80 transition-colors"
+            className="p-xs rounded-full hover:bg-content/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               markAsRead(selectedMail.id, !selectedMail.read);
@@ -62,14 +62,14 @@ const MailReaderHeader = ({
             title={selectedMail.read ? "Mark as unread" : "Mark as read"}
           >
             {!selectedMail.read ? (
-              <CheckIcon className="w-4 h-4" />
+              <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
             ) : (
-              <CheckIcon className="w-4 h-4" />
+              <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
             )}
           </button>
 
           <button
-            className="p-xs rounded-full hover:bg-background/80 transition-colors"
+            className="p-xs rounded-full hover:bg-content/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               bookmark(selectedMail.id, !selectedMail.bookmarked);
@@ -84,7 +84,7 @@ const MailReaderHeader = ({
           >
             <Bookmark
               fill={selectedMail?.bookmarked ? "currentColor" : "none"}
-              className="w-4 h-4"
+              className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
             />
           </button>
 
@@ -95,7 +95,7 @@ const MailReaderHeader = ({
             onClick={() => setSelectedMail(null)}
             title="Close"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
         </div>
       </div>

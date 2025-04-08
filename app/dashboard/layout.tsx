@@ -41,7 +41,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
       {loading ? (
         <div className="flex justify-center w-full items-center h-screen flex-col gap-4">
           <Loader2 className="animate-spin" />
-          <h1>Authenticating...</h1>
+          <h1>Loading...</h1>
         </div>
       ) : (
         <>

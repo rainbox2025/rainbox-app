@@ -282,6 +282,7 @@ export default function Folder({
           await deleteFolder(folder.id);
           setIsDeletingModalOpen(false);
         }}
+        showUnfollowOption={true}
         itemName={folder.name}
         itemType="folder"
       />

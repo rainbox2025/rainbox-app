@@ -25,7 +25,6 @@ import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./SenderIcon";
 import FolderComponent from "./Folder";
 import Sender from "./Sender";
-import { ConfirmModal } from "./ConfirmationModal";
 import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
@@ -61,7 +60,6 @@ export default function Inbox() {
   const [focusedFolder, setFocusedFolder] = useState<string | null>("");
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const [currentAction, setCurrentAction] = useState<
     "delete" | "unfollow" | null
@@ -149,7 +147,6 @@ export default function Inbox() {
         setFocusedFolder(null);
       }
 
-      setIsConfirmModalOpen(false);
       setCurrentAction(null);
       setTargetId(null);
     }
@@ -166,7 +163,6 @@ export default function Inbox() {
         )
       );
 
-      setIsConfirmModalOpen(false);
       setCurrentAction(null);
       setTargetId(null);
     }
@@ -287,7 +283,7 @@ export default function Inbox() {
 
   if (isFoldersLoading || isSendersLoading) {
     return (
-      <div className="flex-1 bg-background text-foreground rounded-lg p-4">
+      <div className="flex-1 text-foreground rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-6 w-6 rounded-full" />
@@ -311,8 +307,8 @@ export default function Inbox() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 bg-background text-foreground rounded-lg">
-        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="flex-1 text-foreground rounded-lg">
+        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
@@ -322,7 +318,7 @@ export default function Inbox() {
           </button>
         </div>
 
-        <div className="px-md py-sm flex items-center justify-between bg-background hover:bg-accent rounded-md cursor-pointer">
+        <div className="px-md py-sm flex items-center justify-between  hover:bg-accent rounded-md cursor-pointer">
           <div className="flex items-center space-x-md">
             <FolderIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium">All</span>
@@ -356,7 +352,6 @@ export default function Inbox() {
                     onDeleteFolder={(folderId) => {
                       setTargetId(folderId);
                       setCurrentAction("delete");
-                      setIsConfirmModalOpen(true);
                     }}
                   />
                 );
