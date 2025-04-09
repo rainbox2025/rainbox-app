@@ -42,6 +42,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [selectedVoice, setSelectedVoice] = useState('Default');
   const [globalNotifications, setGlobalNotifications] = useState(true);
 
+  // Define redirect destinations
+  const redirectDestinations = {
+    reportIssues: 'https://feedback.example.com/issues',
+    suggestFeature: 'https://feedback.example.com/suggestions',
+    contactSupport: 'https://support.example.com',
+    roadmap: 'https://roadmap.example.com',
+    changelog: 'https://changelog.example.com',
+    plans: 'https://plans.example.com',
+    visitWebsite: 'https://www.example.com'
+  };
+
   // Sample notification feeds
   const [notificationFeeds, setNotificationFeeds] = useState([
     { id: 1, name: 'Comments', enabled: true },
@@ -306,136 +317,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
     ),
-    reportIssues: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Report Issues</h2>
-          <p className="text-muted-foreground text-sm">Help us improve by reporting any issues you encounter</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>We use Canny to track and manage issues. You'll be redirected to our feedback portal.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://feedback.example.com/issues')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            Report an issue
-          </button>
-        </div>
-      </div>
-    ),
-    suggestFeature: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Suggest a Feature</h2>
-          <p className="text-muted-foreground text-sm">Have an idea for a new feature? Let us know!</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>We love hearing your ideas. You'll be redirected to our feature request portal.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://feedback.example.com/suggestions')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            Suggest a feature
-          </button>
-        </div>
-      </div>
-    ),
-    contactSupport: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Contact Support</h2>
-          <p className="text-muted-foreground text-sm">Get help from our support team</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>Need help? Our support team is ready to assist you.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://support.example.com')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            Contact support
-          </button>
-        </div>
-      </div>
-    ),
-    roadmap: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Roadmap</h2>
-          <p className="text-muted-foreground text-sm">See what's coming next</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>Check out our public roadmap to see what features we're working on.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://roadmap.example.com')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            View roadmap
-          </button>
-        </div>
-      </div>
-    ),
-    changelog: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Changelog</h2>
-          <p className="text-muted-foreground text-sm">See what's new and what's changed</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>Keep up with the latest updates and improvements to our platform.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://changelog.example.com')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            View changelog
-          </button>
-        </div>
-      </div>
-    ),
-    plans: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Plans</h2>
-          <p className="text-muted-foreground text-sm">Manage your subscription</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>View and manage your current plan or upgrade to access more features.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://plans.example.com')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            View plans
-          </button>
-        </div>
-      </div>
-    ),
-    visitWebsite: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Visit Website</h2>
-          <p className="text-muted-foreground text-sm">Explore our website</p>
-        </div>
-
-        <div className="bg-hovered rounded-lg p-md space-y-4">
-          <p>Learn more about our products and services on our website.</p>
-          <button
-            onClick={() => redirectToExternalLink('https://www.example.com')}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors"
-          >
-            Visit website
-          </button>
-        </div>
-      </div>
-    ),
+    // Removed all tab content for redirect tabs
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="w-[100vw] fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -448,7 +334,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="w-56 border-r border-border overflow-y-auto bg-sidebar">
               <div className="p-sm">
                 <div className="">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Account</h3> */}
                   <ul className="space-y-1">
                     <li>
                       <button
@@ -463,7 +348,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Personal</h3> */}
                   <ul className="space-y-1">
                     <li>
                       <button
@@ -487,12 +371,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Support</h3> */}
                   <ul className="space-y-1">
                     <li>
                       <button
-                        onClick={() => setActiveTab('reportIssues')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'reportIssues' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.reportIssues)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ExclamationTriangleIcon className="h-5 w-5" />
                         <span className='text-sm'>Report Issues</span>
@@ -500,8 +383,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li>
                       <button
-                        onClick={() => setActiveTab('suggestFeature')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'suggestFeature' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.suggestFeature)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <LightBulbIcon className="h-5 w-5" />
                         <span className='text-sm'>Suggest Feature</span>
@@ -509,8 +392,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li>
                       <button
-                        onClick={() => setActiveTab('contactSupport')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'contactSupport' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.contactSupport)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
                         <span className='text-sm'>Contact Support</span>
@@ -520,12 +403,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Resources</h3> */}
                   <ul className="space-y-1">
                     <li>
                       <button
-                        onClick={() => setActiveTab('roadmap')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'roadmap' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.roadmap)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <MapIcon className="h-5 w-5" />
                         <span className='text-sm'>Roadmap</span>
@@ -533,8 +415,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li>
                       <button
-                        onClick={() => setActiveTab('changelog')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'changelog' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.changelog)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ClockIcon className="h-5 w-5" />
                         <span className='text-sm'>Changelog</span>
@@ -542,8 +424,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li>
                       <button
-                        onClick={() => setActiveTab('plans')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'plans' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.plans)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <CreditCardIcon className="h-5 w-5" />
                         <span className='text-sm'>Plans</span>
@@ -551,8 +433,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     </li>
                     <li>
                       <button
-                        onClick={() => setActiveTab('visitWebsite')}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'visitWebsite' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
+                        onClick={() => redirectToExternalLink(redirectDestinations.visitWebsite)}
+                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                         <span className='text-sm'>Visit Website</span>
@@ -571,7 +453,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
-              {tabContent[activeTab]}
+              {tabContent[activeTab as keyof typeof tabContent] || null}
             </div>
           </div>
         </motion.div>

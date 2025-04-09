@@ -270,7 +270,7 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
         </div>
 
         <div
-          className={`absolute top-0 right-[-2px] w-[3px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''
+          className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''
             }`}
           onMouseDown={handleMouseDown}
           title="Drag to resize"
