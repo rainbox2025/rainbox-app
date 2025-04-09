@@ -84,10 +84,10 @@ const Page = () => {
 
       {selectedSender ? (
         <div
-          className={`flex flex-col h-full transition-all duration-300 ease-in-out min-w-[300px] md:min-w-[460px] 
-            ${mailListVisible ? 'block' : 'hidden md:block'} 
-            ${selectedMail ? 'md:w-[50%]' : 'w-full'}`}
-          style={{ width: selectedMail && window.innerWidth >= 768 ? `${mailReaderWidth}%` : "100%" }}
+          className={`flex flex-col h-full transition-all duration-300 ease-in-out 
+        ${mailListVisible ? 'block' : 'hidden md:block'} 
+        ${selectedMail ? 'md:w-[50%]' : 'w-full'}`}
+          style={{ width: selectedMail && window.innerWidth >= 768 ? `${100 - mailReaderWidth}%` : "100%" }}
         >
           <SenderHeader
             filter={filter}

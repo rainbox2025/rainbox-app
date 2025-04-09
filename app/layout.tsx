@@ -10,7 +10,7 @@ import { AuthProvider } from "@/context/authContext";
 import { MailsProvider } from "@/context/mailsContext";
 import { FoldersProvider } from "@/context/foldersContext";
 import { SendersProvider } from "@/context/sendersContext";
-import Sidebar from "@/components/sidebar/Sidebar";
+import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -53,7 +53,9 @@ export default function RootLayout({
                   <AuthProvider>
                     <FoldersProvider>
                       <OnboardingProvider>
-                        <ModeProvider>{children}</ModeProvider>
+                        <SidebarProvider>
+                          <ModeProvider>{children}</ModeProvider>
+                        </SidebarProvider>
                       </OnboardingProvider>
                     </FoldersProvider>
                   </AuthProvider>

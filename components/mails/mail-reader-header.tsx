@@ -38,16 +38,16 @@ const MailReaderHeader = ({
   return (
     selectedMail &&
     selectedSender && (
-      <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-1">
         <button
-          className="p-xs rounded-full hover:bg-muted transition-colors relative left-10 md:left-0"
-          onClick={handleBack}
+          className="p-xs rounded-full hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
+          onClick={() => { setSelectedMail(null); handleBack }}
           title="Go back"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
           <button
             className="p-xs rounded-full hover:bg-muted transition-colors"
             onClick={() => setSummaryDialogOpen(true)}
