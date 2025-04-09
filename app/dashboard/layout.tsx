@@ -59,7 +59,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="fixed top-3 left-4 z-50 md:hidden bg-background shadow-md"
+            className="fixed top-3 left-4 z-50 md:hidden bg-content shadow-md"
           >
             {isSidebarOpen ? <X className="w-0 h-0" /> : <Menu className="w-5 h-5" />}
           </button>

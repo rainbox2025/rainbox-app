@@ -26,8 +26,8 @@ const SummaryDialog = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-card dark:bg-card rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+      <div className="bg-content  rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80">
         <div className="p-md">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold">Summary</h2>

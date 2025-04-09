@@ -145,7 +145,7 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
               <AnimatePresence>
                 {showUserModal && (
                   <motion.div
-                    className="absolute right-0 mr-md top-8 -translate-y-1/2 bg-popover text-popover-foreground rounded-lg shadow-xl p-md w-40 z-50"
+                    className="absolute bg-content right-0 mr-md top-8 -translate-y-1/2 text-popover-foreground rounded-lg shadow-xl p-md w-40 z-50"
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
