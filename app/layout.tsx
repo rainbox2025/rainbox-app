@@ -12,6 +12,7 @@ import { FoldersProvider } from "@/context/foldersContext";
 import { SendersProvider } from "@/context/sendersContext";
 import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
+import OneSignalInit from "@/components/OneSignalInit";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -46,6 +47,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
               <SendersProvider>
@@ -54,6 +56,7 @@ export default function RootLayout({
                     <FoldersProvider>
                       <OnboardingProvider>
                         <SidebarProvider>
+                          <OneSignalInit />
                           <ModeProvider>{children}</ModeProvider>
                         </SidebarProvider>
                       </OnboardingProvider>

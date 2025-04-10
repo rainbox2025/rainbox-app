@@ -188,13 +188,10 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("User ID:", user.user.id);
-        console.log("folder name:", name);
         const data = await api.post(`/folders`, {
           name,
           user_id: user.user.id,
         });
-        console.log("New folder created:", data.data);
 
         // Add order to the new folder (highest order + 1)
         const newFolder = {
@@ -282,7 +279,6 @@ export const FoldersProvider = ({
     async (folderId: string): Promise<SenderType[]> => {
       setIsLoadingSenders(true);
 
-      console.log(" folderId from getSenders", folderId);
       try {
         const response: AxiosResponse<SenderType[]> = await api.get(
           `/folders/getSenders/${folderId}`
@@ -303,7 +299,6 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("Renaming folder:", folderId, "to:", name);
         await api.patch(`/folders/${folderId}`, { name });
         const updatedFolders = folders.map((folder) =>
           folder.id === folderId ? { ...folder, name } : folder
@@ -322,7 +317,6 @@ export const FoldersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("toggleFolder:", folderId, "to:", isRead);
         await api.patch(`/folders/read`, {
           folder_id: folderId,
           isRead: isRead,
