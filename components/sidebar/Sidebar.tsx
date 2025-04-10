@@ -211,7 +211,7 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
                 <AnimatePresence>
                   {showInfoMessage && (
                     <motion.div
-                      className="absolute right-0 translate-x-1/2 top-full mt-md bg-popover text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10 w-40"
+                      className="absolute right-0 translate-x-1/2 top-full mt-md bg-content text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10 w-40"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -232,7 +232,7 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
                 <AnimatePresence>
                   {showCopiedMessage && (
                     <motion.div
-                      className="absolute right-0 top-full mt-md bg-popover text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10"
+                      className="absolute right-0 top-full mt-md bg-content text-popover-foreground px-md py-md-y rounded text-xs shadow-md z-10"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}

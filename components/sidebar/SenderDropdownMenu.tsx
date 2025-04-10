@@ -54,7 +54,7 @@ export const SenderDropdownMenu = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -5, scale: 0.95 }}
           transition={{ duration: 0.15 }}
-          className="absolute right-0 top-8 w-48 bg-popover text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
+          className="absolute right-0 top-8 w-48 bg-content text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
         >
           <button
             className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"

@@ -63,8 +63,8 @@ export default function Sender({ sender, onRenameSender }: SenderProps) {
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // Add your move to folder logic here
-    console.log(`Move ${sender.name} to folder`);
+    setIsRenaming(true);
+    console.log('move to folder')
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
