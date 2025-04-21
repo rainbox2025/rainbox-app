@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Loader2, Menu, X } from "lucide-react";
+import LeftPanel from "@/components/sidebar/LeftPanel";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -67,9 +68,10 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           {/* Sidebar */}
           <div
             ref={sidebarRef}
-            className={`absolute md:relative z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            className={`absolute md:relative flex z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
               } transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full`}
           >
+            <LeftPanel />
             <Sidebar onClose={() => setIsSidebarOpen(false)} />
           </div>
 
