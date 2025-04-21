@@ -46,6 +46,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
               <SendersProvider>

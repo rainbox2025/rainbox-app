@@ -42,10 +42,8 @@ export default function Inbox() {
     folders,
     isFoldersLoading,
     createFolder,
-    deleteFolder,
     addSenderToFolder,
   } = useFolders();
-  console.log(folders);
   const { senders, isSendersLoading } = useSenders();
 
   // New state for tracking the order of all items
@@ -122,50 +120,6 @@ export default function Inbox() {
   const handleRenameFolder = (folderId: string, newName: string) => {
     // This would need to be implemented in the folder context
     console.log(`Rename folder ${folderId} to ${newName}`);
-  };
-
-  const handleDeleteFolder = () => {
-    if (targetId) {
-      deleteFolder(targetId);
-
-      // Remove the folder from ordered items
-      setOrderedItems((prev) =>
-        prev.filter(
-          (item) => !(item.type === "folder" && item.originalId === targetId)
-        )
-      );
-
-      // Clean up expanded state
-      setExpandedFolders((prev) => {
-        const newState = { ...prev };
-        delete newState[targetId];
-        return newState;
-      });
-
-      // Reset focus if needed
-      if (focusedFolder === targetId) {
-        setFocusedFolder(null);
-      }
-
-      setCurrentAction(null);
-      setTargetId(null);
-    }
-  };
-
-  const handleUnfollowSender = () => {
-    if (targetId) {
-      console.log(`Unfollowing sender with ID: ${targetId}`);
-
-      // Remove the sender from ordered items
-      setOrderedItems((prev) =>
-        prev.filter(
-          (item) => !(item.type === "sender" && item.originalId === targetId)
-        )
-      );
-
-      setCurrentAction(null);
-      setTargetId(null);
-    }
   };
 
   const sensors = useSensors(
@@ -308,7 +262,7 @@ export default function Inbox() {
       onDragEnd={handleDragEnd}
     >
       <div className="flex-1 text-foreground rounded-lg">
-        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
+        <div className="px-4 h-header w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"

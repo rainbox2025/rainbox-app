@@ -57,7 +57,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [notificationFeeds, setNotificationFeeds] = useState([
     { id: 1, name: 'Comments', enabled: true },
     { id: 2, name: 'Mentions', enabled: true },
-    { id: 3, name: 'Updates', enabled: false },
+    { id: 3, name: 'Updates', enabled: true },
     { id: 4, name: 'New features', enabled: true },
   ]);
 
@@ -446,7 +446,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Right content area */}
-            <div className="relative flex-1 overflow-y-auto p-md bg-content">
+            <div className="relative flex-1 overflow-y-auto custom-scrollbar p-md bg-content">
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
