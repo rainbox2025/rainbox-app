@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import admin from "@/lib/firebaseAdmin";
 
-// Create new mail
 export const POST = async (req: Request) => {
-  const { user_id, sender_id, subject, body } = await req.json();
+  console.log("came post mail")
+  const { user_id, sender_id, subject, body, fcmToken } = await req.json();
+  console.log(user_id, sender_id, subject, body, fcmToken )
   const supabase = await createClient();
 
   const { data, error } = await supabase.from("mails").insert({
@@ -17,6 +19,20 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ message: "Mail created & notification sent" });
-};
+  // 🔔 Send Push Notification
+  const message = {
+    notification: {
+      title: subject,
+      body: body,
+    },
+    token: fcmToken,
+  };
 
+  try {
+    await admin.messaging().send(message);
+    return NextResponse.json({ message: "Mail created & notification sent" });
+  } catch (err) {
+    console.error("Notification error:", err);
+    return NextResponse.json({ message: "Mail created, but notification failed" });
+  }
+};

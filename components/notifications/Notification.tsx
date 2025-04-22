@@ -5,7 +5,6 @@ import { onMessage } from 'firebase/messaging';
 
 export default function Notification() {
   useEffect(() => {
-    console.log("notification");
     generateToken();
     onMessage(messaging, (payload) => {
       console.log('Message received. ', payload);
