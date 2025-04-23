@@ -24,6 +24,13 @@ export const POST = async (req: Request) => {
     notification: {
       title: subject,
       body: body,
+      image: "/RainboxLogo.png", // logo from public folder
+    },
+    webpush: {
+      notification: {
+        icon: "/RainboxLogo.png",
+        click_action: "http://localhost:3000/dashboard",
+      }
     },
     token: fcmToken,
   };

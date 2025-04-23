@@ -115,7 +115,7 @@ export default function LeftPanel() {
 
   return (
     <>
-      <div className="h-full w-14 bg-content flex flex-col items-center border-r border-border py-3 gap-2">
+      <div className="h-full w-12 bg-content flex flex-col items-center border-r border-border py-3 gap-2">
         {/* Logo */}
         <div className="mb-2">
           <Image
