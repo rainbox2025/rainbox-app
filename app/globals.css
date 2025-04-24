@@ -25,6 +25,7 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.5rem;
+    --dragger: 220 14% 75%; 
 
     /* Feed Icon Colors */
     --feed-icon-1: 12 76% 61%;
@@ -32,6 +33,10 @@
     --feed-icon-3: 197 37% 24%;
     --feed-icon-4: 43 74% 66%;
     --feed-icon-5: 27 87% 67%;
+    /* --sidebar: #f8f8f7; */
+    --sidebar: #f8f8f7;
+    --content: #ffffff;
+    --hovered: #EBEBEB;
   }
 
   .dark {
@@ -54,6 +59,9 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+    --sidebar: #202020;
+    --content: #191919;
+    --hovered: #333333;
   }
 }
 
@@ -65,12 +73,28 @@
          dark:hover:bg-muted/70 
          focus:outline-none focus:ring-2 focus:ring-ring;
 }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--hovered);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(199, 199, 199);
+  border-radius: 4px;
+}
+
 
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-content text-foreground;
   }
 }

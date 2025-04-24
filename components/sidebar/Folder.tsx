@@ -190,7 +190,7 @@ export default function Folder({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -5, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-8 w-48 bg-popover text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
+                    className="absolute right-0 top-8 w-48 bg-content text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
                   >
                     <button
                       className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -267,9 +267,8 @@ export default function Folder({
       <Modal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
-        onSave={(newName) => {
-          console.log("in modal, name is", newName);
-          renameFolder(folder.id, newName)
+        onSave={async (newName) => {
+          await renameFolder(folder.id, newName);
         }}
         initialValue={folder.name}
         title="Rename Folder"
@@ -279,7 +278,11 @@ export default function Folder({
       <DeleteConfirmationModal
         isOpen={isDeletingModalOpen}
         onClose={() => setIsDeletingModalOpen(false)}
-        onConfirm={() => { setIsDeletingModalOpen(false); deleteFolder(folder.id) }}
+        onConfirm={async () => {
+          await deleteFolder(folder.id);
+          setIsDeletingModalOpen(false);
+        }}
+        showUnfollowOption={true}
         itemName={folder.name}
         itemType="folder"
       />
@@ -288,7 +291,9 @@ export default function Folder({
       <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onConfirm={confirmMarkAsRead}
+        onConfirm={async () => {
+          await toggleReadFolder(folder.id, !folder.isRead);
+        }}
         itemName={folder.name}
         itemType={folder.isRead ? "markasunread" : "markasread"}
       />

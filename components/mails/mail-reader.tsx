@@ -1,28 +1,27 @@
-import { Bookmark, ChevronLeft, Share2, Volume2 } from "lucide-react";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
 import { GripVertical, Sparkles } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import TextToAudio from "../ui/text-to-audio";
 import SummaryDialog from "../summary-dialog";
-import { EnvelopeOpenIcon } from "@heroicons/react/24/outline";
-import { EnvelopeIcon } from "@heroicons/react/24/outline";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
+
 export const MailReader = ({
   containerRef,
   mailReaderWidth,
   setMailReaderWidth,
+  onBack
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>;
   mailReaderWidth: number;
   setMailReaderWidth: (width: number) => void;
+  onBack: () => void;
 }) => {
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
-
   const { selectedSender } = useSenders();
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
@@ -32,11 +31,21 @@ export const MailReader = ({
       if (!isResizing || !containerRef?.current) return;
 
       const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth =
-        ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      const containerWidth = containerRect.width;
 
-      // Constrain between 30% and 70%
-      const constrainedWidth = Math.max(30, Math.min(70, newWidth));
+      // Calculate the position from the left edge of the container
+      const mousePosition = e.clientX - containerRect.left;
+
+      // Convert to percentage - this is the width of the mail list
+      const mailListWidthPercent = (mousePosition / containerWidth) * 100;
+
+      // Since mailReaderWidth is the width of the reader (right panel),
+      // we need to invert the percentage (100 - mailListWidth)
+      const readerWidthPercent = 100 - mailListWidthPercent;
+
+      // Constrain between 15% and 85% for the reader width
+      const constrainedWidth = Math.max(50, Math.min(60, readerWidthPercent));
+
       setMailReaderWidth(constrainedWidth);
     };
 
@@ -47,16 +56,15 @@ export const MailReader = ({
 
     if (isResizing) {
       document.body.style.cursor = "col-resize";
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "default";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, containerRef, setMailReaderWidth]); // Complete dependency array
 
   return (
     selectedMail &&
@@ -64,17 +72,28 @@ export const MailReader = ({
       <>
         <div
           ref={resizeRef}
-          className="w-1 h-full cursor-col-resize flex items-center justify-center bg-border hover:bg-primary/50 group"
-          onMouseDown={() => setIsResizing(true)}
+          className="w-[2px] h-screen cursor-col-resize hidden md:flex items-center justify-center bg-border hover:bg-dragger z-10 transition-all duration-200"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizing(true);
+          }}
         >
           <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
         </div>
-        <div className="flex-1 h-full bg-background border-l border-border overflow-auto transition-all duration-300 animate-in slide-in-from-right">
+
+        <div
+          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto"
+          style={{ width: window.innerWidth >= 768 ? `${mailReaderWidth}%` : "100%" }}
+        >
           <MailReaderHeader
             setSummaryDialogOpen={setSummaryDialogOpen}
             setTextToAudioOpen={setTextToAudioOpen}
+            onBack={onBack}
           />
           <div className="p-md">
+            <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
+              {selectedMail?.subject}
+            </h1>
             <div className="flex items-center mb-2 text-sm">
               <SenderAvatar
                 domain={selectedSender.domain || ""}

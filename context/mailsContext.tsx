@@ -186,6 +186,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
     fetchMails();
   }, []);
 
+
   return (
     <MailsContext.Provider
       value={{

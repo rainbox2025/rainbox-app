@@ -25,7 +25,6 @@ import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./SenderIcon";
 import FolderComponent from "./Folder";
 import Sender from "./Sender";
-import { ConfirmModal } from "./ConfirmationModal";
 import { Modal } from "./Modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
@@ -43,10 +42,8 @@ export default function Inbox() {
     folders,
     isFoldersLoading,
     createFolder,
-    deleteFolder,
     addSenderToFolder,
   } = useFolders();
-  console.log(folders);
   const { senders, isSendersLoading } = useSenders();
 
   // New state for tracking the order of all items
@@ -58,12 +55,9 @@ export default function Inbox() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeSender, setActiveSender] = useState<SenderType | null>(null);
   const [activeFolder, setActiveFolder] = useState<FolderType | null>(null);
-  const [focusedFolder, setFocusedFolder] = useState<string | null>(
-    "marketing"
-  ); // Default focus on Marketing
+  const [focusedFolder, setFocusedFolder] = useState<string | null>("");
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const [currentAction, setCurrentAction] = useState<
     "delete" | "unfollow" | null
@@ -126,52 +120,6 @@ export default function Inbox() {
   const handleRenameFolder = (folderId: string, newName: string) => {
     // This would need to be implemented in the folder context
     console.log(`Rename folder ${folderId} to ${newName}`);
-  };
-
-  const handleDeleteFolder = () => {
-    if (targetId) {
-      deleteFolder(targetId);
-
-      // Remove the folder from ordered items
-      setOrderedItems((prev) =>
-        prev.filter(
-          (item) => !(item.type === "folder" && item.originalId === targetId)
-        )
-      );
-
-      // Clean up expanded state
-      setExpandedFolders((prev) => {
-        const newState = { ...prev };
-        delete newState[targetId];
-        return newState;
-      });
-
-      // Reset focus if needed
-      if (focusedFolder === targetId) {
-        setFocusedFolder(null);
-      }
-
-      setIsConfirmModalOpen(false);
-      setCurrentAction(null);
-      setTargetId(null);
-    }
-  };
-
-  const handleUnfollowSender = () => {
-    if (targetId) {
-      console.log(`Unfollowing sender with ID: ${targetId}`);
-
-      // Remove the sender from ordered items
-      setOrderedItems((prev) =>
-        prev.filter(
-          (item) => !(item.type === "sender" && item.originalId === targetId)
-        )
-      );
-
-      setIsConfirmModalOpen(false);
-      setCurrentAction(null);
-      setTargetId(null);
-    }
   };
 
   const sensors = useSensors(
@@ -289,7 +237,7 @@ export default function Inbox() {
 
   if (isFoldersLoading || isSendersLoading) {
     return (
-      <div className="flex-1 bg-background text-foreground rounded-lg p-4">
+      <div className="flex-1 text-foreground rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-6 w-6 rounded-full" />
@@ -313,8 +261,8 @@ export default function Inbox() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 bg-background text-foreground rounded-lg">
-        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="flex-1 text-foreground rounded-lg">
+        <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
           <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
@@ -324,7 +272,7 @@ export default function Inbox() {
           </button>
         </div>
 
-        <div className="px-md py-sm flex items-center justify-between bg-background hover:bg-accent rounded-md cursor-pointer">
+        <div className="px-md py-sm flex items-center justify-between  hover:bg-accent rounded-md cursor-pointer">
           <div className="flex items-center space-x-md">
             <FolderIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium">All</span>
@@ -358,7 +306,6 @@ export default function Inbox() {
                     onDeleteFolder={(folderId) => {
                       setTargetId(folderId);
                       setCurrentAction("delete");
-                      setIsConfirmModalOpen(true);
                     }}
                   />
                 );
@@ -384,8 +331,8 @@ export default function Inbox() {
       <Modal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
-        onSave={(folderName) => {
-          createFolder(folderName);
+        onSave={async (folderName) => {
+          await createFolder(folderName);
 
           // Add new folder to ordered items when created
           setOrderedItems((prev) => [
@@ -397,32 +344,10 @@ export default function Inbox() {
               order: prev.length,
             },
           ]);
-
-          setIsFolderModalOpen(false);
         }}
         title="Create New Folder"
       />
 
-      {/* Confirmation Modal (for delete/unfollow) */}
-      <ConfirmModal
-        isOpen={isConfirmModalOpen}
-        onClose={() => {
-          setIsConfirmModalOpen(false);
-          setCurrentAction(null);
-          setTargetId(null);
-        }}
-        onConfirm={() => {
-          if (currentAction === "delete") handleDeleteFolder();
-          if (currentAction === "unfollow") handleUnfollowSender();
-        }}
-        title={currentAction === "delete" ? "Delete Folder" : "Unfollow Sender"}
-        description={
-          currentAction === "delete"
-            ? "Are you sure you want to delete this folder? This operation cannot be undone."
-            : "Are you sure you want to unfollow this sender?"
-        }
-        showUnfollowOption={currentAction === "delete"}
-      />
 
       <DragOverlay>
         {activeId && activeSender && (

@@ -10,8 +10,9 @@ import { AuthProvider } from "@/context/authContext";
 import { MailsProvider } from "@/context/mailsContext";
 import { FoldersProvider } from "@/context/foldersContext";
 import { SendersProvider } from "@/context/sendersContext";
-import Sidebar from "@/components/sidebar/Sidebar";
+import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
+import Notification from "@/components/notifications/Notification";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -46,6 +47,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Notification />
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
               <SendersProvider>
@@ -53,7 +55,9 @@ export default function RootLayout({
                   <AuthProvider>
                     <FoldersProvider>
                       <OnboardingProvider>
-                        <ModeProvider>{children}</ModeProvider>
+                        <SidebarProvider>
+                          <ModeProvider>{children}</ModeProvider>
+                        </SidebarProvider>
                       </OnboardingProvider>
                     </FoldersProvider>
                   </AuthProvider>
