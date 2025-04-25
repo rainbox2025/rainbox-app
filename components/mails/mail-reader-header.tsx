@@ -2,6 +2,7 @@ import {
   Bookmark,
   CheckIcon,
   ChevronLeft,
+  PlayIcon,
   Share2,
   Volume2,
 } from "lucide-react";
@@ -61,7 +62,7 @@ const MailReaderHeader = ({
             onClick={() => setTextToAudioOpen(true)}
             title="Text to Audio"
           >
-            <Volume2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+            <PlayIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
 
           <button
@@ -101,13 +102,13 @@ const MailReaderHeader = ({
 
 
 
-          <button
+          {/* <button
             className="p-xs rounded-full hover:bg-muted transition-colors"
             onClick={() => setSelectedMail(null)}
             title="Close"
           >
             <Share2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
-          </button>
+          </button> */}
         </div>
       </div>
     )

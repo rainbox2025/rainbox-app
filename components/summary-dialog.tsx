@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from "react";
-import { useMails } from "@/context/mailsContext";
+import { useEffect, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
+import { useMails } from "@/context/mailsContext";
+import { X } from "lucide-react";
 
 const SummaryDialog = ({
   open,
   onOpenChange,
+  containerRef
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  containerRef: any;
 }) => {
-  const { summarize, summarizeLoading, selectedMail, summarizeError } =
-    useMails();
+  const { summarize, summarizeLoading, selectedMail, summarizeError } = useMails();
   const [summary, setSummary] = useState<string | null>(null);
+  const [dialogStyle, setDialogStyle] = useState({});
 
   useEffect(() => {
     const summarizeMail = async () => {
@@ -23,59 +26,78 @@ const SummaryDialog = ({
     summarizeMail();
   }, [open, selectedMail?.id]);
 
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (!containerRef?.current) return;
+
+      // Get container width for proper sizing
+      const containerWidth = containerRef.current.getBoundingClientRect().width;
+
+      setDialogStyle({
+        position: 'fixed',
+        bottom: '0',
+        left: containerRef.current.getBoundingClientRect().left,
+        width: `${containerWidth}px`,
+        zIndex: 30
+      });
+    };
+
+    // Initial position calculation
+    updatePosition();
+
+    // Only update on resize, not on scroll
+    window.addEventListener('resize', updatePosition);
+
+    // Create a ResizeObserver to detect container width changes
+    const resizeObserver = new ResizeObserver(updatePosition);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      resizeObserver.disconnect();
+    };
+  }, [containerRef]);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
-      <div className="bg-content  rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80">
-        <div className="p-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold">Summary</h2>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="text-sm hover:text-secondary-foreground"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+    <div
+      className="bg-sidebar border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
+      style={{
+        ...dialogStyle,
+        borderRadius: '8px 8px 0 0',
+      }}
+    >
+      {/* Rest of your dialog content remains the same */}
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-semibold">AI Summary ✨</h2>
 
-          <div className="mt-2">
-            {summarizeLoading ? (
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            ) : summarizeError ? (
-              <div className="text-red-500">{summarizeError}</div>
-            ) : (
-              <div className="text-sm">{summary}</div>
-            )}
-          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="text-sm hover:text-secondary-foreground p-1 rounded-full hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-          <div className="flex justify-end space-x-2 mt-4">
-            <button
-              onClick={() => onOpenChange(false)}
-              className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
-            >
-              Close
-            </button>
-          </div>
+        <div className="mt-2 overflow-y-auto max-h-[200px]">
+          {summarizeLoading ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : summarizeError ? (
+            <div className="text-red-500">{summarizeError}</div>
+          ) : (
+            <div className="text-sm">{summary}</div>
+          )}
         </div>
       </div>
     </div>

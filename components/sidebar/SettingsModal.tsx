@@ -164,7 +164,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <div className="pt-4 border-t border-border">
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="px-4 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              className="px-4 py-2 text-sm text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-md transition-colors"
             >
               Delete account
             </button>
@@ -330,7 +330,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-full max-w-3xl h-[95vh] mx-4 border border-border flex flex-col"
+          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-full max-w-3xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}

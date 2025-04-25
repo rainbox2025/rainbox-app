@@ -267,6 +267,7 @@ export default function Inbox() {
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
             onClick={openFolderCreationModal}
+            title="Create a new folder"
           >
             <FolderPlusIcon className="w-5 h-5" />
           </button>

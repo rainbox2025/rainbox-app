@@ -100,12 +100,14 @@ export const SenderHeader = ({
             onClick={() => {
               refreshMails();
             }}
+            title="Refresh"
           >
             <RefreshCcw className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
           <button
             onClick={() => markAsReadAllBySenderId(selectedSender?.id!)}
             className="p-xs rounded-full hover:bg-muted transition-colors"
+            title="Mark all as read"
           >
             <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
@@ -117,6 +119,7 @@ export const SenderHeader = ({
                 setMenuOpen(!menuOpen);
               }}
               className="p-xs rounded-full hover:bg-muted transition-colors"
+              title="More actions"
             >
               <MoreHorizontal className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
             </button>
