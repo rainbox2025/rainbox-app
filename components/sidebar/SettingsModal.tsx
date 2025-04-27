@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useAuth } from "@/context/authContext";
@@ -65,6 +65,90 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [feedSettings, setFeedSettings] = useState<Record<string, boolean>>({});
   const [previousSettings, setPreviousSettings] = useState<Record<string, boolean>>({});
 
+  const [voiceList, setVoiceList] = useState<SpeechSynthesisVoice[]>([]);
+  const [isVoicesLoaded, setIsVoicesLoaded] = useState(false);
+
+  // Function to load available voices
+  const loadVoices = useCallback(() => {
+    const availableVoices = window.speechSynthesis.getVoices();
+    if (availableVoices.length > 0) {
+      setVoiceList(availableVoices);
+      setIsVoicesLoaded(true);
+    }
+  }, []);
+
+  // Initialize voices when component mounts
+  useEffect(() => {
+    // Some browsers need a small delay to properly initialize speech synthesis
+    const timer = setTimeout(() => {
+      loadVoices();
+    }, 100);
+
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    return () => {
+      clearTimeout(timer);
+      // Cancel any ongoing speech when component unmounts
+      window.speechSynthesis.cancel();
+    };
+  }, [loadVoices]);
+
+  // Function to play demo voice
+  const playVoiceDemo = useCallback(() => {
+    // Cancel any ongoing speech first
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(
+      "This is a preview of your selected voice and speed settings."
+    );
+
+    // Set speech rate
+    utterance.rate = voiceSpeed;
+
+    // Find appropriate voice based on selection
+    if (voiceList.length > 0) {
+      let selectedVoiceObj;
+
+      switch (selectedVoice) {
+        case "Female":
+          selectedVoiceObj = voiceList.find(
+            voice => voice.name.toLowerCase().includes("female") ||
+              (!voice.name.toLowerCase().includes("male") && voice.name.includes("Google") && !voice.name.includes("UK"))
+          );
+          break;
+        case "Male":
+          selectedVoiceObj = voiceList.find(
+            voice => voice.name.toLowerCase().includes("male") && !voice.name.toLowerCase().includes("female")
+          );
+          break;
+        case "British":
+          selectedVoiceObj = voiceList.find(
+            voice => voice.name.includes("UK") || voice.name.includes("British")
+          );
+          break;
+        case "Australian":
+          selectedVoiceObj = voiceList.find(
+            voice => voice.name.includes("Australian") || voice.name.includes("AU")
+          );
+          break;
+        default:
+          // Default voice - typically first in the list or a neutral voice
+          selectedVoiceObj = voiceList.find(
+            voice => voice.lang.startsWith("en-")
+          ) || voiceList[0];
+      }
+
+      if (selectedVoiceObj) {
+        utterance.voice = selectedVoiceObj;
+      }
+    }
+
+    // Play the speech
+    window.speechSynthesis.speak(utterance);
+  }, [selectedVoice, voiceSpeed, voiceList]);
+
   useEffect(() => {
     if (senders && senders.length > 0) {
       const initialSettings: Record<string, boolean> = {};
@@ -81,32 +165,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const newAllEnabled = !allNotificationsEnabled;
     setAllNotificationsEnabled(newAllEnabled);
 
-    if (!newAllEnabled) {
-      // Save current settings before disabling all
-      setPreviousSettings({ ...feedSettings });
+    // Set all feed settings to match the master toggle
+    const updatedSettings: Record<string, boolean> = {};
+    Object.keys(feedSettings).forEach(key => {
+      updatedSettings[key] = newAllEnabled;
+    });
+    setFeedSettings(updatedSettings);
 
-      // Disable all feeds
-      const updatedSettings: Record<string, boolean> = {};
-      Object.keys(feedSettings).forEach(key => {
-        updatedSettings[key] = false;
-      });
-      setFeedSettings(updatedSettings);
-    } else {
-      // Restore previous settings when enabling all
-      setFeedSettings({ ...previousSettings });
+    // If turning off, save current state for possible restore
+    if (!newAllEnabled) {
+      setPreviousSettings({ ...feedSettings });
     }
   };
 
   // Handle toggling individual feed
   const handleToggleFeed = (senderId: string) => {
-    if (allNotificationsEnabled) {
-      setFeedSettings(prev => ({
-        ...prev,
-        [senderId]: !prev[senderId]
-      }));
-    }
-  };
+    const updatedSettings = {
+      ...feedSettings,
+      [senderId]: !feedSettings[senderId]
+    };
 
+    setFeedSettings(updatedSettings);
+
+    // Check if all feeds are now disabled
+    const areAllDisabled = Object.values(updatedSettings).every(value => !value);
+
+    // Update master toggle if all feeds are disabled
+    if (areAllDisabled && allNotificationsEnabled) {
+      setAllNotificationsEnabled(false);
+    }
+    // Update master toggle if at least one feed is enabled and master was off
+    else if (!areAllDisabled && !allNotificationsEnabled) {
+      setAllNotificationsEnabled(true);
+    }
+  }
   // Sort senders alphabetically
   const sortedSenders = senders ? [...senders].sort((a, b) =>
     a.name.toLowerCase().localeCompare(b.name.toLowerCase())
@@ -568,57 +660,74 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <span>2x</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    ),
-    notification: (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-1">Notification</h2>
-          <p className="text-sm text-muted-foreground">Manage the notifications on your desktop and mobile</p>
-        </div>
 
-        <div className="space-y-4">
-          {/* All feeds toggle */}
-          <div className="flex items-center justify-between py-3">
-            <span className="font-medium">All feeds</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={allNotificationsEnabled}
-                onChange={handleToggleAllFeeds}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-hovered peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
-
-          <hr className="border-border" />
-
-          {/* Individual feed toggles */}
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {sortedSenders.map((sender) => (
-              <div key={sender.id} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <SenderIcon sender={sender} />
-                  <span className="text-sm">{sender.name}</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={feedSettings[sender.id] || false}
-                    onChange={() => handleToggleFeed(sender.id)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-hovered peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                </label>
+            <div className="mt-4 p-4 border border-border rounded-md bg-sidebar">
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm text-center">Preview your selected voice and speed</p>
+                <button
+                  onClick={playVoiceDemo}
+                  disabled={!isVoicesLoaded}
+                  className="flex items-center gap-2 px-4 py-2 bg-hovered hover:bg-card text-sm rounded-md transition-colors"
+                >
+                  <SpeakerWaveIcon className="h-4 w-4" />
+                  Play Demo
+                </button>
               </div>
-            ))}
+              <div className="mt-3 text-xs text-center text-muted-foreground">
+                Sample text: "This is a preview of your selected voice and speed settings."
+              </div>
+            </div>
           </div>
         </div>
       </div>
     ),
+    notification: (<div className="bg-content rounded-lg max-w-xl">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-1">Notification</h2>
+        <p className="text-sm text-muted-foreground">Manage the notifications on your desktop and mobile</p>
+      </div>
+
+      <div className="space-y-4">
+        {/* All feeds toggle */}
+        <div className="flex items-center justify-between py-3 pr-2">
+          <span className="font-medium">All feeds</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allNotificationsEnabled}
+              onChange={handleToggleAllFeeds}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-hovered rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+
+          </label>
+        </div>
+
+        <hr className="border-gray-200" />
+
+        {/* Individual feed toggles */}
+        <div className="max-h-60 overflow-y-auto pr-2">
+          {sortedSenders.map((sender) => (
+            <div key={sender.id} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <SenderIcon sender={sender} />
+                <span className="text-sm">{sender.name}</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={feedSettings[sender.id] || false}
+                  onChange={() => handleToggleFeed(sender.id)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-hovered rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>),
     billing: (
       <div className="space-y-6">
         <div>
@@ -654,6 +763,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     ),
     // All other tabs will redirect to external links
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
