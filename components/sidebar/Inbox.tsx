@@ -322,7 +322,7 @@ export default function Inbox() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 text-center text-xs text-muted-foreground">
+        <div className="px-4 py-3 text-center text-xs text-muted-foreground/30">
           <p>Drag items to rearrange or move between folders</p>
           <p className="mt-1">All changes are automatically saved</p>
         </div>

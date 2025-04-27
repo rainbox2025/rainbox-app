@@ -39,9 +39,9 @@ const MailReaderHeader = ({
   return (
     selectedMail &&
     selectedSender && (
-      <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-1">
+      <div className="sticky top-0 z-10 bg-content h-header border-b border-border p-sm flex items-center justify-between gap-1">
         <button
-          className="p-xs rounded-full hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
+          className="p-xs rounded-full bg-content hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
           onClick={() => { setSelectedMail(null); handleBack }}
           title="Go back"
         >

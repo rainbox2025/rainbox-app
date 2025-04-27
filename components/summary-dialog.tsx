@@ -65,7 +65,7 @@ const SummaryDialog = ({
 
   return (
     <div
-      className="bg-sidebar border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
+      className="bg-sidebar/1 pb-8 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
       style={{
         ...dialogStyle,
         borderRadius: '8px 8px 0 0',

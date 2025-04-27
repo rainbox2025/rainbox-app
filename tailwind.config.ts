@@ -19,7 +19,7 @@ const config = {
     },
     extend: {
       height: {
-        header: "45px", 
+        header: "35px", 
       },
       colors: {
         // Base color palette
