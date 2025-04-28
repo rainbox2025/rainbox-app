@@ -1,6 +1,6 @@
 "use client";
 import { useOnboarding } from "@/context/onboardingContext";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,22 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-// Replacing Lucide with Heroicons
 import { CheckIcon } from "@heroicons/react/24/solid";
-
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/authContext";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { PostgrestError } from "@supabase/supabase-js";
 export const Onboardingmodal = () => {
-  const {
-    isOnboardingComplete,
-    setCurrentStep,
-    nextStep,
-    previousStep,
-    checkUserName,
-    updateUserName,
-    currentStep,
-  } = useOnboarding();
+  const { nextStep, previousStep, checkUserName, updateUserName, currentStep } =
+    useOnboarding();
   const supabase = createClient();
   const [userName, setUserName] = useState("");
   const [userNameError, setUserNameError] = useState("");
@@ -46,8 +38,18 @@ export const Onboardingmodal = () => {
     }
 
     if (isUsernameValid) {
-      updateUserName(user?.id || "", userName);
-      nextStep();
+      const { error } = await updateUserName(user?.id || "", userName);
+      if (error) {
+        setUserNameError(
+          error
+            ? (error as PostgrestError).code === "23505"
+              ? "Username already taken"
+              : "An error occurred"
+            : "An error occurred"
+        );
+      } else {
+        nextStep();
+      }
     }
   };
 
@@ -70,10 +72,10 @@ export const Onboardingmodal = () => {
       case 1:
         return (
           <div className="space-y-md">
-            <h3 className="text-sm text-gray-800 font-semibold border-b pb-2">
+            <h3 className="text-sm text-gray-800 dark:text-gray-200 font-semibold border-b pb-2">
               Create your Newsletter email address
             </h3>
-            <p className="text-sm text-gray-800">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
               Subscribe to newsletters with this email address
             </p>
 
@@ -85,7 +87,7 @@ export const Onboardingmodal = () => {
                   name="username"
                   value={userName}
                   onChange={handleUsernameChange}
-                  className={`text-black focus:outline-none text-sm focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-destructive" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-primaryBlue" : ""}`}
+                  className={`text-black dark:text-gray-200 focus:outline-none text-sm focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-destructive" : isUsernameValid && userName.trim() && !isCheckingUsername ? "border-primaryBlue" : ""}`}
                   disabled={isCheckingUsername}
                 />
                 <div className="bg-gray-100 flex items-center px-3 rounded-r-md">
@@ -95,9 +97,25 @@ export const Onboardingmodal = () => {
                 {isCheckingUsername && (
                   <div className="absolute right-14 top-1/2 transform -translate-y-1/2">
                     {/* Replaced Loader2 with a simple loading spinner */}
-                    <svg className="h-4 w-4 text-primaryBlue animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="h-4 w-4 text-primaryBlue animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                   </div>
                 )}
@@ -108,7 +126,7 @@ export const Onboardingmodal = () => {
                 </p>
               )}
               {userNameError && !isCheckingUsername && (
-                <p className="text-destructive text-sm text-gray-800">{userNameError}</p>
+                <p className="text-destructive text-sm">{userNameError}</p>
               )}
               {!isUsernameValid && userName.trim() && !isCheckingUsername ? (
                 <p className="text-sm  text-amber-600">
@@ -138,7 +156,7 @@ export const Onboardingmodal = () => {
       case 2:
         return (
           <div className="space-y-md">
-            <h3 className="text-sm text-gray-800 font-semibold border-b pb-2">
+            <h3 className="text-sm text-gray-800 dark:text-gray-200 font-semibold border-b pb-2 ">
               Get your newsletters from Gmail or Outlook to Rainbox
             </h3>
 
@@ -146,12 +164,12 @@ export const Onboardingmodal = () => {
               [Image Placeholder]
             </div>
 
-            <p className="text-sm text-gray-800">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
               You can set email forwarding rules to automatically send your
               newsletter emails from Gmail and Outlook to Rainbox
             </p>
 
-            <ul className="list-disc list-inside space-y-md text-sm text-gray-800">
+            <ul className="list-disc list-inside space-y-md text-sm text-gray-800 dark:text-gray-200">
               <li>
                 Instructions for email forwarding:
                 <ul className="list-inside ml-5 mt-1">
@@ -172,7 +190,9 @@ export const Onboardingmodal = () => {
                 to uniquely identify the newsletters
                 <p className="mt-1">
                   Example:{" "}
-                  <span className="text-primaryBlue">{userName}@rainbox.app</span>
+                  <span className="text-primaryBlue">
+                    {userName}@rainbox.app
+                  </span>
                   +newslettername@rainbox.app
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -221,7 +241,9 @@ export const Onboardingmodal = () => {
                 <h4 className="font-medium">Pro Plan</h4>
                 <div className="flex items-center gap-2">
                   <p className="font-bold">$20/year</p>
-                  <span className="text-sm text-gray-800 text-muted-foreground">$2.5/mo</span>
+                  <span className="text-sm text-gray-800 text-muted-foreground">
+                    $2.5/mo
+                  </span>
                 </div>
                 <ul className="mt-4 space-y-md">
                   <li className="flex items-center gap-2">
@@ -269,7 +291,7 @@ export const Onboardingmodal = () => {
   };
 
   return (
-    <Dialog open={true} onOpenChange={() => { }}>
+    <Dialog open={true} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Onboarding</DialogTitle>

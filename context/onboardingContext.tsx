@@ -1,14 +1,20 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { createContext, useContext, useState } from "react";
-
+import { PostgrestError } from "@supabase/supabase-js";
 interface OnboardingContextType {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   previousStep: () => void;
   checkUserName: (name: string) => Promise<boolean>;
-  updateUserName: (userId: string, name: string) => Promise<void>;
+  updateUserName: (
+    userId: string,
+    name: string
+  ) => Promise<{
+    error: unknown;
+    data: string;
+  }>;
   isOnboardingComplete: () => Promise<boolean>;
 }
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
@@ -38,11 +44,16 @@ export const OnboardingProvider = ({
   };
 
   const updateUserName = async (userId: string, name: string) => {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("users")
-      .update({ user_name: name })
-      .eq("id", userId);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("users")
+        .update({ user_name: name })
+        .eq("id", userId);
+      return { error, data: "success" };
+    } catch (error) {
+      return { error, data: "error" };
+    }
   };
 
   const isOnboardingComplete = async () => {
