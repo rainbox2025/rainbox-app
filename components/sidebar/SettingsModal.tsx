@@ -19,6 +19,7 @@ import {
   DocumentTextIcon,
   ArrowPathIcon,
   SpeakerWaveIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { ClipboardCopy, Mail, X } from 'lucide-react';
 import { useSenders } from '@/context/sendersContext';
@@ -588,7 +589,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
           {/* AI Summary */}
           <div className="space-y-4">
-            <h3 className="font-medium">AI Summary</h3>
+            <div className='flex items-center gap-1'>
+              <h3 className="font-medium">AI Summary </h3>
+              <SparklesIcon className="h-4 w-4" />
+            </div>
             <div>
               <label htmlFor="ai-prompt" className="block text-sm font-medium mb-1">Default prompt for summaries</label>
               <textarea
@@ -690,7 +694,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
       <div className="space-y-4">
         {/* All feeds toggle */}
         <div className="flex items-center justify-between py-3 pr-2">
-          <span className="font-medium">All feeds</span>
+          <span className="font-medium">Enable all feeds notifications</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -703,7 +707,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </label>
         </div>
 
-        <hr className="border-gray-200" />
+        <hr className="border-border" />
 
         {/* Individual feed toggles */}
         <div className="max-h-60 overflow-y-auto pr-2">
@@ -851,7 +855,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <LightBulbIcon className="h-5 w-5" />
-                        <span className='text-sm'>Suggest Feature</span>
+                        <span className='text-sm'>Suggest Feature 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -860,7 +864,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <DocumentTextIcon className="h-5 w-5" />
-                        <span className='text-sm'>Help Docs</span>
+                        <span className='text-sm'>Help Docs 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -869,7 +873,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
-                        <span className='text-sm'>Contact Support</span>
+                        <span className='text-sm'>Contact Support 🡥</span>
                       </button>
                     </li>
                   </ul>
@@ -887,7 +891,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <MapIcon className="h-5 w-5" />
-                        <span className='text-sm'>Roadmap</span>
+                        <span className='text-sm'>Roadmap 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -896,7 +900,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ClockIcon className="h-5 w-5" />
-                        <span className='text-sm'>Changelog</span>
+                        <span className='text-sm'>Changelog 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -905,7 +909,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <CreditCardIcon className="h-5 w-5" />
-                        <span className='text-sm'>Plans</span>
+                        <span className='text-sm'>Plans 🡥</span>
                       </button>
                     </li>
                   </ul>
@@ -923,7 +927,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <GlobeAltIcon className="h-5 w-5" />
-                        <span className='text-sm'>Visit Website</span>
+                        <span className='text-sm'>Visit Website 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -934,7 +938,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497-3.753C20.18 7.773 21.692 5.25 22 4.009z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className='text-sm'>Follow us on X</span>
+                        <span className='text-sm'>Follow us on X 🡥</span>
                       </button>
                     </li>
                   </ul>

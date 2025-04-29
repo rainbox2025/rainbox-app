@@ -102,13 +102,13 @@ const MailReaderHeader = ({
 
 
 
-          {/* <button
+          <button
             className="p-xs rounded-full hover:bg-muted transition-colors"
             onClick={() => setSelectedMail(null)}
             title="Close"
           >
             <Share2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
-          </button> */}
+          </button>
         </div>
       </div>
     )

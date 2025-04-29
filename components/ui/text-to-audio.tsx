@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { stripHtml } from "@/lib/utils";
+import { useSenders } from "@/context/sendersContext";
+import { SenderIcon } from "../sidebar/SenderIcon";
 
 const TextToAudio = ({
   open,
@@ -35,6 +37,9 @@ const TextToAudio = ({
   const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [dialogStyle, setDialogStyle] = useState({});
+  const { selectedSender } = useSenders();
+
+
 
   // Get summary when component opens or selected mail changes
   useEffect(() => {
@@ -215,7 +220,7 @@ const TextToAudio = ({
 
   return (
     <div
-      className="bg-sidebar border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
+      className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
       style={{
         ...dialogStyle,
         borderRadius: '8px 8px 0 0',
@@ -224,12 +229,12 @@ const TextToAudio = ({
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">C</div>
+            <div className="flex-shrink-0 bg-blue-900/10 dark:bg-blue-900/30 p-2 rounded-lg">
+              {selectedSender && <SenderIcon sender={selectedSender} />}
             </div>
             <div className="overflow-hidden">
               <div className="font-medium truncate w-full">{selectedMail?.subject || "Untitled Email"}</div>
-              <div className="text-xs text-gray-500 truncate">{"Unknown Sender"}</div>
+              <div className="text-xs text-gray-500 truncate">{selectedSender?.name}</div>
             </div>
           </div>
           <div className="flex items-center gap-0 flex-shrink-0 ml-2">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 import { useMails } from "@/context/mailsContext";
 import { X } from "lucide-react";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 const SummaryDialog = ({
   open,
@@ -74,7 +75,11 @@ const SummaryDialog = ({
       {/* Rest of your dialog content remains the same */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold">AI Summary ✨</h2>
+
+          <div className='flex items-center gap-1'>
+            <h2 className="text-sm font-semibold">AI Summary </h2>
+            <SparklesIcon className="h-4 w-4" />
+          </div>
 
           <button
             onClick={() => onOpenChange(false)}
