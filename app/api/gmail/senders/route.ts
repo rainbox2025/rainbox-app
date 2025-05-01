@@ -1,3 +1,4 @@
+import { initOauthCLient } from "@/lib/oauth";
 import { google } from "googleapis";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     }
 
     const tokens = JSON.parse(tokensCookie.value);
-    const oauth2Client = new google.auth.OAuth2(
+    const oauth2Client = initOauthCLient(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
       process.env.REDIRECT_URI

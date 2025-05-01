@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
+import { initOauthCLient } from "@/lib/oauth";
 
 export async function GET(request: Request) {
-  const oauth2Client = new google.auth.OAuth2(
+  const oauth2Client = initOauthCLient(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
     process.env.REDIRECT_URI
