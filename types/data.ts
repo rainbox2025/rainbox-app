@@ -63,3 +63,12 @@ export interface User {
   usedFeeds: number;
   totalFeeds: number;
 }
+
+export interface EmailData {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  date: string;
+  body: string;
+}
