@@ -5,10 +5,10 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/gmail/senders?pageToken={nextPageToken}&pageSize=50
+ * Takes in cookie for token and uses it to make the request, makes sure it only returns uniue senders for each page
  * query params:
  * - pageToken: string | undefined (the token for the next page of results)
  * - pageSize: number | undefined (the number of records processed in one request)
- * takes in cookie for token and uses it to make the request, makes sure it only returns uniue senders for each page
  */
 export async function GET(request: Request) {
   try {
