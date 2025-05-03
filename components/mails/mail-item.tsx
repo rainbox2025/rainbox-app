@@ -46,6 +46,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
             e.stopPropagation();
             bookmark(mail.id, !mail.bookmarked);
           }}
+          title={mail.bookmarked ? "Unbookmark" : "Bookmark"}
         >
           <Bookmark
             fill={mail.bookmarked ? "currentColor" : "none"}

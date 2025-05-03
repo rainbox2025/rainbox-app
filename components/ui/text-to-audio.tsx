@@ -1,14 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useMails } from "@/context/mailsContext";
 import { ElevenLabsClient } from "elevenlabs";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
   Play,
@@ -18,43 +10,66 @@ import {
   Volume2,
   Volume1,
   VolumeX,
+  X,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { stripHtml } from "@/lib/utils";
+import { useSenders } from "@/context/sendersContext";
+import { SenderIcon } from "../sidebar/SenderIcon";
 
 const TextToAudio = ({
   open,
   onOpenChange,
+  containerRef
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  containerRef: any;
 }) => {
-  const { selectedMail } = useMails();
+  const { selectedMail, summarize, summarizeLoading } = useMails();
+  const [summary, setSummary] = useState<string | null>(null);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [dialogStyle, setDialogStyle] = useState({});
+  const { selectedSender } = useSenders();
+
+
+
+  // Get summary when component opens or selected mail changes
+  useEffect(() => {
+    const summarizeMail = async () => {
+      if (open && selectedMail?.id) {
+        const mailSummary = await summarize(selectedMail.id);
+        setSummary(mailSummary);
+      }
+    };
+    // summarizeMail();
+  }, [open, selectedMail?.id, summarize]);
 
   const convertTextToSpeech = async () => {
-    if (!selectedMail?.body) return;
+    // Use summary if available, otherwise fall back to body
+    const textToConvert = summary || (selectedMail?.body ? stripHtml(selectedMail.body) : null);
+
+    if (!textToConvert) return;
 
     try {
       setIsLoading(true);
 
-      // Strip HTML tags to get plain text
-      const plainText = stripHtml(selectedMail.body);
-      console.log(plainText);
-      console.log(process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY!);
       const client = new ElevenLabsClient({
         apiKey: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY!,
       });
+
       // Get the audio stream
       const audioStream = await client.textToSpeech.convert(
         "JBFqnCBsd6RMkjVDRZzb",
         {
-          text: plainText,
+          text: textToConvert,
           model_id: "eleven_multilingual_v2",
           output_format: "mp3_44100_128",
         }
@@ -82,6 +97,7 @@ const TextToAudio = ({
       // Create and configure audio element
       const audioElement = new Audio(audioUrl);
       audioElement.volume = volume;
+      audioElement.playbackRate = playbackRate;
       audioRef.current = audioElement;
       setAudio(audioElement);
 
@@ -102,7 +118,7 @@ const TextToAudio = ({
   };
 
   useEffect(() => {
-    if (selectedMail?.body) {
+    if (open && (summary || selectedMail?.body)) {
       convertTextToSpeech();
     }
 
@@ -113,7 +129,7 @@ const TextToAudio = ({
         setAudio(null);
       }
     };
-  }, [selectedMail?.body]);
+  }, [summary, open]);
 
   const updateProgress = () => {
     if (audioRef.current) {
@@ -135,6 +151,7 @@ const TextToAudio = ({
   const skip = (seconds: number) => {
     if (!audio) return;
     audio.currentTime += seconds;
+    setCurrentTime(audio.currentTime);
   };
 
   const changeVolume = (value: number[]) => {
@@ -145,45 +162,135 @@ const TextToAudio = ({
     }
   };
 
+  const togglePlaybackRate = () => {
+    const rates = [1, 1.25, 1.5, 1.75, 2];
+    const currentIndex = rates.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % rates.length;
+    const newRate = rates[nextIndex];
+
+    setPlaybackRate(newRate);
+    if (audio) {
+      audio.playbackRate = newRate;
+    }
+  };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  useEffect(() => {
+    const updatePosition = () => {
+      if (!containerRef?.current) return;
+
+      // Get container width for proper sizing
+      const containerWidth = containerRef.current.getBoundingClientRect().width;
+
+      setDialogStyle({
+        position: 'fixed',
+        bottom: '0',
+        left: containerRef.current.getBoundingClientRect().left,
+        width: `${containerWidth}px`,
+        zIndex: 50
+      });
+    };
+
+    // Initial position calculation
+    updatePosition();
+
+    // Only update on resize, not on scroll
+    window.addEventListener('resize', updatePosition);
+
+    // Create a ResizeObserver to detect container width changes
+    const resizeObserver = new ResizeObserver(updatePosition);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      resizeObserver.disconnect();
+    };
+  }, [containerRef]);
+
+
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Text to Audio</DialogTitle>
-          <DialogDescription>
-            {isLoading
-              ? "Converting text to speech..."
-              : "Listen to the email content"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col items-center space-y-4 py-4">
-          {/* Waveform animation */}
-          {isPlaying && (
-            <div className="flex items-center justify-center h-16 w-full">
-              <div className="flex items-end space-x-1">
-                {[...Array(20)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-primary w-1 animate-pulse rounded-full"
-                    style={{
-                      height: `${Math.max(15, Math.floor(Math.random() * 45))}px`,
-                      animationDuration: `${0.6 + Math.random() * 0.7}s`,
-                    }}
-                  />
-                ))}
-              </div>
+    <div
+      className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
+      style={{
+        ...dialogStyle,
+        borderRadius: '8px 8px 0 0',
+      }}
+    >
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex-shrink-0 bg-blue-900/10 dark:bg-blue-900/30 p-2 rounded-lg">
+              {selectedSender && <SenderIcon sender={selectedSender} />}
             </div>
-          )}
+            <div className="overflow-hidden">
+              <div className="font-medium truncate w-full">{selectedMail?.subject || "Untitled Email"}</div>
+              <div className="text-xs text-gray-500 truncate">{selectedSender?.name}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-0 flex-shrink-0 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={togglePlaybackRate}
+              className="text-xs text-gray-500 px-2 py-1"
+            >
+              {playbackRate}x
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => skip(-10)}
+            >
+              <SkipBack className="h-4 w-4 text-gray-500" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlayPause}
+              disabled={isLoading}
+              className="rounded-full bg-gray-100 dark:bg-gray-800 h-8 w-8 flex items-center justify-center"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => skip(10)}
+            >
+              <SkipForward className="h-4 w-4 text-gray-500" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full ml-3"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </Button>
+          </div>
+        </div>
 
-          {/* Progress bar */}
-          <div className="w-full space-y-2">
+        <div className="mt-3">
+          <div className="flex items-center">
+            <span className="text-xs text-gray-500 mr-2">{formatTime(currentTime)}</span>
             <Slider
               value={[currentTime]}
               max={duration || 100}
@@ -193,65 +300,13 @@ const TextToAudio = ({
                   audio.currentTime = value[0];
                 }
               }}
-              className="w-full"
+              className="flex-grow"
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="icon" onClick={() => skip(-10)}>
-              <SkipBack className="h-4 w-4" />
-            </Button>
-
-            <Button
-              disabled={!audio || isLoading}
-              variant="default"
-              size="icon"
-              onClick={togglePlayPause}
-              className="h-12 w-12 rounded-full"
-            >
-              {isPlaying ? (
-                <Pause className="h-6 w-6" />
-              ) : (
-                <Play className="h-6 w-6 ml-1" />
-              )}
-            </Button>
-
-            <Button variant="outline" size="icon" onClick={() => skip(10)}>
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Volume control */}
-          <div className="flex items-center space-x-2 w-full max-w-xs">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => changeVolume(volume > 0 ? [0] : [1])}
-            >
-              {volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : volume < 0.5 ? (
-                <Volume1 className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-            <Slider
-              value={[volume]}
-              min={0}
-              max={1}
-              step={0.01}
-              onValueChange={changeVolume}
-            />
+            <span className="text-xs text-gray-500 ml-2">{formatTime(duration)}</span>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 

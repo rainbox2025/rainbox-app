@@ -2,6 +2,7 @@ import {
   Bookmark,
   CheckIcon,
   ChevronLeft,
+  PlayIcon,
   Share2,
   Volume2,
 } from "lucide-react";
@@ -38,9 +39,9 @@ const MailReaderHeader = ({
   return (
     selectedMail &&
     selectedSender && (
-      <div className="sticky top-0 z-10 bg-content/95 h-header backdrop-blur-sm border-b border-border p-sm flex items-center justify-between gap-1">
+      <div className="sticky top-0 z-10 bg-content h-header border-b border-border p-sm flex items-center justify-between gap-1">
         <button
-          className="p-xs rounded-full hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
+          className="p-xs rounded-full bg-content hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
           onClick={() => { setSelectedMail(null); handleBack }}
           title="Go back"
         >
@@ -61,7 +62,7 @@ const MailReaderHeader = ({
             onClick={() => setTextToAudioOpen(true)}
             title="Text to Audio"
           >
-            <Volume2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+            <PlayIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
           </button>
 
           <button
