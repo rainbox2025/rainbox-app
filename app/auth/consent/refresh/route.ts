@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { google } from "googleapis";
 import { initOauthCLient } from "@/lib/oauth";
+import { createClient } from "@/utils/supabase/server";
+// Initialize Supabase client
 
 export async function GET(request: Request) {
+  const supabase = await createClient();
   try {
     const cookieStore = cookies();
     const tokensCookie = cookieStore.get("consent_tokens");
@@ -36,9 +39,27 @@ export async function GET(request: Request) {
 
     const { credentials } = await oauth2Client.refreshAccessToken();
 
+    // Get user info to get email
+    oauth2Client.setCredentials(credentials);
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const { data: userInfo } = await oauth2.userinfo.get();
+
+    // Store refreshed tokens in Supabase
+    const { error: upsertError } = await supabase.from("gmail_tokens").upsert({
+      email: userInfo.email,
+      tokens: credentials,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (upsertError) {
+      console.error("Token storage error:", upsertError);
+      throw new Error("Failed to store refreshed tokens");
+    }
+
     const response = NextResponse.json({
       success: true,
       tokens: credentials,
+      email: userInfo.email,
     });
 
     response.cookies.set({
@@ -47,7 +68,7 @@ export async function GET(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, //? what expiry would be idea
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return response;
