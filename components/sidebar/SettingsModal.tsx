@@ -24,6 +24,7 @@ import {
 import { ClipboardCopy, Mail, X } from 'lucide-react';
 import { useSenders } from '@/context/sendersContext';
 import { SenderIcon } from './SenderIcon';
+import ConnectionCard from '../settings/ConnectionCard';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<TabType>('account');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('Summarize this in a concise manner');
-  const [voiceSpeed, setVoiceSpeed] = useState(1);
+  const [voiceSpeed, setVoiceSpeed] = useState('1.0');
   const [selectedVoice, setSelectedVoice] = useState('Default');
   const [fontSize, setFontSize] = useState('small');
 
@@ -68,6 +69,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
   const [voiceList, setVoiceList] = useState<SpeechSynthesisVoice[]>([]);
   const [isVoicesLoaded, setIsVoicesLoaded] = useState(false);
+
+
+  // Sample voice speeds as options
+  const speedOptions = [
+    { value: "0.5", label: "0.5x (Slow)" },
+    { value: "0.75", label: "0.75x" },
+    { value: "1.0", label: "1.0x (Normal)" },
+    { value: "1.25", label: "1.25x" },
+    { value: "1.5", label: "1.5x" },
+    { value: "1.75", label: "1.75x" },
+    { value: "2.0", label: "2.0x (Fast)" }
+  ];
 
   // Function to load available voices
   const loadVoices = useCallback(() => {
@@ -106,7 +119,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     );
 
     // Set speech rate
-    utterance.rate = voiceSpeed;
+    utterance.rate = parseFloat(voiceSpeed);
 
     // Find appropriate voice based on selection
     if (voiceList.length > 0) {
@@ -167,11 +180,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     setAllNotificationsEnabled(newAllEnabled);
 
     // Set all feed settings to match the master toggle
-    const updatedSettings: Record<string, boolean> = {};
-    Object.keys(feedSettings).forEach(key => {
-      updatedSettings[key] = newAllEnabled;
-    });
-    setFeedSettings(updatedSettings);
+
 
     // If turning off, save current state for possible restore
     if (!newAllEnabled) {
@@ -376,18 +385,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               Use this email address when subscribing to newsletters. All newsletters sent to this address will appear here in Meco.
             </p>
 
-            <div className="border border-border rounded-md flex justify-between items-center">
-              <div className="flex items-center gap-3 p-sm flex-grow">
-                <Image src="/RainboxLogo.png" alt="Rainbox Logo" width={24} height={24} className="w-8 h-8" />
-                <div>
-                  <div className="text-sm font-medium">Rainbox - Primary Email</div>
-                  <div className="text-sm text-muted-foreground">ganesh123@rainbox.ai</div>
-                </div>
-              </div>
-              <div className="p-3 border-l border-border">
-                <ClipboardCopy className="h-5 w-5 cursor-pointer hover:text-primary" />
-              </div>
-            </div>
+            <ConnectionCard
+              logo="/RainboxLogo.png"
+              logoAlt="Rainbox Logo"
+              title="Rainbox - Primary Email"
+              subtitle="ganesh123@rainbox.ai"
+              actionType="copy"
+              onAction={() => { }}
+              isConnected={true}
+            />
 
             <button
               onClick={handleAddMailbox}
@@ -397,9 +403,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          <hr className="border-border" />
+          <hr className="border-border" style={{ margin: "1rem 0" }} />
 
-          <div>
+          <div style={{ marginTop: "0" }}>
             <h3 className="font-medium mb-2">Connect your Gmail or Outlook</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Bring your existing newsletters from Gmail or Outlook to Rainbox. Just sign in and select the sender — that's it! All existing and future emails from the senders will automatically appear in Rainbox.
@@ -407,64 +413,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
             <div className="space-y-4">
               <div className="flex items-center">
-                <div className="border border-border rounded-md flex justify-between items-center w-full">
-                  <div className="flex items-center gap-3 p-sm flex-grow">
-                    <div className="bg-content rounded p-1 border border-border">
-                      <svg className="h-6 w-6" viewBox="0 0 24 24">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                      </svg>
-                    </div>
-                    <div className="flex-grow">
-                      <span className="text-sm">Connect your Gmail</span>
-                    </div>
-                  </div>
-                  <div className="border-l border-border p-3 bg-sidebar hover:bg-hovered cursor-pointer transition-colors">
-                    <span className="text-sm">+ Connect</span>
-                  </div>
-                </div>
+                <ConnectionCard
+                  logo="svg"
+                  logoAlt="Google Logo"
+                  title="Connect your Gmail"
+                  subtitle=""
+                  actionType="connect"
+                  onAction={() => { }}
+                  isConnected={false}
+                />
               </div>
 
               <div className="flex items-center">
-                <div className="border border-border rounded-md flex justify-between items-center w-full">
-                  <div className="flex items-center gap-3 p-sm flex-grow">
-                    <div className="bg-content rounded p-1 border border-border">
-                      <svg className="h-6 w-6" viewBox="0 0 24 24">
-                        <rect width="24" height="24" fill="#0078D4" />
-                        <path d="M12 15.5L5 11V22H19V11L12 15.5Z" fill="white" />
-                        <path d="M19 2H5V11L12 15.5L19 11V2Z" fill="white" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Ganesh's Outlook</div>
-                      <div className="text-sm text-muted-foreground">ganesh123@outlook.com</div>
-                    </div>
-                  </div>
-                  <div className="border-l border-border p-3 hover:bg-hovered cursor-pointer transition-colors" onClick={handleDisconnectOutlook}>
-                    <X className="h-5 w-5" />
-                  </div>
-                </div>
+                <ConnectionCard
+                  logo="/OutlookLogo.png"
+                  logoAlt="Outlook Logo"
+                  title="Ganesh's Outlook"
+                  subtitle="ganesh123@outlook.com"
+                  actionType="disconnect"
+                  onAction={handleDisconnectOutlook}
+                  isConnected={true}
+                />
               </div>
             </div>
           </div>
 
-          <hr className="border-border" />
+          <hr className="border-border" style={{ margin: "1rem 0" }} />
 
-          <div>
-            <h3 className="font-medium mb-2">Automatically forward existing newsletters to Rainbox</h3>
+          <div style={{ marginTop: "0" }}>
+            <h3 className="font-medium mb-2" >Automatically forward existing newsletters to Rainbox</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              You can also get your newsletters from Gmail, Outlook or other email clients to Rainbox by setting up forwarding rules. This option is suitable if you don't want to connect your Gmail or Outlook. Check the guide below to learn email forwarding.
+              You can also get your newsletters frraom Gmail, Outlook or other email clients to Rainbox by setting up forwarding rules. This option is suitable if you don't want to connect your Gmail or Outlook. Check the guide below to learn email forwarding.
             </p>
 
             <div className="space-y-2">
               <a href="#" className="flex items-center gap-2 text-primary hover:underline">
-                <Mail className="h-4 w-4" />
+                <Image src="/YoutubeLogo.png" alt="Rainbox Logo" width={24} height={24} className="w-5 h-5" />
                 <span className="text-sm">Forwarding from Gmail</span>
               </a>
               <a href="#" className="flex items-center gap-2 text-primary hover:underline">
-                <Mail className="h-4 w-4" />
+                <Image src="/YoutubeLogo.png" alt="Rainbox Logo" width={24} height={24} className="w-5 h-5" />
                 <span className="text-sm">Forwarding from Outlook</span>
               </a>
             </div>
@@ -585,10 +573,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <hr className="border-border" />
+          <hr className="border-border" style={{ margin: "1rem 0" }} />
 
           {/* AI Summary */}
-          <div className="space-y-4">
+          <div className="space-y-4 !m-0" >
             <div className='flex items-center gap-1'>
               <h3 className="font-medium">AI Summary </h3>
               <SparklesIcon className="h-4 w-4" />
@@ -618,15 +606,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <hr className="border-border" />
+          <hr className="border-border" style={{ margin: "1rem 0" }} />
 
           {/* Text to Speech */}
-          <div className="space-y-4">
+          <div className="space-y-4 !m-0">
             <h3 className="font-medium flex items-center gap-2">
-              <SpeakerWaveIcon className="h-5 w-5" />
               Text to Speech
+              <SpeakerWaveIcon className="h-5 w-5" />
             </h3>
 
+            {/* Voice Selection */}
             <div className="flex items-center justify-between">
               <label htmlFor="voice" className="text-sm font-medium">Voice</label>
               <select
@@ -643,28 +632,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="speed" className="block text-sm font-medium mb-1">
-                Default speed: {voiceSpeed}x
-              </label>
-              <input
-                type="range"
+            {/* Voice Speed - Now as Dropdown */}
+            <div className="flex items-center justify-between">
+              <label htmlFor="speed" className="text-sm font-medium">Speed</label>
+              <select
                 id="speed"
-                min="0.5"
-                max="2"
-                step="0.1"
                 value={voiceSpeed}
-                onChange={(e) => setVoiceSpeed(parseFloat(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0.5x</span>
-                <span>1x</span>
-                <span>1.5x</span>
-                <span>2x</span>
-              </div>
+                onChange={(e) => setVoiceSpeed(e.target.value)}
+                className="w-40 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+              >
+                {speedOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
+            {/* Preview Section */}
             <div className="mt-4 p-4 border border-border rounded-md bg-sidebar">
               <div className="flex flex-col items-center gap-2">
                 <p className="text-sm text-center">Preview your selected voice and speed</p>
@@ -673,8 +658,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   disabled={!isVoicesLoaded}
                   className="flex items-center gap-2 px-4 py-2 bg-hovered hover:bg-card text-sm rounded-md transition-colors"
                 >
-                  <SpeakerWaveIcon className="h-4 w-4" />
                   Play Demo
+                  <SpeakerWaveIcon className="h-4 w-4" />
                 </button>
               </div>
               <div className="mt-3 text-xs text-center text-muted-foreground">
@@ -682,8 +667,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     ),
     notification: (<div className="bg-content rounded-lg max-w-xl">
       <div className="mb-6">
@@ -694,7 +679,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
       <div className="space-y-4">
         {/* All feeds toggle */}
         <div className="flex items-center justify-between py-3 pr-2">
-          <span className="font-medium">Enable all feeds notifications</span>
+          <span className="text-md font-medium">Enable notifications for all feeds</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -707,7 +692,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </label>
         </div>
 
-        <hr className="border-border" />
+        <hr className="border-border" style={{ margin: "1rem 0" }} />
 
         {/* Individual feed toggles */}
         <div className="max-h-60 overflow-y-auto pr-2">
@@ -776,7 +761,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-full max-w-3xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
+          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
@@ -784,7 +769,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               <div className="p-sm">
                 {/* Main sections */}
                 <div className="mb-2">
-                  <ul className="space-y-1">
+                  <ul className="">
                     <li>
                       <button
                         onClick={() => setActiveTab('account')}
@@ -834,7 +819,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Divider */}
-                <div className="h-px bg-border my-2"></div>
+                <div className="h-px bg-border my-1"></div>
 
                 {/* Help & Support */}
                 <div className="mb-2">
@@ -880,7 +865,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Divider */}
-                <div className="h-px bg-border my-2"></div>
+                <div className="h-px bg-border my-1"></div>
 
                 {/* Product Info */}
                 <div className="mb-2">
@@ -916,7 +901,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Divider */}
-                <div className="h-px bg-border my-2"></div>
+                <div className="h-px bg-border my-1"></div>
 
                 {/* External Links */}
                 <div>

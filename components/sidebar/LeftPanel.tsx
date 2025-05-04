@@ -23,7 +23,7 @@ import { useAuth } from "@/context/authContext";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import SettingsModal from "./SettingsModal";
-import { InboxIcon } from "lucide-react";
+import { InboxIcon, PlusIcon } from "lucide-react";
 
 export default function LeftPanel() {
   const { setMode } = useMode();
@@ -160,6 +160,15 @@ export default function LeftPanel() {
         >
           <MagnifyingGlassIcon className="w-5 h-5" />
         </button>
+
+        <button
+          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
+          title="Add New"
+        >
+          <PlusIcon className="w-5 h-5" />
+        </button>
+
+
 
         <div className="flex-grow"></div>
 

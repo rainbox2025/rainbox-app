@@ -13,20 +13,23 @@ const firebaseConfig = {
   measurementId: "G-69CV9C2REJ"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
-// const analytics = getAnalytics(app);
+let messaging: ReturnType<typeof getMessaging> | null = null;
+
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  const app = initializeApp(firebaseConfig);
+  messaging = getMessaging(app);
+}
+
+export { messaging };
 
 export const generateToken = async () => {
-  const permission = await Notification.requestPermission();
-  console.log(permission)    
+  if (!messaging) return;
 
-  if(permission === 'granted') {
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
     const token = await getToken(messaging, {
       vapidKey: "BHvwTOIzWh7pzf36EeZ_zItRksuzkGFVp2ILPGwesc9PW6DjgHuJjtUNvWbeayE16OKP1DLMKkVZHbw88cRUhn0"
-    })
-    console.log(token)
+    });
+    console.log(token);
   }
-  
-}
+};
