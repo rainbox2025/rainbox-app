@@ -7,7 +7,6 @@ import SummaryDialog from "../summary-dialog";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
-import { m } from "framer-motion";
 
 export const MailReader = ({
   containerRef,
@@ -23,11 +22,16 @@ export const MailReader = ({
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
-  const { selectedSender } = useSenders();
+  const { selectedSender, senders } = useSenders();
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const previousWidthRef = useRef(mailReaderWidth);
+
+  // Find sender associated with selected mail
+  const mailSender = selectedSender ||
+    (selectedMail && senders.find(sender => sender.id === selectedMail.sender_id)) ||
+    { name: "Unknown Sender", domain: "unknown.com" };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -86,8 +90,7 @@ export const MailReader = ({
   };
 
   return (
-    selectedMail &&
-    selectedSender && (
+    selectedMail && (
       <>
         <div
           ref={resizeRef}
@@ -120,11 +123,11 @@ export const MailReader = ({
               </h1>
               <div className="flex items-center mb-2 text-sm">
                 <SenderAvatar
-                  domain={selectedSender.domain || ""}
+                  domain={mailSender?.domain || ""}
                   alt={selectedMail.subject || ""}
                 />
                 <div>
-                  <div className="font-medium">{selectedSender?.name}</div>
+                  <div className="font-medium">{mailSender?.name}</div>
                   <div className="text-muted-foreground text-xs">
                     {moment(selectedMail.created_at).format(
                       "MMM D, YYYY [at] h:mm A"
