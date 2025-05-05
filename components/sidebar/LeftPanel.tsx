@@ -14,6 +14,7 @@ import {
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon,
   QuestionMarkCircleIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useMode } from "@/context/modeContext";
@@ -309,7 +310,7 @@ export default function LeftPanel() {
           aria-label="Feedback"
           title="Feedback"
         >
-          <QuestionMarkCircleIcon className="w-5 h-5" />
+          <ChatBubbleLeftEllipsisIcon className="w-5 h-5" />
         </button>
 
 

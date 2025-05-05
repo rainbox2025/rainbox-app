@@ -5,6 +5,8 @@ import {
   PlayIcon,
   Share2,
   Volume2,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
@@ -18,11 +20,15 @@ import {
 const MailReaderHeader = ({
   setSummaryDialogOpen,
   setTextToAudioOpen,
-  onBack
+  onBack,
+  isFullScreen,
+  toggleFullScreen
 }: {
   setSummaryDialogOpen: (open: boolean) => void;
   setTextToAudioOpen: (open: boolean) => void;
   onBack: () => void;
+  isFullScreen: boolean;
+  toggleFullScreen: () => void;
 }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const { selectedSender } = useSenders();
@@ -40,13 +46,27 @@ const MailReaderHeader = ({
     selectedMail &&
     selectedSender && (
       <div className="sticky top-0 z-10 bg-content h-header border-b border-border p-sm flex items-center justify-between gap-1">
-        <button
-          className="p-xs rounded-full bg-content hover:bg-muted transition-colors relative left-10 md:left-0 flex-shrink-0"
-          onClick={() => { setSelectedMail(null); handleBack }}
-          title="Go back"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
+            onClick={() => { setSelectedMail(null); handleBack(); }}
+            title="Go back"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <button
+            className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
+            onClick={toggleFullScreen}
+            title={isFullScreen ? "Exit full screen" : "Full screen"}
+          >
+            {isFullScreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
         <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
           <button
@@ -99,8 +119,6 @@ const MailReaderHeader = ({
               className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
             />
           </button>
-
-
 
           <button
             className="p-xs rounded-full hover:bg-muted transition-colors"

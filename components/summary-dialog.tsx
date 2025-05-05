@@ -66,14 +66,14 @@ const SummaryDialog = ({
 
   return (
     <div
-      className="bg-sidebar/1 pb-8 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
+      className="bg-sidebar/1 pb-8 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300 "
       style={{
         ...dialogStyle,
         borderRadius: '8px 8px 0 0',
       }}
     >
-      {/* Rest of your dialog content remains the same */}
-      <div className="p-4">
+      {/* This div come center when max-w-2xl */}
+      <div className="p-4 max-w-2xl mx-auto">
         <div className="flex justify-between items-center mb-4">
 
           <div className='flex items-center gap-1'>

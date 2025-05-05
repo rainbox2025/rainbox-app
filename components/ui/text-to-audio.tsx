@@ -226,7 +226,7 @@ const TextToAudio = ({
         borderRadius: '8px 8px 0 0',
       }}
     >
-      <div className="p-4">
+      <div className="p-4 max-w-2xl mx-auto relative">
         {/* Close button at top right corner */}
         <div className="flex justify-end absolute right-0 top-0">
           <Button
