@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    const topicName = `projects/kaizenklass/topics/notification`;
+    const topicName = process.env.PUBSUB_TOPIC_NAME;
 
     console.log("Setting up watch with topic:", topicName);
 
