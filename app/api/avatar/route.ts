@@ -11,17 +11,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Get current user
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: userError?.message || "Not authenticated" },
+        { status: 401 }
+      );
     }
 
+    const { data: userData, error: profileError } = await supabase
+      .from("users")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      return NextResponse.json(
+        { error: profileError.message },
+        { status: 500 }
+      );
+    }
+
+    // Delete existing avatar if it exists
+    if (userData?.avatar_url) {
+      const oldFileName = userData.avatar_url.split("/").pop();
+      if (oldFileName) {
+        const { error: deleteError } = await supabase.storage
+          .from("avatars")
+          .remove([oldFileName]);
+
+        if (deleteError) {
+          console.error("Error deleting old avatar:", deleteError);
+        }
+      }
+    }
+
+    // Upload new avatar
     const fileExt = file.name.split(".").pop();
-    const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("avatars")
@@ -34,15 +65,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    // Get the public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-    // Update user profile
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { avatar_url: publicUrl },
-    });
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        avatar_url: publicUrl,
+      })
+      .eq("id", user.id);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
