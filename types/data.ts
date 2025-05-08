@@ -72,3 +72,14 @@ export interface EmailData {
   date: string;
   body: string;
 }
+
+export interface AddSenderRequest {
+  name: string;
+  email: string;
+  domain?: string;
+  folder_id?: string;
+  order?: number;
+  subscribed?: boolean;
+  count?: number;
+  mail_service: "gmail";
+}
