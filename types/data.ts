@@ -81,5 +81,4 @@ export interface AddSenderRequest {
   order?: number;
   subscribed?: boolean;
   count?: number;
-  mail_service: "gmail";
 }

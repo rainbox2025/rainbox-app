@@ -33,13 +33,13 @@ export async function POST(request: Request) {
 
     // Insert sender
     const { data: sender, error: insertError } = await supabase
-      .from("rainbox.senders")
+      .from("senders")
       .upsert({
         user_id: user.id,
         name: body.name,
         email: body.email,
         domain,
-        mail_service: body.mail_service,
+        mail_service: "gmail",
         created_at: new Date().toISOString(),
       })
       .select()

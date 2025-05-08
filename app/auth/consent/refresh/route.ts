@@ -41,15 +41,22 @@ export async function GET(request: Request) {
 
     // Get user info to get email
     oauth2Client.setCredentials(credentials);
+
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const { data: userInfo } = await oauth2.userinfo.get();
 
     // Store refreshed tokens in Supabase
-    const { error: upsertError } = await supabase.from("gmail_tokens").upsert({
-      email: userInfo.email,
-      tokens: credentials,
-      updated_at: new Date().toISOString(),
-    });
+    const { error: upsertError } = await supabase.from("gmail_tokens").upsert(
+      {
+        email: userInfo.email,
+        tokens: credentials,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "email",
+        ignoreDuplicates: false,
+      }
+    );
 
     if (upsertError) {
       console.error("Token storage error:", upsertError);
