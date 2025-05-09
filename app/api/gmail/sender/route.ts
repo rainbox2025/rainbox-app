@@ -49,10 +49,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: sender,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: sender,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("Error adding sender:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

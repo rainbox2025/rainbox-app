@@ -6,9 +6,43 @@ import { GaxiosResponse } from "gaxios";
 import { gmail_v1 } from "googleapis";
 import { EmailData } from "@/types/data";
 import { initOauthCLient } from "@/lib/oauth";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+
   try {
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Get user's Gmail senders
+    const { data: senders, error: sendersError } = await supabase
+      .from("senders")
+      .select("email")
+      .eq("user_id", user.id)
+      .eq("mail_service", "gmail");
+
+    if (sendersError) {
+      return NextResponse.json(
+        { error: "Failed to fetch senders" },
+        { status: 500 }
+      );
+    }
+
+    if (!senders || senders.length === 0) {
+      return NextResponse.json({
+        emails: [],
+        total: 0,
+        message: "No Gmail senders found",
+      });
+    }
+
     const cookieStore = cookies();
     const tokensCookie = cookieStore.get("consent_tokens");
 
@@ -28,16 +62,9 @@ export async function POST(request: Request) {
     oauth2Client.setCredentials(tokens);
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-    const { senders } = (await request.json()) as { senders: string[] };
 
-    if (!Array.isArray(senders) || senders.length === 0) {
-      return NextResponse.json(
-        { error: "Please provide an array of sender emails" },
-        { status: 400 }
-      );
-    }
-
-    const query = senders.map((email) => `from:${email}`).join(" OR ");
+    // Create query from senders' emails
+    const query = senders.map((sender) => `from:${sender.email}`).join(" OR ");
     let allEmails: EmailData[] = [];
     let pageToken: string | undefined;
 
@@ -78,6 +105,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       emails: allEmails,
       total: allEmails.length,
+      senderCount: senders.length,
     });
   } catch (error: any) {
     console.error("Error fetching emails:", error);
