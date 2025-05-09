@@ -7,7 +7,6 @@ import { extractEmail } from "@/lib/gmail";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  // todo: ignore emails which have already been processed to avoid duplicates and onboard new ones successfully
   try {
     // Get authenticated user
     const {
@@ -18,17 +17,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get user's Gmail senders with IDs
+    // Get user's non-onboarded Gmail senders
     const { data: senders, error: sendersError } = await supabase
       .from("senders")
       .select("id, email")
       .eq("user_id", user.id)
-      .eq("mail_service", "gmail");
+      .eq("mail_service", "gmail")
+      .eq("is_onboarded", false);
 
-    if (sendersError || !senders) {
+    if (sendersError) {
       return NextResponse.json(
         { error: "Failed to fetch senders" },
         { status: 500 }
+      );
+    }
+
+    // Return early if no senders need processing
+    if (!senders || senders.length === 0) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "No new senders to process",
+          processed: 0,
+          sendersOnboarded: 0,
+        },
+        { status: 200 }
       );
     }
 
@@ -115,15 +128,38 @@ export async function POST(request: Request) {
             { status: 500 }
           );
         }
+
+        // Update is_onboarded status only for senders with saved emails
+        const { error: updateError } = await supabase
+          .from("senders")
+          .update({ is_onboarded: true })
+          .in(
+            "id",
+            senders.map((s) => s.id)
+          );
+
+        if (updateError) {
+          console.error(
+            "Error updating sender onboarding status:",
+            updateError
+          );
+        }
       }
 
       return NextResponse.json({
         success: true,
         processed: validEmails.length,
+        sendersOnboarded: senders.length,
+        message: "Successfully processed new senders",
       });
     }
 
-    return NextResponse.json({ success: true, processed: 0, total: 0 });
+    return NextResponse.json({
+      success: true,
+      processed: 0,
+      total: 0,
+      message: "No messages found for processing",
+    });
   } catch (error: any) {
     console.error("Error processing emails:", error);
     return NextResponse.json(
