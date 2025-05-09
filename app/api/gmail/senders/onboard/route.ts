@@ -7,7 +7,7 @@ import { extractEmail } from "@/lib/gmail";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  // todo: ignore emails which have already been processed to avoid duplicates and onboard new ones successfully
+  // todo: ignore emails which have already been processed
   try {
     // Get authenticated user
     const {
