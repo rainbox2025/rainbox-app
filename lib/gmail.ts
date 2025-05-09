@@ -5,7 +5,6 @@ export function extractEmailData(message: any) {
     const from = headers.find((h: any) => h.name === "From")?.value;
     const date = headers.find((h: any) => h.name === "Date")?.value;
 
-    // Extract body content
     let body = "";
     if (message.data.payload.parts) {
       const textPart = message.data.payload.parts.find(
@@ -30,4 +29,10 @@ export function extractEmailData(message: any) {
     console.error("Error extracting email data:", error);
     return null;
   }
+}
+
+export function extractEmail(from: string): string | null {
+  const emailRegex = /<([^>]+)>|([^\s<]+@[^\s>]+)/;
+  const match = from.match(emailRegex);
+  return match ? match[1] || match[2] : null;
 }

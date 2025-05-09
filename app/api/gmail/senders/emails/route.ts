@@ -1,12 +1,9 @@
 import { google } from "googleapis";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { extractEmailData } from "@/lib/gmail";
-import { GaxiosResponse } from "gaxios";
-import { gmail_v1 } from "googleapis";
-import { EmailData } from "@/types/data";
-import { initOauthCLient } from "@/lib/oauth";
 import { createClient } from "@/utils/supabase/server";
+import { initOauthCLient } from "@/lib/oauth";
+import { extractEmail } from "@/lib/gmail";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -21,26 +18,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get user's Gmail senders
+    // Get user's Gmail senders with IDs
     const { data: senders, error: sendersError } = await supabase
       .from("senders")
-      .select("email")
+      .select("id, email")
       .eq("user_id", user.id)
       .eq("mail_service", "gmail");
 
-    if (sendersError) {
+    if (sendersError || !senders) {
       return NextResponse.json(
         { error: "Failed to fetch senders" },
         { status: 500 }
       );
-    }
-
-    if (!senders || senders.length === 0) {
-      return NextResponse.json({
-        emails: [],
-        total: 0,
-        message: "No Gmail senders found",
-      });
     }
 
     const cookieStore = cookies();
@@ -63,54 +52,83 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    // Create query from senders' emails
-    const query = senders.map((sender) => `from:${sender.email}`).join(" OR ");
-    let allEmails: EmailData[] = [];
-    let pageToken: string | undefined;
+    const messagesRes = await gmail.users.messages.list({
+      userId: "me",
+      maxResults: 100,
+    });
 
-    do {
-      const messagesRes: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse> =
-        await gmail.users.messages.list({
-          userId: "me",
-          q: query,
-          maxResults: 100,
-          pageToken: pageToken,
-        });
+    if (messagesRes.data.messages) {
+      const emailsToInsert = await Promise.all(
+        messagesRes.data.messages.map(async (message) => {
+          const msg = await gmail.users.messages.get({
+            userId: "me",
+            id: message.id!,
+            format: "full",
+          });
 
-      const messages = messagesRes.data.messages || [];
-      const emails = await Promise.all(
-        messages.map(async (message) => {
-          if (!message.id) return null;
+          const headers = msg.data.payload?.headers || [];
+          const from = headers.find((h) => h.name === "From")?.value || "";
+          const subject = headers.find((h) => h.name === "Subject")?.value;
+          const date = headers.find((h) => h.name === "Date")?.value;
 
-          const msg: GaxiosResponse<gmail_v1.Schema$Message> =
-            await gmail.users.messages.get({
-              userId: "me",
-              id: message.id,
-              format: "full",
-            });
-          return extractEmailData(msg);
+          // Extract email from "From" field
+          const senderEmail = extractEmail(from);
+          if (!senderEmail) return null;
+
+          // Find matching sender from our database
+          const sender = senders.find((s) => s.email === senderEmail);
+          if (!sender) return null;
+
+          // Extract body
+          let body = "";
+          if (msg.data.payload?.parts) {
+            const textPart = msg.data.payload.parts.find(
+              (part) => part.mimeType === "text/plain"
+            );
+            if (textPart?.body?.data) {
+              body = Buffer.from(textPart.body.data, "base64").toString();
+            }
+          } else if (msg.data.payload?.body?.data) {
+            body = Buffer.from(msg.data.payload.body.data, "base64").toString();
+          }
+
+          return {
+            user_id: user.id,
+            sender_id: sender.id,
+            subject: subject || null,
+            body: body || null,
+          };
         })
       );
 
-      allEmails = allEmails.concat(
-        emails.filter((email): email is EmailData => email !== null)
-      );
-      pageToken = messagesRes.data.nextPageToken || undefined;
-    } while (pageToken);
+      // Filter out nulls and insert valid emails
+      const validEmails = emailsToInsert.filter(Boolean);
+      if (validEmails.length > 0) {
+        const { error: insertError } = await supabase
+          .from("mails")
+          .upsert(validEmails);
 
-    allEmails.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+        if (insertError) {
+          console.error("Error inserting emails:", insertError);
+          return NextResponse.json(
+            { error: "Failed to save emails" },
+            { status: 500 }
+          );
+        }
+      }
 
-    return NextResponse.json({
-      emails: allEmails,
-      total: allEmails.length,
-      senderCount: senders.length,
-    });
+      return NextResponse.json({
+        success: true,
+        processed: validEmails.length,
+        total: messagesRes.data.messages.length,
+      });
+    }
+
+    return NextResponse.json({ success: true, processed: 0, total: 0 });
   } catch (error: any) {
-    console.error("Error fetching emails:", error);
+    console.error("Error processing emails:", error);
     return NextResponse.json(
-      { error: "Failed to fetch emails", details: error.message },
+      { error: "Failed to process emails", details: error.message },
       { status: 500 }
     );
   }
