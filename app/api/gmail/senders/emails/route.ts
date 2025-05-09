@@ -120,7 +120,6 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         processed: validEmails.length,
-        total: messagesRes.data.messages.length,
       });
     }
 
