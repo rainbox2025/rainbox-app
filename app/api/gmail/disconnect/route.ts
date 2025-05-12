@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 import { createClient } from "@/utils/supabase/server";
 import { initOauthCLient } from "@/lib/oauth";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     const { data: tokenData, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("email", user.email)
       .single();
 
     if (tokenError) {
@@ -69,10 +70,21 @@ export async function POST(request: Request) {
       console.error("Error revoking token:", error);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Gmail disconnected successfully",
-    });
+    const cookieStore = cookies();
+    cookieStore.delete("consent_tokens");
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Gmail disconnected successfully",
+      },
+      {
+        headers: {
+          "Set-Cookie":
+            "consent_tokens=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("Disconnect error:", error);
     return NextResponse.json(
