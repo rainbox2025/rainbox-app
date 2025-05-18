@@ -225,7 +225,7 @@ const TextToAudio = ({
         borderRadius: '8px 8px 0 0',
       }}
     >
-      <div className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300 p-4 max-w-xl rounded-t-md mx-auto relative pb-8">
+      <div className="bg-sidebar/1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300 p-4 max-w-xl rounded-t-md mx-auto relative pb-8">
         {/* Close button at top right corner */}
         <div className="flex justify-end absolute right-0 top-0">
           <Button
