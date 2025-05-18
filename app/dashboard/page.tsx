@@ -1,5 +1,5 @@
 "use client";
-import { Onboardingmodal } from "@/components/onboardingmodal";
+import { OnboardingModal } from "@/components/onboardingmodal";
 import { useOnboarding } from "@/context/onboardingContext";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
@@ -78,7 +78,7 @@ const Page = () => {
       className="flex min-w-fit h-screen overflow-x-auto"
       ref={containerRef}
     >
-      {showOnboardingModal && <Onboardingmodal />}
+      {showOnboardingModal && <OnboardingModal />}
 
       <div
         className={`flex flex-col h-full transition-all duration-300 ease-in-out 

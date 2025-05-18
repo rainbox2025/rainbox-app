@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
-import { ClipboardIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ClipboardIcon, PlusCircleIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 type ConnectionCardProps = {
   logo: string;           // URL or path to logo image
@@ -25,8 +25,8 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   className
 }) => {
   return (
-    <div className={`border border-border rounded-md flex justify-between items-center w-full ${className}`}>
-      <div className="flex items-center gap-3 p-sm flex-grow">
+    <div className={`border border-border rounded-md pr-1 flex justify-between items-center w-full ${className}`}>
+      <div className="flex items-center gap-2 p-sm flex-grow">
         {logo.includes("svg") ? (
           // For SVG logos (like Google)
           <div className="bg-content rounded p-1 border border-border">
@@ -46,19 +46,49 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           <div className={`text-sm font-medium`}>{subtitle}</div>
         </div>
       </div>
-      <div
-        className=" border-border p-3 mr-1 cursor-pointer rounded-md bg-sidebar hover:bg-hovered transition-colors text-sm"
-        onClick={onAction}
-      >
-        {actionType === "connect" ? (
-          <span className="text-sm">{actionText || "+ Connect"}</span>
-        ) : actionType === "disconnect" ? (
-          <XMarkIcon className="h-5 w-5" />
-        ) : actionType === "copy" ? (
-          <ClipboardIcon className="h-5 w-5 hover:text-primary" />
-        ) : null}
-      </div>
-    </div>
+
+      {actionType === "connect" && (
+        <div
+          className=" border-border p-2 mr-1 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
+          onClick={onAction}
+        >
+          <div className="flex justify-center items-center gap-2">
+            <PlusIcon className="h-5 w-5 hover:text-primary" />
+            <span className="text-sm text-muted-foreground">Connect</span>
+          </div>
+        </div>
+      )}
+
+      {actionType === "copy" && (
+        <div
+          className=" border-border p-2 mr-1 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
+          onClick={onAction}
+        >
+          <div className="flex justify-center items-center gap-2">
+            <ClipboardIcon className="h-5 w-5 hover:text-primary" />
+            <span className="text-sm text-muted-foreground">Copy</span>
+          </div>
+        </div>
+
+      )}
+
+      {actionType === "resync" && (
+        <div className="flex justify-center items-center gap-1">
+          <div
+            className=" border-border p-2 mr-1 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
+            onClick={onAction}
+          >
+            <span className="text-sm text-muted-foreground">Re-sync</span>
+          </div>
+          <div
+            className=" border-border p-2 mr-1 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
+            onClick={onAction}
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </div>
+        </div>
+      )}
+    </div >
   );
 };
 

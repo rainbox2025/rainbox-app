@@ -220,13 +220,12 @@ const TextToAudio = ({
 
   return (
     <div
-      className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
       style={{
         ...dialogStyle,
         borderRadius: '8px 8px 0 0',
       }}
     >
-      <div className="p-4 max-w-2xl mx-auto relative">
+      <div className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300 p-4 max-w-xl rounded-t-md mx-auto relative pb-8">
         {/* Close button at top right corner */}
         <div className="flex justify-end absolute right-0 top-0">
           <Button

@@ -20,6 +20,7 @@ const config = {
     extend: {
       height: {
         header: "35px", 
+        onbarding: "400px",
       },
       colors: {
         // Base color palette

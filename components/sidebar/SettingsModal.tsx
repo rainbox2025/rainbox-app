@@ -25,6 +25,8 @@ import { ClipboardCopy, Mail, X } from 'lucide-react';
 import { useSenders } from '@/context/sendersContext';
 import { SenderIcon } from './SenderIcon';
 import ConnectionCard from '../settings/ConnectionCard';
+import AddMailBox from '../settings/add-mail-box';
+import DisconnectBox from '../settings/disconnect-box';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -397,7 +399,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
             <button
               onClick={handleAddMailbox}
-              className="mt-4 flex items-center gap-2 px-4 py-2 border border-border rounded-md bg-sidebar hover:bg-hovered transition-colors text-sm"
+              className="mt-4 flex items-center gap-2 px-4 py-2 border border-border rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
             >
               + Add a secondary mailbox
             </button>
@@ -430,10 +432,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   logoAlt="Outlook Logo"
                   title="Ganesh's Outlook"
                   subtitle="ganesh123@outlook.com"
-                  actionType="disconnect"
+                  actionType="resync"
                   onAction={handleDisconnectOutlook}
                   isConnected={true}
                 />
+
               </div>
             </div>
           </div>
@@ -462,88 +465,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
 
         {/* Add a New Mailbox Modal */}
-        {showAddMailbox && (
-          <div className="fixed mt-0 inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ marginTop: '0px' }}>
-            <div className="bg-content rounded-lg w-full max-w-md p-6 relative">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Add a New Mailbox</h2>
-                <button onClick={handleCloseModal} className="">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <p className="mb-6 text-sm">Create a new Rainbox address for your Newsletters</p>
-
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Your name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-md"
-                />
-
-                <div className="flex">
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-l-md"
-                  />
-                  <div className="bg-sidebar px-3 py-3 border-t border-r border-b rounded-r-md text-sm">
-                    @rainbox.app
-                  </div>
-                </div>
-
-                {error && (
-                  <p className="text-red-500 text-sm">{error}</p>
-                )}
-
-                <button
-                  onClick={handleCreateMailbox}
-                  className="w-full bg-sidebar text-md rounded-md py-2 mt-4"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AddMailBox showAddMailbox={showAddMailbox} handleCloseModal={handleCloseModal} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} handleCreateMailbox={handleAddMailbox} />
 
         {/* Disconnect Outlook Modal */}
-        {showDisconnectOutlook && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ marginTop: '0px' }}>
-            <div className="bg-content rounded-lg w-full max-w-md p-6 relative">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Disconnect Outlook</h2>
-                <button onClick={handleCloseModal} className="">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <p className="mb-6 text-sm">Are you sure you want to disconnect Outlook? You'll not receive any future emails from Outlook.</p>
-
-              <div className="flex gap-4 mt-6">
-                <button
-                  onClick={handleCloseModal}
-                  className="flex-1 bg-gray-500 text-md rounded-md py-2"
-                >
-                  &lt; Go back
-                </button>
-                <button
-                  onClick={() => {
-                    // Implementation for disconnecting would go here
-                    handleCloseModal();
-                  }}
-                  className="flex-1 bg-sidebar text-md rounded-md py-2"
-                >
-                  Disconnect
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DisconnectBox showDisconnectOutlook={showDisconnectOutlook} handleCloseModal={handleCloseModal} />
       </div>
     ),
     preferences: (
@@ -583,6 +508,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <label htmlFor="ai-prompt" className="block text-sm font-medium mb-1">Default prompt for summaries</label>
+              <p className="text-xs text-muted-foreground mb-2">
+                {250 - (aiPrompt?.length || 0)} characters remaining
+              </p>
               <textarea
                 id="ai-prompt"
                 value={aiPrompt}
@@ -595,14 +523,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 rows={3}
                 className="w-full p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
               />
-              <div className="flex justify-between mt-1">
-                <p className="text-xs text-muted-foreground">
-                  This prompt will be used when generating AI summaries of your content.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {250 - (aiPrompt?.length || 0)} characters remaining
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                This prompt will be used when generating AI summaries of your content.
+              </p>
+
             </div>
           </div>
 

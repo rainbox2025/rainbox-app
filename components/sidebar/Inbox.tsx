@@ -326,6 +326,19 @@ export default function Inbox() {
           <p>Drag items to rearrange or move between folders</p>
           <p className="mt-1">All changes are automatically saved</p>
         </div>
+
+        {/* Upgrade Box */}
+        <div className="px-4 py-3 mt-auto border-border absolute bottom-2  ">
+          <div className="bg-content p-3 rounded-lg shadow-sm">
+            <p className="text-sm font-medium text-foreground">
+              30 days left in your free trial. Keep your reading habit alive.
+              <span className="ml-1 text-blue-500 font-semibold cursor-pointer">
+                Upgrade -&gt;
+              </span>
+            </p>
+          </div>
+        </div>
+
       </div>
 
       {/* Folder Creation Modal */}

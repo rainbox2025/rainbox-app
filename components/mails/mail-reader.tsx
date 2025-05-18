@@ -106,7 +106,6 @@ export const MailReader = ({
         <div
           ref={mailReaderRef} // Add ref to mail reader container
           className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative" // Add relative positioning
-          // style={{ width: window.innerWidth >= 768 ? `${mailReaderWidth}%` : "100%" }}
           style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : { width: `${mailReaderWidth}%` }}
         >
           <MailReaderHeader
@@ -117,7 +116,7 @@ export const MailReader = ({
             toggleFullScreen={toggleFullScreen}
           />
           <div className="p-md pb-64"> {/* Keep bottom padding to prevent content being hidden */}
-            <div className={`${isFullScreen ? 'max-w-3xl mx-auto' : 'w-full'}`}>
+            <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
               <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
                 {selectedMail?.subject}
               </h1>
