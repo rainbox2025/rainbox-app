@@ -7,56 +7,119 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/authContext";
+import { useOnboarding } from "@/context/onboardingContext";
 import Image from "next/image";
 import ConnectionCard from "./settings/ConnectionCard";
 
 export const OnboardingModal = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const {
+    currentStep: contextCurrentStep,
+    nextStep: contextNextStep,
+    previousStep: contextPreviousStep,
+    checkUserName,
+    updateUserName,
+
+  } = useOnboarding();
+
+
   const [userName, setUserName] = useState("");
   const [userNameError, setUserNameError] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [isUsernameValid, setIsUsernameValid] = useState(true);
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [country, setCountry] = useState("");
 
   const { user } = useAuth ? useAuth() : { user: { id: "mock-user-id" } };
-  const supabase = createClient ? createClient() : {};
 
-  const nextStep = () => {
-    setCurrentStep(prev => prev + 1);
-  };
 
-  const previousStep = () => {
-    setCurrentStep(prev => prev - 1);
-  };
 
   const handleUsernameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUsername = e.target.value;
+    const trimmedUsername = newUsername.trim();
+
     setUserName(newUsername);
     setUserNameError("");
-    if (newUsername.trim().length > 0) {
-      setIsUsernameValid(true);
-    } else {
+    setIsUsernameValid(false);
+
+    if (trimmedUsername.length === 0) {
+
+
+      return;
+    }
+
+    if (trimmedUsername.length < 3) {
+      setUserNameError("Username must be at least 3 characters.");
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(trimmedUsername)) {
+      setUserNameError("Only letters, numbers, and underscores allowed.");
+      return;
+    }
+
+
+    setIsCheckingUsername(true);
+    try {
+      const isAvailable = await checkUserName(trimmedUsername);
+      if (isAvailable) {
+        setIsUsernameValid(true);
+        setUserNameError("");
+      } else {
+        setIsUsernameValid(false);
+        setUserNameError("Username is already taken.");
+      }
+    } catch (error) {
+      console.error("Error checking username:", error);
+      setUserNameError("Error checking username. Please try again.");
       setIsUsernameValid(false);
+    } finally {
+      setIsCheckingUsername(false);
     }
   };
 
-  const handleUsernameSubmit = (e: React.FormEvent) => {
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userName.trim()) {
+    const trimmedUserName = userName.trim();
+
+    if (!trimmedUserName) {
       setUserNameError("Username cannot be empty");
       setIsUsernameValid(false);
       return;
     }
+
     if (!isUsernameValid) {
-      setUserNameError("Username is not valid.");
+
+      if (!userNameError) setUserNameError("Username is not valid. Please check the requirements.");
       return;
     }
-    console.log("Username saved:", userName);
-    nextStep();
+
+    if (!user || !user.id) {
+      setUserNameError("User not authenticated. Cannot save username.");
+
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    try {
+      await updateUserName(user.id, trimmedUserName);
+      console.log("Username saved:", trimmedUserName);
+      contextNextStep();
+    } catch (error) {
+      console.error("Error updating username:", error);
+
+      if (error instanceof Error && error.message.toLowerCase().includes("duplicate") /* more specific check needed */) {
+        setUserNameError("This username was just taken. Please choose another.");
+        setIsUsernameValid(false);
+      } else {
+        setUserNameError("Failed to save username. Please try again.");
+      }
+    } finally {
+      setIsCheckingUsername(false);
+    }
   };
+
 
   const handleTopicSelection = (topicId: string) => {
     setSelectedTopics(prevSelectedTopics =>
@@ -66,8 +129,11 @@ export const OnboardingModal = () => {
     );
   };
 
+
   const completeOnboarding = () => {
     console.log("Onboarding complete!");
+
+
     window.location.href = "/dashboard";
   };
 
@@ -82,12 +148,13 @@ export const OnboardingModal = () => {
     { id: "humor", name: "Humor" },
   ];
 
+
   const renderProgressBar = () => {
     return (
       <div className="w-[90%] mb-5 bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
         <div
           className="bg-primary h-2 rounded-full transition-all duration-300"
-          style={{ width: `${(currentStep / 5) * 100}%` }}
+          style={{ width: `${(contextCurrentStep / 5) * 100}%` }}
         ></div>
       </div>
     );
@@ -97,7 +164,7 @@ export const OnboardingModal = () => {
   const secondaryButtonClasses = "text-muted-foreground hover:bg-accent";
 
   const renderStep = () => {
-    switch (currentStep) {
+    switch (contextCurrentStep) {
       case 1:
         return (
           <div className="space-y-4 p-6">
@@ -120,15 +187,17 @@ export const OnboardingModal = () => {
                   name="username"
                   value={userName}
                   onChange={handleUsernameChange}
-                  className={`w-full text-black dark:text-white dark:bg-neutral-800 focus:outline-none text-sm focus:ring-0 !outline-none rounded-r-none ${!isUsernameValid && userName.trim() && !isCheckingUsername ? "border-red-500" : "border-input"}`}
+                  className={`w-full text-black dark:text-white focus:outline-none text-sm focus:ring-0 !outline-none rounded-r-none ${userName.trim() && !isUsernameValid && !isCheckingUsername ? "border-red-500" : "border-input"}`}
                   disabled={isCheckingUsername}
+                  aria-invalid={!isUsernameValid && userName.trim().length > 0}
+                  aria-describedby="username-error"
                 />
-                <div className="bg-gray-100 dark:bg-neutral-800 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
+                <div className="bg-gray-100 dark:bg-neutral-900 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
                   @rainbox.app
                 </div>
               </div>
               {userNameError && (
-                <p className="text-red-500 text-xs">{userNameError}</p>
+                <p id="username-error" className="text-red-500 text-xs">{userNameError}</p>
               )}
               <Button
                 type="submit"
@@ -136,7 +205,7 @@ export const OnboardingModal = () => {
                 size="sm"
                 disabled={isCheckingUsername || !isUsernameValid || !userName.trim()}
               >
-                Next →
+                {isCheckingUsername ? "Checking..." : "Next →"}
               </Button>
             </form>
           </div>
@@ -182,14 +251,14 @@ export const OnboardingModal = () => {
             <div className="flex justify-end space-x-2 mt-6">
               <Button
                 variant="ghost"
-                onClick={previousStep}
+                onClick={contextPreviousStep}
                 className={secondaryButtonClasses}
                 size="sm"
               >
                 ← Back
               </Button>
               <Button
-                onClick={nextStep}
+                onClick={contextNextStep}
                 className={primaryButtonClasses}
                 size="sm"
                 disabled={selectedTopics.length < 3 || !country}
@@ -241,14 +310,14 @@ export const OnboardingModal = () => {
             <div className="flex justify-end space-x-2 mt-6">
               <Button
                 variant="ghost"
-                onClick={previousStep}
+                onClick={contextPreviousStep}
                 className={secondaryButtonClasses}
                 size="sm"
               >
                 ← Back
               </Button>
               <Button
-                onClick={nextStep}
+                onClick={contextNextStep}
                 className={primaryButtonClasses}
                 size="sm"
               >
@@ -266,14 +335,14 @@ export const OnboardingModal = () => {
             <div className="flex justify-end space-x-2 mt-6">
               <Button
                 variant="ghost"
-                onClick={previousStep}
+                onClick={contextPreviousStep}
                 className={secondaryButtonClasses}
                 size="sm"
               >
                 ← Back
               </Button>
               <Button
-                onClick={nextStep}
+                onClick={contextNextStep}
                 className={primaryButtonClasses}
                 size="sm"
               >
@@ -288,7 +357,7 @@ export const OnboardingModal = () => {
           <div className="space-y-4 p-6">
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <Image src="/RainboxLogo.png" width={48} height={48} alt="Rainbox Logo" className="mb-4" />
-              <h2 className="text-md font-medium text-foreground">Hey {userName || "User"},</h2>
+              <h2 className="text-md font-medium text-foreground">Hey {userName.trim() || "User"},</h2>
               <p className="text-xs text-muted-foreground mt-1 mb-6 flex items-center justify-center">
                 Welcome to your
                 <Image src="/RainboxLogo.png" width={16} height={16} alt="Rainbox" className="inline h-4 w-4 mx-0.5" />

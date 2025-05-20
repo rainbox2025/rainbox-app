@@ -883,7 +883,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="text-xl font-bold"
               >
-                X
+                <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
@@ -901,17 +901,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="flex justify-between">
+
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-5 py-3 bg-content text-sm font-medium rounded-full transition-colors"
+              >
+                Go back
+              </button>
               <button
                 onClick={handleDeleteAccount}
                 className="px-4 py-2 text-sm text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-md transition-colors"
               >
                 Delete Account
-              </button>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-5 py-3 bg-black text-sm font-medium rounded-full transition-colors"
-              >
-                Go back
               </button>
             </div>
           </motion.div>
