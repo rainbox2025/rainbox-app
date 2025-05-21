@@ -25,6 +25,7 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import SettingsModal from "./SettingsModal";
 import { InboxIcon, PlusIcon } from "lucide-react";
+import { FeedbackModal } from "../feedback-modal";
 
 export default function LeftPanel() {
   const { setMode } = useMode();
@@ -35,6 +36,7 @@ export default function LeftPanel() {
 
   // State for modals
   const [showUserModal, setShowUserModal] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -309,6 +311,7 @@ export default function LeftPanel() {
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
           aria-label="Feedback"
           title="Feedback"
+          onClick={() => setIsFeedbackOpen(true)}
         >
           <ChatBubbleLeftEllipsisIcon className="w-5 h-5" />
         </button>
@@ -371,6 +374,13 @@ export default function LeftPanel() {
           )}
         </div>
       </div>
+
+      {isFeedbackOpen && (
+        <FeedbackModal
+          isOpen={isFeedbackOpen}
+          onClose={() => setIsFeedbackOpen(false)}
+        />
+      )}
 
       <SettingsModal
         isOpen={isSettingsOpen}
