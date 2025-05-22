@@ -79,7 +79,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           <img
             src={
               mailSender?.domain === "gmail.com"
-                ? "/logos/gmail.webp"
+                ? "/gmail.webp"
                 : `https://www.google.com/s2/favicons?domain=${mailSender?.domain}&sz=128`
             }
             alt={mail.subject}

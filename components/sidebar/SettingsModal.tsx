@@ -27,6 +27,8 @@ import { SenderIcon } from './SenderIcon';
 import ConnectionCard from '../settings/ConnectionCard';
 import AddMailBox from '../settings/add-mail-box';
 import DisconnectBox from '../settings/disconnect-box';
+import { ConnectGmailModal } from '../connect-gmail/connect-gmail';
+import { GmailConnectionFlow } from '../connect-gmail/flow';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -59,12 +61,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [fontSize, setFontSize] = useState('small');
 
   const [showAddMailbox, setShowAddMailbox] = useState(false);
+  const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
   const [showDisconnectOutlook, setShowDisconnectOutlook] = useState(false);
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
   const { senders, isSendersLoading } = useSenders();
+  const [openConnectModal, setOpenConnectModal] = useState(false);
   const [allNotificationsEnabled, setAllNotificationsEnabled] = useState(true);
   const [feedSettings, setFeedSettings] = useState<Record<string, boolean>>({});
   const [previousSettings, setPreviousSettings] = useState<Record<string, boolean>>({});
@@ -421,7 +425,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   title="Connect your Gmail"
                   subtitle=""
                   actionType="connect"
-                  onAction={() => { }}
+                  onAction={() => { setIsGmailFlowOpen(true) }}
                   isConnected={false}
                 />
               </div>
@@ -918,6 +922,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </motion.div>
         </div>
       )}
+
+      <GmailConnectionFlow
+        isOpen={isGmailFlowOpen}
+        onClose={() => setIsGmailFlowOpen(false)}
+        onConnectionComplete={() => setIsGmailFlowOpen(false)}
+      />
     </div>
   );
 };
