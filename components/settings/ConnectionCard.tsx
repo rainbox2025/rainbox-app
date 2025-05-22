@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
-import { ClipboardIcon, PlusCircleIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ClipboardIcon, PlusCircleIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 type ConnectionCardProps = {
   logo: string;           // URL or path to logo image
@@ -38,7 +38,6 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             </svg>
           </div>
         ) : (
-          // For other image logos
           <Image src={logo} alt={logoAlt} width={24} height={24} className="w-8 h-8" />
         )}
         <div>
@@ -85,6 +84,18 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             onClick={onAction}
           >
             <XMarkIcon className="h-5 w-5" />
+          </div>
+        </div>
+      )}
+
+      {actionType === "select-sender" && (
+        <div
+          className=" border-border p-2 mr-1 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
+          onClick={onAction}
+        >
+          <div className="flex justify-center items-center gap-2">
+            <span className="text-sm text-muted-foreground">Select Sender</span>
+            <ArrowRightIcon className="h-5 w-5 hover:text-primary text-muted-foreground" />
           </div>
         </div>
       )}

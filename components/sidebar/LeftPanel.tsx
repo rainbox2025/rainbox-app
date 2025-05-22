@@ -26,6 +26,7 @@ import Image from "next/image";
 import SettingsModal from "./SettingsModal";
 import { InboxIcon, PlusIcon } from "lucide-react";
 import { FeedbackModal } from "../feedback-modal";
+import { AddNewsletterFlow } from "../newsletter/flow";
 
 export default function LeftPanel() {
   const { setMode } = useMode();
@@ -35,6 +36,7 @@ export default function LeftPanel() {
   const { theme, setTheme } = useTheme();
 
   // State for modals
+  const [isAddNewsletterFlowOpen, setIsAddNewsletterFlowOpen] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -167,6 +169,7 @@ export default function LeftPanel() {
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
           title="Add New"
+          onClick={() => setIsAddNewsletterFlowOpen(true)}
         >
           <PlusIcon className="w-5 h-5" />
         </button>
@@ -385,6 +388,10 @@ export default function LeftPanel() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <AddNewsletterFlow
+        isOpen={isAddNewsletterFlowOpen}
+        onClose={() => setIsAddNewsletterFlowOpen(false)}
       />
     </>
   );
