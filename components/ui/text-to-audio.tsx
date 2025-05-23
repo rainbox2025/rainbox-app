@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { stripHtml } from "@/lib/utils";
 import { useSenders } from "@/context/sendersContext";
-import { SenderIcon } from "../sidebar/SenderIcon";
+import { SenderIcon } from "../sidebar/sender-icon";
 
 const TextToAudio = ({
   open,

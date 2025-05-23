@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Loader2, Menu, X } from "lucide-react";
-import LeftPanel from "@/components/sidebar/LeftPanel";
+import LeftPanel from "@/components/left-panel";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);

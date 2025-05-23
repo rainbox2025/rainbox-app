@@ -1,7 +1,6 @@
 "use client";
-import { motion } from "framer-motion";
 import React, { useState, useRef, useEffect } from "react";
-import Inbox from "./Inbox";
+import Inbox from "./inbox";
 import { useAuth } from "@/context/authContext";
 
 const Sidebar = ({ onClose }: { onClose: () => void }) => {

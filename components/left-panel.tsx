@@ -23,10 +23,10 @@ import { useMails } from "@/context/mailsContext";
 import { useAuth } from "@/context/authContext";
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import SettingsModal from "./SettingsModal";
+import SettingsModal from "./settings/settings-modal";
 import { InboxIcon, PlusIcon } from "lucide-react";
-import { FeedbackModal } from "../feedback-modal";
-import { AddNewsletterFlow } from "../newsletter/flow";
+import { FeedbackModal } from "./feedback-modal";
+import { AddNewsletterFlow } from "./newsletter/flow";
 
 export default function LeftPanel() {
   const { setMode } = useMode();

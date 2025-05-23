@@ -22,10 +22,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { FolderType, SenderType } from "@/types/data";
-import { SenderIcon } from "./SenderIcon";
-import FolderComponent from "./Folder";
-import Sender from "./Sender";
-import { Modal } from "./Modal";
+import { SenderIcon } from "./sender-icon";
+import FolderComponent from "./folder";
+import Sender from "./sender";
+import { BasicModal } from "../modals/basic-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
@@ -342,7 +342,7 @@ export default function Inbox() {
       </div>
 
       {/* Folder Creation Modal */}
-      <Modal
+      <BasicModal
         isOpen={isFolderModalOpen}
         onClose={() => setIsFolderModalOpen(false)}
         onSave={async (folderName) => {

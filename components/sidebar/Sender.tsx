@@ -2,13 +2,13 @@ import { SenderType } from "@/types/data";
 import { useSortable } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { CSS } from "@dnd-kit/utilities";
-import { SenderIcon } from "./SenderIcon";
+import { SenderIcon } from "./sender-icon";
 import { useState } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
-import { DeleteConfirmationModal } from "./DeleteModal";
+import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useSenders } from "@/context/sendersContext";
-import { EditSenderModal } from "./EditSenderModal";
-import { SenderDropdownMenu } from "./SenderDropdownMenu";
+import { EditSenderModal } from "../modals/edit-sender-modal";
+import { SenderDropdownMenu } from "./sender-dropdown-menu";
 
 interface SenderProps {
   sender: SenderType;

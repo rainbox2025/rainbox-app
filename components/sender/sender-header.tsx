@@ -9,9 +9,9 @@ import {
 import { useMails } from "@/context/mailsContext";
 import { XIcon, RefreshCcw, CheckIcon, MoreHorizontal } from "lucide-react";
 import { useSenders } from "@/context/sendersContext";
-import { SenderDropdownMenu } from "../sidebar/SenderDropdownMenu";
-import { DeleteConfirmationModal } from "../sidebar/DeleteModal";
-import { EditSenderModal } from "../sidebar/EditSenderModal";
+import { SenderDropdownMenu } from "../sidebar/sender-dropdown-menu";
+import { DeleteConfirmationModal } from "../modals/delete-modal";
+import { EditSenderModal } from "../modals/edit-sender-modal";
 
 export const SenderHeader = ({
   filter,

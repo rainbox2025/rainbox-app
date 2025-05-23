@@ -23,10 +23,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { ClipboardCopy, Mail, X } from 'lucide-react';
 import { useSenders } from '@/context/sendersContext';
-import { SenderIcon } from './SenderIcon';
-import ConnectionCard from '../settings/ConnectionCard';
-import AddMailBox from '../settings/add-mail-box';
-import DisconnectBox from '../settings/disconnect-box';
+import { SenderIcon } from '../sidebar/sender-icon';
+import ConnectionCard from './ConnectionCard';
+import AddMailBox from './add-mail-box';
+import DisconnectBox from './disconnect-box';
 import { ConnectGmailModal } from '../connect-gmail/connect-gmail';
 import { GmailConnectionFlow } from '../connect-gmail/flow';
 
