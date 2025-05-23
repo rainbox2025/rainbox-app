@@ -31,7 +31,9 @@ export default async function SignIn(props: {
             className="w-100 h-auto object-contain dark:invert"
           />
         </div>
-        <h2 className="text-xl  text-center text-muted-foreground mb-2">All your newsletters in one place</h2>
+        <h2 className="text-xl text-center text-muted-foreground mb-2 italic">
+          All your newsletters in one place
+        </h2>
         <div className="text-muted-foreground text-center text-sm mb-2 mt-10">
           New here? <Link href="/sign-up" className="text-primary hover:underline">Create an account</Link>
 

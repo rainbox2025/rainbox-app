@@ -86,12 +86,15 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
         isOpen={activeModal === 'success'}
         onClose={closeModal}
         onSelectNewsletters={() => setActiveModal('selectNewsletters')}
+        mainText='Woohoo! Selected Newsletters are getting added. It may take upto 2 minutes to show up in your feed'
+        buttonText='Close'
       />
 
       <ErrorModal
         isOpen={activeModal === 'error'}
         onClose={closeModal}
         onTryAgain={handleTryAgainError}
+        mainText='Oops! There was an error. Please try again, or re-sync your email account. If nothing works, contact support.'
       />
     </div>
   );

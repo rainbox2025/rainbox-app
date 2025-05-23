@@ -33,8 +33,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             className={`bg-content rounded-xl shadow-xl w-full ${widthClass} border border-secondary overflow-hidden flex flex-col`}
           >
             {title && (
-              <div className="flex justify-between items-center p-md border-b border-secondary">
-                <h2 className="text-lg font-semibold te">{title}</h2>
+              <div className="flex justify-between items-center p-md pb-0 border-b border-secondary">
+                <h2 className="text-lg font-semibold ml-2">{title}</h2>
                 <button
                   onClick={onClose}
                   className=""

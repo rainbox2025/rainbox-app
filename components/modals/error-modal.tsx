@@ -10,9 +10,10 @@ interface ErrorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTryAgain: () => void;
+  mainText: string;
 }
 
-export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAgain }) => {
+export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAgain, mainText }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -46,7 +47,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAg
             <div className="text-center my-6 flex flex-col items-center">
               <FaceFrownIcon className="h-16 w-16 text-muted-foreground mb-4" />
               <h2 className="text-md   mb-2">
-                Oops! There was an error. Please try again, or <span className="underline">re-sync</span> your email account. If nothing works, contact support.
+                {mainText}
               </h2>
             </div>
 

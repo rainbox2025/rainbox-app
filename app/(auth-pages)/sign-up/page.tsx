@@ -32,7 +32,7 @@ export default async function Signup(props: {
             className="w-100 h-auto object-contain dark:invert"
           />
         </div>
-        <h2 className="text-xl  text-center text-muted-foreground mb-2">All your newsletters in one place</h2>
+        <h2 className="text-xl  text-center text-muted-foreground mb-2 italic">All your newsletters in one place</h2>
         <div className="text-muted-foreground text-center text-sm mb-2 mt-10">
           Already have an account? <Link href="/sign-in" className="text-primary hover:underline">Sign in</Link>
 

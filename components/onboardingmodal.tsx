@@ -238,7 +238,7 @@ export const OnboardingModal = () => {
             <div className="mt-6">
               <p className="text-xs font-semibold text-foreground mb-2">Select your country</p>
               <select
-                className="w-full p-2 border border-input bg-background rounded-md text-sm focus:ring-primary focus:border-primary"
+                className="w-full p-2 border border-input bg-content rounded-md text-sm focus:ring-primary focus:border-primary"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
               >
@@ -388,7 +388,7 @@ export const OnboardingModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-sm bg-background rounded-lg shadow-xl border border-border p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-sm bg-content rounded-lg shadow-xl border border-border p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0 border-b border-border">
           {renderProgressBar()}
         </DialogHeader>

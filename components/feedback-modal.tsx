@@ -7,6 +7,7 @@ import {
   XMarkIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import { Button } from './ui/button';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -159,20 +160,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
             {/* Submit Button */}
             <div className="mt-6">
-              <button
-                onClick={handleSubmit}
-                className={`
-                  w-full px-4 py-2.5 rounded-md transition-colors text-sm font-semibold
-                  flex items-center justify-center relative
-                  bg-primary hover:bg-primary/80 text-primary-foreground 
-                  dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-slate-50
-                  disabled:opacity-60 disabled:cursor-not-allowed
-                `}
-                disabled={isLoading || !message.trim()}
-              >
+
+
+              <Button className='bg-primary w-full' onClick={handleSubmit} disabled={isLoading || !message.trim()}>
                 {isLoading ? (
                   <>
-                    <span className="opacity-0">Submit</span> {/* Maintain width */}
+                    <span>Submit</span>
                     <span className="absolute inset-0 flex items-center justify-center">
                       <ArrowPathIcon className="animate-spin h-5 w-5" />
                     </span>
@@ -180,7 +173,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 ) : (
                   'Submit'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </motion.div>

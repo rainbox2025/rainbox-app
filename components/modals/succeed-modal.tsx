@@ -8,10 +8,12 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline';
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectNewsletters: () => void;
+  onSelectNewsletters?: () => void;
+  mainText?: string;
+  buttonText?: string;
 }
 
-export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onSelectNewsletters }) => {
+export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onSelectNewsletters, mainText, buttonText }) => {
   if (!isOpen) return null;
 
   return (
@@ -31,12 +33,12 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onS
             <div className="text-center my-6">
               <CheckCircleIcon className="h-16 w-16 text-blue-500 mx-auto mb-4" />
               <h2 className="text-md  mb-2">
-                Woohoo! Selected Newsletters are getting added. It may take upto 2 minutes to show up in your feed
+                {mainText}
               </h2>
             </div>
 
             <Button className='w-full bg-primary text-sm' onClick={onClose}>
-              Close
+              {buttonText}
               <ArrowRightIcon className="w-4 h-4 ml-1" />
             </Button>
           </div>

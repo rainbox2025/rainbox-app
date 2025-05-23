@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ConnectGmailModal } from './connect-gmail';
 import { GmailPermissionsModal } from './proceed-modal';
-import { GmailSuccessModal } from './succeed-modal';
-import { GmailErrorModal } from './error-modal';
+import { ErrorModal } from '../modals/error-modal';
+import { SuccessModal } from '../modals/succeed-modal';
 
 
 type ActiveGmailSubModalType = 'connect' | 'permissions' | 'success' | 'error' | null;
@@ -118,18 +118,21 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
       )}
 
       {activeSubModal === 'success' && (
-        <GmailSuccessModal
+        <SuccessModal
           isOpen={true}
           onClose={handleSubModalClose}
           onSelectNewsletters={handleSelectNewsletters}
+          mainText='Woohoo! Your Gmail is now connected to Rainbox'
+          buttonText='Select Newsletters'
         />
       )}
 
       {activeSubModal === 'error' && (
-        <GmailErrorModal
+        <ErrorModal
           isOpen={true}
           onClose={handleSubModalClose}
           onTryAgain={handleTryAgainError}
+          mainText=' Oops! There was an error. Try again or contact support.'
         />
       )}
     </>
