@@ -30,14 +30,14 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`bg-white rounded-xl shadow-xl w-full ${widthClass} border border-neutral-200 overflow-hidden flex flex-col`}
+            className={`bg-content rounded-xl shadow-xl w-full ${widthClass} border border-secondary overflow-hidden flex flex-col`}
           >
             {title && (
-              <div className="flex justify-between items-center p-md border-b border-neutral-200">
-                <h2 className="text-lg font-semibold text-neutral-800">{title}</h2>
+              <div className="flex justify-between items-center p-md border-b border-secondary">
+                <h2 className="text-lg font-semibold te">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="text-neutral-500 hover:text-neutral-700"
+                  className=""
                   aria-label="Close modal"
                 >
                   <CloseIcon className="w-6 h-6" />
@@ -47,13 +47,13 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             {!title && (
               <button
                 onClick={onClose}
-                className="absolute top-5 right-5 text-neutral-500 hover:text-neutral-700 z-10"
+                className="absolute top-5 right-5  z-10"
                 aria-label="Close modal"
               >
                 <CloseIcon className="w-6 h-6" />
               </button>
             )}
-            <div className="p-6 flex-grow overflow-y-auto">
+            <div className="p-6  flex-grow overflow-y-auto">
               {children}
             </div>
           </motion.div>

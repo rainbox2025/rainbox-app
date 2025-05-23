@@ -30,13 +30,13 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAg
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed w-screen inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-xl shadow-xl w-full max-w-[400px] border border-neutral-200"
+          className="bg-content rounded-xl shadow-xl w-full max-w-[400px] border border-hovered"
         >
           <div className="p-6">
             <div className="flex justify-end items-center mb-4">
@@ -44,9 +44,9 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAg
             </div>
 
             <div className="text-center my-6 flex flex-col items-center">
-              <FaceFrownIcon className="h-16 w-16 text-neutral-700 mb-4" />
-              <h2 className="text-md font-semibold text-neutral-800 mb-2">
-                Oops! There was an error. <br /> Try again or contact support.
+              <FaceFrownIcon className="h-16 w-16 text-muted-foreground mb-4" />
+              <h2 className="text-md   mb-2">
+                Oops! There was an error. Please try again, or <span className="underline">re-sync</span> your email account. If nothing works, contact support.
               </h2>
             </div>
 

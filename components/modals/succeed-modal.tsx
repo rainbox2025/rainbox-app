@@ -15,13 +15,13 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onS
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed w-screen inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-xl shadow-xl w-full max-w-[400px] border border-neutral-200"
+          className="bg-content rounded-xl shadow-xl w-full max-w-[400px] border border-hovered"
         >
           <div className="p-6">
             <div className="flex justify-end items-center mb-4">
@@ -30,13 +30,13 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onS
 
             <div className="text-center my-6">
               <CheckCircleIcon className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-              <h2 className="text-md font-semibold text-neutral-800 mb-2">
-                Woohoo! Your Gmail is now connected to Rainbox
+              <h2 className="text-md  mb-2">
+                Woohoo! Selected Newsletters are getting added. It may take upto 2 minutes to show up in your feed
               </h2>
             </div>
 
-            <Button className='w-full text-sm' onClick={onSelectNewsletters}>
-              Select Newsletters
+            <Button className='w-full bg-primary text-sm' onClick={onClose}>
+              Close
               <ArrowRightIcon className="w-4 h-4 ml-1" />
             </Button>
           </div>

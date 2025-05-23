@@ -171,7 +171,7 @@ export default function LeftPanel() {
           title="Add New"
           onClick={() => setIsAddNewsletterFlowOpen(true)}
         >
-          <PlusIcon className="w-5 h-5" />
+          <PlusIcon className="w-5 h-5" strokeWidth={1.8} />
         </button>
 
 

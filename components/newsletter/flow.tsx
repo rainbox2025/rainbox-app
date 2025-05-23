@@ -35,22 +35,6 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
     onClose();
   };
 
-  const handleConnectGmail = () => {
-    alert('Initiate Gmail connection flow...');
-
-
-
-
-  };
-
-  const handleConnectOutlook = () => {
-    alert('Initiate Outlook connection flow...');
-  };
-
-  const handleCreateNewMailbox = () => {
-    alert('Open create new mailbox UI...');
-  };
-
   const handleSelectSender = (email: string, accountName: string) => {
     setCurrentConnectedAccount({ email, name: accountName });
     setActiveModal('selectNewsletters');
@@ -63,7 +47,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
   const handleAddNewsletters = (selected: Sender[]) => {
     console.log('Selected newsletters to add:', selected);
 
-    const isSuccess = Math.random() > 0.3;
+    const isSuccess = Math.random() > 0.3; // Simulate success or failure
     if (isSuccess) {
       setActiveModal('success');
     } else {
@@ -86,10 +70,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
         isOpen={activeModal === 'addNewsletter'}
         onClose={closeModal}
         connections={connections}
-        onConnectGmail={handleConnectGmail}
-        onConnectOutlook={handleConnectOutlook}
         onSelectSender={handleSelectSender}
-        onCreateNewMailbox={handleCreateNewMailbox}
       />
 
       <SelectNewslettersModal
