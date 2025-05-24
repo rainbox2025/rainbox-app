@@ -21,7 +21,7 @@ export default async function SignIn(props: {
 
   return (
     <div className="w-screen max-w-md mx-auto p-6">
-      <div>
+      <div className="bg-content rounded-xl shadow-xl w-full p-4 border border-secondary overflow-hidden flex flex-col">
         <div className="w-full flex items-center justify-center">
           <Image
             src="/logo-lg.png"
@@ -31,7 +31,7 @@ export default async function SignIn(props: {
             className="w-100 h-auto object-contain dark:invert"
           />
         </div>
-        <h2 className="text-xl text-center text-muted-foreground mb-2 italic">
+        <h2 className="text-lg text-center text-muted-foreground mb-1 italic">
           All your newsletters in one place
         </h2>
         <div className="text-muted-foreground text-center text-sm mb-2 mt-10">

@@ -1,5 +1,5 @@
 "use client";
-import Sidebar from "@/components/sidebar/Sidebar";
+import Sidebar from "@/components/sidebar";
 import React, { useEffect, useState, useRef } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
