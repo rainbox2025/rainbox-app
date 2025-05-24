@@ -7,6 +7,9 @@ import SummaryDialog from "../summary-dialog";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
+import { BookmarkProvider } from "@/context/bookmarkContext";
+import MailBodyViewer from "../bookmark/main-body-viewer";
+import SelectionPopup from "../bookmark/selection-popup";
 
 export const MailReader = ({
   containerRef,
@@ -134,10 +137,15 @@ export const MailReader = ({
                   </div>
                 </div>
               </div>
-              <div
-                className="prose text-sm prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedMail.body }}
-              />
+              <BookmarkProvider>
+                {selectedMail && (
+                  <MailBodyViewer
+                    htmlContent={selectedMail.body}
+                    mailId={selectedMail.id}
+                  />
+                )}
+                <SelectionPopup />
+              </BookmarkProvider>
             </div>
           </div>
 
