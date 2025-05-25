@@ -8,8 +8,9 @@ import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
 import { BookmarkProvider } from "@/context/bookmarkContext";
-import MailBodyViewer from "../bookmark/main-body-viewer";
+import MailBodyViewer from "../bookmark/mail-body-viewer";
 import SelectionPopup from "../bookmark/selection-popup";
+import CommentModal from "../bookmark/comment-modal";
 
 export const MailReader = ({
   containerRef,
@@ -145,6 +146,7 @@ export const MailReader = ({
                   />
                 )}
                 <SelectionPopup />
+                <CommentModal />
               </BookmarkProvider>
             </div>
           </div>

@@ -13,10 +13,6 @@ const getNodePath = (node: Node, root: Node): number[] => {
     currentNode = parent;
   }
   if (currentNode !== root) {
-    // This can happen if node is not a descendant, or if root is not an ancestor.
-    // Or if node is the root itself, path would be empty.
-    // For this application, an error or empty path might be fine if node IS root.
-    // However, range boundaries are typically *within* root.
     if (node !== root) throw new Error("Node is not a descendant of the root element or root itself.");
   }
   return path;
@@ -47,11 +43,17 @@ export interface Bookmark {
   text: string;
   serializedRange: SerializedRange;
   mailId?: string;
+  comment?: string; // New: For storing comments
 }
 
 interface ActivePopupData {
   bookmarkId: string;
-  rect: DOMRect; // Use DOMRect for full positioning info
+  rect: DOMRect;
+}
+
+interface ActiveCommentModalData { // New: For comment modal
+  bookmarkId: string;
+  rect: DOMRect;
 }
 
 interface BookmarkContextType {
@@ -59,11 +61,19 @@ interface BookmarkContextType {
   addBookmark: (text: string, range: Range, rootElement: HTMLElement, mailId?: string) => Bookmark | null;
   removeBookmark: (bookmarkId: string) => void;
   getBookmarkById: (bookmarkId: string) => Bookmark | undefined;
+
   activePopup: ActivePopupData | null;
   showPopup: (bookmarkId: string, rect: DOMRect) => void;
   hidePopup: () => void;
+
   getSerializedRange: (range: Range, rootElement: HTMLElement) => SerializedRange | null;
   deserializeRange: (serializedRange: SerializedRange, rootElement: HTMLElement) => Range | null;
+
+  // New: Comment related properties and functions
+  activeCommentModal: ActiveCommentModalData | null;
+  showCommentModal: (bookmarkId: string, rect: DOMRect) => void;
+  hideCommentModal: () => void;
+  addOrUpdateComment: (bookmarkId: string, commentText: string) => void;
 }
 
 const BookmarkContext = createContext<BookmarkContextType | undefined>(undefined);
@@ -71,6 +81,7 @@ const BookmarkContext = createContext<BookmarkContextType | undefined>(undefined
 export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [activePopup, setActivePopup] = useState<ActivePopupData | null>(null);
+  const [activeCommentModal, setActiveCommentModal] = useState<ActiveCommentModalData | null>(null); // New state
 
   const getSerializedRange = useCallback((range: Range, rootElement: HTMLElement): SerializedRange | null => {
     try {
@@ -93,7 +104,6 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
       if (startNode && endNode) {
         const range = document.createRange();
-        // Validate offsets against node lengths
         const startOffset = Math.min(serializedRange.start.offset, startNode.nodeValue?.length ?? (startNode.childNodes?.length || 0));
         const endOffset = Math.min(serializedRange.end.offset, endNode.nodeValue?.length ?? (endNode.childNodes?.length || 0));
 
@@ -121,22 +131,21 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       text,
       serializedRange: sRange,
       mailId,
+      comment: undefined, // Initialize comment as undefined
     };
-    setBookmarks(prev => {
-      // Prevent duplicate bookmarks if range is identical (optional, based on needs)
-      // const existing = prev.find(b => JSON.stringify(b.serializedRange) === JSON.stringify(sRange) && b.mailId === mailId);
-      // if (existing) return prev;
-      return [...prev, newBookmark];
-    });
+    setBookmarks(prev => [...prev, newBookmark]);
     return newBookmark;
-  }, [getSerializedRange]); // getSerializedRange is stable
+  }, [getSerializedRange]);
 
   const removeBookmark = useCallback((bookmarkId: string) => {
     setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
     if (activePopup?.bookmarkId === bookmarkId) {
       setActivePopup(null);
     }
-  }, [activePopup]);
+    if (activeCommentModal?.bookmarkId === bookmarkId) { // New: Close comment modal if associated bookmark is removed
+      setActiveCommentModal(null);
+    }
+  }, [activePopup, activeCommentModal]);
 
   const getBookmarkById = useCallback((bookmarkId: string) => {
     return bookmarks.find(b => b.id === bookmarkId);
@@ -144,10 +153,31 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const showPopup = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActivePopup({ bookmarkId, rect });
+    setActiveCommentModal(null); // Hide comment modal if selection popup is shown
   }, []);
 
   const hidePopup = useCallback(() => {
     setActivePopup(null);
+  }, []);
+
+  // New: Comment modal functions
+  const showCommentModal = useCallback((bookmarkId: string, rect: DOMRect) => {
+    setActiveCommentModal({ bookmarkId, rect });
+    setActivePopup(null); // Hide selection popup when comment modal is shown
+  }, []);
+
+  const hideCommentModal = useCallback(() => {
+    setActiveCommentModal(null);
+  }, []);
+
+  const addOrUpdateComment = useCallback((bookmarkId: string, commentText: string) => {
+    setBookmarks(prev =>
+      prev.map(b =>
+        b.id === bookmarkId
+          ? { ...b, comment: commentText.trim() ? commentText.trim() : undefined }
+          : b
+      )
+    );
   }, []);
 
   return (
@@ -160,7 +190,12 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       showPopup,
       hidePopup,
       getSerializedRange,
-      deserializeRange
+      deserializeRange,
+      // New: Expose comment-related items
+      activeCommentModal,
+      showCommentModal,
+      hideCommentModal,
+      addOrUpdateComment,
     }}>
       {children}
     </BookmarkContext.Provider>

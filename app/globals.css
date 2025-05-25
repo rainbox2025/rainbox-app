@@ -115,6 +115,13 @@
   color: inherit !important;
 }
 
+.rw-highlight-note-icon {
+  color: #666457; /* light */
+}
+
+.dark .rw-highlight-note-icon {
+  color: #AFAFA5; /* dark */
+}
 
 
 
