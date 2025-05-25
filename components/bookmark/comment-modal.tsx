@@ -22,12 +22,11 @@ const CommentModal: React.FC = () => {
   useEffect(() => {
     if (bookmark) {
       setNote(bookmark.comment || '');
-      // Focus textarea when modal opens with a bookmark
       setTimeout(() => textareaRef.current?.focus(), 0);
     } else {
-      setNote(''); // Clear note if no bookmark or modal is hidden
+      setNote('');
     }
-  }, [bookmark]); // Re-run if the bookmark object itself changes (e.g. its comment from elsewhere) or modal appears
+  }, [bookmark]);
 
   useEffect(() => {
     if (activeCommentModal && modalRef.current) {
@@ -35,48 +34,42 @@ const CommentModal: React.FC = () => {
       const popupElement = modalRef.current;
       const offsetParentEl = popupElement.offsetParent as HTMLElement | null;
 
-      const modalWidth = Math.min(300, window.innerWidth - 32); // Max width 300px, or smaller if viewport is narrow
-      const modalHeight = popupElement.offsetHeight || 150; // Estimate if not rendered
+      const modalWidth = Math.min(300, window.innerWidth - 32);
+      const modalHeight = popupElement.offsetHeight || 150;
 
       let top, left;
 
       if (offsetParentEl) {
         const offsetParentRect = offsetParentEl.getBoundingClientRect();
-        // Position below the selection
         top = (selectionViewportRect.bottom - offsetParentRect.top) + offsetParentEl.scrollTop + 10;
-        left = (selectionViewportRect.left - offsetParentRect.left) + offsetParentEl.scrollLeft + (selectionViewportRect.width / 2) - (modalWidth / 2);
+        left = (selectionViewportRect.left - offsetParentRect.top) + offsetParentEl.scrollLeft + (selectionViewportRect.width / 2) - (modalWidth / 2);
 
-        // Boundary checks (simplified)
         const margin = 8;
-        top = Math.max(offsetParentEl.scrollTop + margin, top);
         left = Math.max(offsetParentEl.scrollLeft + margin, left);
-
         if (left + modalWidth > offsetParentEl.scrollLeft + offsetParentEl.clientWidth - margin) {
           left = offsetParentEl.scrollLeft + offsetParentEl.clientWidth - modalWidth - margin;
         }
         if (top + modalHeight > offsetParentEl.scrollTop + offsetParentEl.clientHeight - margin) {
-          // If it overflows bottom, try to position above selection
           top = (selectionViewportRect.top - offsetParentRect.top) + offsetParentEl.scrollTop - modalHeight - 10;
-          top = Math.max(offsetParentEl.scrollTop + margin, top); // Ensure it's still within parent top
         }
+        top = Math.max(offsetParentEl.scrollTop + margin, top);
 
-      } else { // Fallback to viewport-relative positioning
+
+      } else {
         const scrollY = window.scrollY;
         const scrollX = window.scrollX;
         top = scrollY + selectionViewportRect.bottom + 10;
         left = scrollX + selectionViewportRect.left + (selectionViewportRect.width / 2) - (modalWidth / 2);
 
-        // Fallback boundary checks (simplified)
         const margin = 8;
-        top = Math.max(scrollY + margin, top);
         left = Math.max(scrollX + margin, left);
         if (left + modalWidth > scrollX + window.innerWidth - margin) {
           left = scrollX + window.innerWidth - modalWidth - margin;
         }
         if (top + modalHeight > scrollY + window.innerHeight - margin) {
           top = scrollY + selectionViewportRect.top - modalHeight - 10;
-          top = Math.max(scrollY + margin, top);
         }
+        top = Math.max(scrollY + margin, top);
       }
 
       setModalStyle({
@@ -84,7 +77,7 @@ const CommentModal: React.FC = () => {
         top: `${top}px`,
         left: `${left}px`,
         width: `${modalWidth}px`,
-        zIndex: 1001, // Higher than selection popup
+        zIndex: 1001,
       });
     }
   }, [activeCommentModal]);
@@ -121,8 +114,8 @@ const CommentModal: React.FC = () => {
     <div
       ref={modalRef}
       style={modalStyle}
-      className="bg-sidebar  shadow-xl rounded-lg p-4 border border-hovered "
-      onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing modal
+      className="bg-sidebar shadow-xl rounded-lg p-4 border border-hovered comment-modal-root-class" // Added class
+      onClick={(e) => e.stopPropagation()}
     >
       <textarea
         ref={textareaRef}

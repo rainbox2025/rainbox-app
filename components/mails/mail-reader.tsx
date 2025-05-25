@@ -9,8 +9,9 @@ import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
 import { BookmarkProvider } from "@/context/bookmarkContext";
 import MailBodyViewer from "../bookmark/mail-body-viewer";
-import SelectionPopup from "../bookmark/selection-popup";
+import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
+import TagModal from "@/components/bookmark/tag-modal";
 
 export const MailReader = ({
   containerRef,
@@ -32,7 +33,6 @@ export const MailReader = ({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const previousWidthRef = useRef(mailReaderWidth);
 
-  // Find sender associated with selected mail
   const mailSender = selectedSender ||
     (selectedMail && senders.find(sender => sender.id === selectedMail.sender_id)) ||
     { name: "Unknown Sender", domain: "unknown.com" };
@@ -43,20 +43,10 @@ export const MailReader = ({
 
       const containerRect = containerRef.current.getBoundingClientRect();
       const containerWidth = containerRect.width;
-
-      // Calculate the position from the left edge of the container
       const mousePosition = e.clientX - containerRect.left;
-
-      // Convert to percentage - this is the width of the mail list
       const mailListWidthPercent = (mousePosition / containerWidth) * 100;
-
-      // Since mailReaderWidth is the width of the reader (right panel),
-      // we need to invert the percentage (100 - mailListWidth)
       const readerWidthPercent = 100 - mailListWidthPercent;
-
-      // Constrain between 15% and 85% for the reader width
       const constrainedWidth = Math.max(50, Math.min(60, readerWidthPercent));
-
       setMailReaderWidth(constrainedWidth);
       setIsFullScreen(false);
     };
@@ -82,13 +72,10 @@ export const MailReader = ({
 
   const toggleFullScreen = () => {
     if (isFullScreen) {
-      // Return to previous width
       setMailReaderWidth(previousWidthRef.current);
     } else {
-      // Save current width before going fullscreen
       previousWidthRef.current = mailReaderWidth;
-      // Set to fullscreen (adjust for left panel - 5rem)
-      setMailReaderWidth(95); // 100% - 5rem (left panel)
+      setMailReaderWidth(95);
     }
     setIsFullScreen(!isFullScreen);
   };
@@ -108,8 +95,8 @@ export const MailReader = ({
         </div>
 
         <div
-          ref={mailReaderRef} // Add ref to mail reader container
-          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative" // Add relative positioning
+          ref={mailReaderRef}
+          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
           style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : { width: `${mailReaderWidth}%` }}
         >
           <MailReaderHeader
@@ -119,7 +106,7 @@ export const MailReader = ({
             isFullScreen={isFullScreen}
             toggleFullScreen={toggleFullScreen}
           />
-          <div className="p-md pb-64"> {/* Keep bottom padding to prevent content being hidden */}
+          <div className="p-md pb-64">
             <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
               <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
                 {selectedMail?.subject}
@@ -147,18 +134,16 @@ export const MailReader = ({
                 )}
                 <SelectionPopup />
                 <CommentModal />
+                <TagModal /> {/* <<< Add TagModal */}
               </BookmarkProvider>
             </div>
           </div>
 
-          {/* Position dialogs at the bottom of mail reader */}
           {textToAudioOpen && (
             <TextToAudio
               open={textToAudioOpen}
-              onOpenChange={(open) => {
-                setTextToAudioOpen(open);
-              }}
-              containerRef={mailReaderRef} // Pass ref to the component
+              onOpenChange={setTextToAudioOpen}
+              containerRef={mailReaderRef}
             />
           )}
 
@@ -166,7 +151,7 @@ export const MailReader = ({
             <SummaryDialog
               open={summaryDialogOpen}
               onOpenChange={setSummaryDialogOpen}
-              containerRef={mailReaderRef} // Pass ref to the component
+              containerRef={mailReaderRef}
             />
           )}
         </div>

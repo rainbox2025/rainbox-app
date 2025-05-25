@@ -16,10 +16,25 @@ const createCommentIndicatorSvg = (bookmarkId: string) => `
      width="13"
      class="comment-indicator-icon-svg"
      data-bookmark-id="${bookmarkId}" 
-     style="margin: 0 4px; fill: currentColor; display: inline-block; cursor: pointer;">
+     style="margin: 0 2px; fill: currentColor; display: inline-block; cursor: pointer;">
   <path d="M5 2C3.34315 2 2 3.34315 2 5V9C2 10.6569 3.34315 12 5 12H6L8 15L10 12H11C12.6569 12 14 10.6569 14 9V5C14 3.34315 12.6569 2 11 2H5Z"></path>
 </svg>
 `;
+
+// SVG for the tag indicator
+const createTagIndicatorSvg = (bookmarkId: string) => `
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 16 16"
+     height="13"
+     width="13"
+     class="tag-indicator-icon-svg"
+     data-bookmark-id="${bookmarkId}"
+     style="margin: 0 2px; fill: currentColor; display: inline-block; cursor: pointer;">
+  <path d="M13.5858 7.58579L8.58579 2.58579C8.21071 2.21071 7.70201 2 7.17157 2H4C2.89543 2 2 2.89543 2 4V7.17157C2 7.70201 2.21071 8.21071 2.58579 8.58579L7.58579 13.5858C8.36684 14.3668 9.63316 14.3668 10.4142 13.5858L13.5858 10.4142C14.3668 9.63317 14.3668 8.36684 13.5858 7.58579ZM6 7C6.55228 7 7 6.55228 7 6C7 5.44771 6.55228 5 6 5C5.44772 5 5 5.44771 5 6C5 6.55228 5.44772 7 6 7Z"
+        clip-rule="evenodd" fill-rule="evenodd"></path>
+</svg>
+`;
+
 
 const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) => {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -29,7 +44,8 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     showPopup,
     deserializeRange,
     removeBookmark,
-    showCommentModal, // <<< Import showCommentModal
+    showCommentModal,
+    showTagModal, // <<< Import showTagModal
   } = useBookmarks();
 
   const currentMailBookmarks = useMemo(() => {
@@ -42,7 +58,6 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     contentRef.current.innerHTML = htmlContent;
 
     const sortedBookmarks = [...currentMailBookmarks].sort((a, b) => {
-      // ... (sorting logic remains the same)
       const rangeA = deserializeRange(a.serializedRange, contentRef.current!);
       const rangeB = deserializeRange(b.serializedRange, contentRef.current!);
       if (rangeA && rangeB) {
@@ -64,22 +79,22 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
             return;
           }
 
-          const highlightSpan = document.createElement('span'); // Renamed to highlightSpan for clarity
+          const highlightSpan = document.createElement('span');
           highlightSpan.className = 'bookmark-highlight';
           highlightSpan.dataset.bookmarkId = bookmark.id;
 
           let mouseDownX = 0, mouseDownY = 0;
           highlightSpan.onmousedown = (e) => {
-            // Only set mouseDown for the highlight span itself, not its children like the icon
-            if (e.target === highlightSpan || (e.target as Node).parentNode === highlightSpan && !(e.target as HTMLElement).closest('.comment-indicator')) {
+            if (e.target === highlightSpan || (e.target as Node).parentNode === highlightSpan &&
+              !((e.target as HTMLElement).closest('.comment-indicator') || (e.target as HTMLElement).closest('.tag-indicator'))
+            ) {
               e.stopPropagation();
               mouseDownX = e.clientX;
               mouseDownY = e.clientY;
             }
           };
           highlightSpan.onclick = (e) => {
-            // Prevent opening selection popup if the click was on the comment icon
-            if ((e.target as HTMLElement).closest('.comment-indicator')) {
+            if ((e.target as HTMLElement).closest('.comment-indicator') || (e.target as HTMLElement).closest('.tag-indicator')) {
               e.stopPropagation();
               return;
             }
@@ -99,16 +114,14 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
           if (bookmark.comment && bookmark.comment.trim() !== "") {
             const commentIndicatorWrapper = document.createElement('span');
             commentIndicatorWrapper.className = 'comment-indicator';
-            commentIndicatorWrapper.innerHTML = createCommentIndicatorSvg(bookmark.id); // Pass bookmark.id
+            commentIndicatorWrapper.innerHTML = createCommentIndicatorSvg(bookmark.id);
 
-            // Get the actual SVG element to attach the click listener
             const svgIcon = commentIndicatorWrapper.querySelector('.comment-indicator-icon-svg');
             if (svgIcon) {
               svgIcon.addEventListener('click', (e) => {
-                e.stopPropagation(); // IMPORTANT: Stop propagation to prevent highlightSpan's onclick
+                e.stopPropagation();
                 const targetBookmarkId = (e.currentTarget as HTMLElement).dataset.bookmarkId;
                 if (targetBookmarkId) {
-                  // Use the highlightSpan's rect for consistent modal positioning
                   const rect = highlightSpan.getBoundingClientRect();
                   showCommentModal(targetBookmarkId, rect);
                 }
@@ -117,15 +130,43 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
             highlightSpan.appendChild(commentIndicatorWrapper);
           }
 
+          // New: Add tag indicator if tags exist
+          if (bookmark.tags && bookmark.tags.length > 0) {
+            const tagIndicatorWrapper = document.createElement('span');
+            tagIndicatorWrapper.className = 'tag-indicator';
+            tagIndicatorWrapper.innerHTML = createTagIndicatorSvg(bookmark.id);
+
+            const svgIcon = tagIndicatorWrapper.querySelector('.tag-indicator-icon-svg');
+            if (svgIcon) {
+              svgIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetBookmarkId = (e.currentTarget as HTMLElement).dataset.bookmarkId;
+                if (targetBookmarkId) {
+                  const rect = highlightSpan.getBoundingClientRect();
+                  showTagModal(targetBookmarkId, rect);
+                }
+              });
+            }
+            // Append after comment indicator or directly to highlightSpan
+            const existingCommentIndicator = highlightSpan.querySelector('.comment-indicator');
+            if (existingCommentIndicator) {
+              if (existingCommentIndicator.nextSibling) {
+                existingCommentIndicator.parentNode?.insertBefore(tagIndicatorWrapper, existingCommentIndicator.nextSibling);
+              } else {
+                existingCommentIndicator.parentNode?.appendChild(tagIndicatorWrapper);
+              }
+            } else {
+              highlightSpan.appendChild(tagIndicatorWrapper);
+            }
+          }
+
         } catch (error) {
-          // ... (error handling remains the same)
           console.error(`Error applying highlight for bookmark ${bookmark.id}:`, error);
           if (error instanceof DOMException && error.name === 'NotFoundError') {
             bookmarksToRemove.push(bookmark.id);
           }
         }
       } else {
-        // ... (logic for non-deserializable range remains the same)
         bookmarksToRemove.push(bookmark.id);
       }
     });
@@ -134,16 +175,16 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       bookmarksToRemove.forEach(id => removeBookmark(id));
     }
     window.getSelection()?.removeAllRanges();
-  }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, removeBookmark, showCommentModal]); // <<< Add showCommentModal to dependencies
+  }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, removeBookmark, showCommentModal, showTagModal]);
 
-  // ... (handleMouseUp and other useEffects remain the same)
   const handleMouseUp = useCallback((event: MouseEvent) => {
     if (!contentRef.current) return;
 
-    // Updated condition to be more robust for preventing mouseup when clicking on interactive elements within highlight
     if ((event.target as HTMLElement).closest('.bookmark-highlight .comment-indicator') ||
-      (event.target as HTMLElement).closest('.selection-popup-class-name') || // Add class to SelectionPopup root
-      (event.target as HTMLElement).closest('.comment-modal-root-class') // Add class to CommentModal root
+      (event.target as HTMLElement).closest('.bookmark-highlight .tag-indicator') || // Added this
+      (event.target as HTMLElement).closest('.selection-popup-class-name') ||
+      (event.target as HTMLElement).closest('.comment-modal-root-class') ||
+      (event.target as HTMLElement).closest('.tag-modal-root-class') // Added this
     ) {
       return;
     }
@@ -176,15 +217,10 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
         }
         current = current.parentNode as Node;
       }
-      // Allow selecting text even if it's partially within a highlight,
-      // but if the click to *start* the selection was on a comment icon, we've already handled it.
-      // The main purpose here is to prevent creating a *new* bookmark if the selection is trivial or problematic.
       if (insideExistingHighlight && text === (current as HTMLElement)?.textContent?.trim()) {
-        // If the selection is exactly an existing highlight, let its own click handler manage it.
         selection.removeAllRanges();
         return;
       }
-
 
       const rect = range.getBoundingClientRect();
       const newBookmark = addBookmark(text, range, contentRef.current, mailId);

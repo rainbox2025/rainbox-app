@@ -16,7 +16,8 @@ const SelectionPopup: React.FC = () => {
     hidePopup,
     removeBookmark,
     getBookmarkById,
-    showCommentModal // New: Get showCommentModal from context
+    showCommentModal,
+    showTagModal // <<< New: Get showTagModal from context
   } = useBookmarks();
 
   const popupRef = useRef<HTMLDivElement>(null);
@@ -31,8 +32,9 @@ const SelectionPopup: React.FC = () => {
       let popupHeight = popupElement.offsetHeight;
       let popupWidth = popupElement.offsetWidth;
 
-      if (popupHeight === 0) popupHeight = 50;
-      if (popupWidth === 0) popupWidth = 200;
+      if (popupHeight === 0) popupHeight = 50; // Default height estimate
+      if (popupWidth === 0) popupWidth = 200; // Default width estimate
+
 
       const offsetParentEl = popupElement.offsetParent as HTMLElement | null;
 
@@ -49,6 +51,11 @@ const SelectionPopup: React.FC = () => {
         if (left + popupWidth > scrollX + window.innerWidth - viewportMargin) {
           left = scrollX + window.innerWidth - popupWidth - viewportMargin;
         }
+        // If popup overflows top (e.g. selection is very high), position below selection
+        if (top < scrollY + viewportMargin && selectionViewportRect.bottom + popupHeight + 10 < scrollY + window.innerHeight - viewportMargin) {
+          top = scrollY + selectionViewportRect.bottom + 10;
+        }
+
 
         setPopupStyle({
           top: `${top}px`,
@@ -66,23 +73,24 @@ const SelectionPopup: React.FC = () => {
         popupHeight -
         10;
 
-      let left = (selectionViewportRect.left - offsetParentRect.left) +
+      let left = (selectionViewportRect.left - offsetParentRect.top) +
         offsetParentEl.scrollLeft +
         (selectionViewportRect.width / 2) -
         (popupWidth / 2);
 
       const marginFromOffsetParentEdge = 8;
 
-      top = Math.max(marginFromOffsetParentEdge, top);
       left = Math.max(marginFromOffsetParentEdge, left);
 
       if (left + popupWidth > offsetParentEl.clientWidth - marginFromOffsetParentEdge) {
         left = offsetParentEl.clientWidth - popupWidth - marginFromOffsetParentEdge;
       }
-      // If popup overflows top (e.g. selection is very high), position below selection
-      if (top < marginFromOffsetParentEdge + offsetParentEl.scrollTop) {
+      // If popup overflows top, position below selection if space allows
+      if (top < offsetParentEl.scrollTop + marginFromOffsetParentEdge &&
+        (selectionViewportRect.bottom - offsetParentRect.top) + offsetParentEl.scrollTop + popupHeight + 10 < offsetParentEl.scrollTop + offsetParentEl.clientHeight - marginFromOffsetParentEdge) {
         top = (selectionViewportRect.bottom - offsetParentRect.top) + offsetParentEl.scrollTop + 10;
       }
+      top = Math.max(offsetParentEl.scrollTop + marginFromOffsetParentEdge, top);
 
 
       setPopupStyle({
@@ -95,28 +103,27 @@ const SelectionPopup: React.FC = () => {
   }, [activePopup]);
 
   useEffect(() => {
+    // This handler is general and might be for icons not directly managed by MailBodyViewer.
+    // Clicks on icons within highlights are handled by MailBodyViewer and should stop propagation.
     const handler = (e: MouseEvent) => {
-      console.log('clicked comment')
-      const target = e.target as Element;
-      const icon = target.closest('.comment-icon');
-      if (icon) {
-        const bookmarkId = icon.getAttribute('data-bookmark-id');
-        const rect = icon.getBoundingClientRect();
-        showCommentModal(bookmarkId!, rect);
-      }
+      // const target = e.target as Element;
+      // Example: if you had other comment icons with class 'some-other-comment-icon'
+      // const icon = target.closest('.some-other-comment-icon');
+      // if (icon) { ... }
     };
 
     const handleClickOutside = (event: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
         const targetElement = event.target as HTMLElement;
-        if (!targetElement.closest('.bookmark-highlight')) {
+        if (
+          !targetElement.closest('.bookmark-highlight') &&
+          !targetElement.closest('.comment-modal-root-class') &&
+          !targetElement.closest('.tag-modal-root-class')
+        ) {
           hidePopup();
         }
       }
     };
-
-
-
 
     document.addEventListener('click', handler);
     if (activePopup) {
@@ -135,7 +142,6 @@ const SelectionPopup: React.FC = () => {
 
   const handleCancel = () => {
     removeBookmark(bookmark.id);
-    // hidePopup(); // removeBookmark will hide it if active
   };
 
   const handleCopy = async () => {
@@ -151,11 +157,16 @@ const SelectionPopup: React.FC = () => {
     }
   };
 
-  // New: Handler for the comment button
   const handleCommentClick = () => {
     if (activePopup) {
       showCommentModal(activePopup.bookmarkId, activePopup.rect);
-      // hidePopup(); // showCommentModal now handles hiding the selection popup
+    }
+  };
+
+  // New: Handler for the tag button
+  const handleTagClick = () => {
+    if (activePopup) {
+      showTagModal(activePopup.bookmarkId, activePopup.rect);
     }
   };
 
@@ -165,17 +176,16 @@ const SelectionPopup: React.FC = () => {
     <div
       ref={popupRef}
       style={popupStyle}
-      className="bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-1"
+      className="bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-1 selection-popup-class-name" // Added class
       onClick={(e) => e.stopPropagation()}
     >
       <button onClick={handleCancel} title="Remove bookmark" className={`${iconButtonClass}`}>
         <XCircleIcon className="h-6 w-6 text-red-400 " />
       </button>
-      {/* Updated onClick for comment button */}
       <button onClick={handleCommentClick} title="Add/Edit comment" className={iconButtonClass}>
         <ChatBubbleLeftEllipsisIcon className="h-5 w-5" />
       </button>
-      <button onClick={() => alert('Add tags (not implemented)')} title="Add tags" className={iconButtonClass}>
+      <button onClick={handleTagClick} title="Add/Edit tags" className={iconButtonClass}>
         <TagIcon className="h-5 w-5" />
       </button>
       <button onClick={handleCopy} title={copied ? "Copied!" : "Copy text"} className={`${iconButtonClass} ${copied ? 'text-green-400' : ''}`}>

@@ -43,7 +43,8 @@ export interface Bookmark {
   text: string;
   serializedRange: SerializedRange;
   mailId?: string;
-  comment?: string; // New: For storing comments
+  comment?: string;
+  tags?: string[]; // New: For storing tags
 }
 
 interface ActivePopupData {
@@ -51,7 +52,12 @@ interface ActivePopupData {
   rect: DOMRect;
 }
 
-interface ActiveCommentModalData { // New: For comment modal
+interface ActiveCommentModalData {
+  bookmarkId: string;
+  rect: DOMRect;
+}
+
+interface ActiveTagModalData { // New: For tag modal
   bookmarkId: string;
   rect: DOMRect;
 }
@@ -69,19 +75,27 @@ interface BookmarkContextType {
   getSerializedRange: (range: Range, rootElement: HTMLElement) => SerializedRange | null;
   deserializeRange: (serializedRange: SerializedRange, rootElement: HTMLElement) => Range | null;
 
-  // New: Comment related properties and functions
   activeCommentModal: ActiveCommentModalData | null;
   showCommentModal: (bookmarkId: string, rect: DOMRect) => void;
   hideCommentModal: () => void;
   addOrUpdateComment: (bookmarkId: string, commentText: string) => void;
+
+  // New: Tag related properties and functions
+  allTags: string[];
+  activeTagModal: ActiveTagModalData | null;
+  showTagModal: (bookmarkId: string, rect: DOMRect) => void;
+  hideTagModal: () => void;
+  updateBookmarkTags: (bookmarkId: string, tags: string[]) => void;
 }
 
 const BookmarkContext = createContext<BookmarkContextType | undefined>(undefined);
 
 export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]); // Store all unique tags
   const [activePopup, setActivePopup] = useState<ActivePopupData | null>(null);
-  const [activeCommentModal, setActiveCommentModal] = useState<ActiveCommentModalData | null>(null); // New state
+  const [activeCommentModal, setActiveCommentModal] = useState<ActiveCommentModalData | null>(null);
+  const [activeTagModal, setActiveTagModal] = useState<ActiveTagModalData | null>(null); // New state for tags
 
   const getSerializedRange = useCallback((range: Range, rootElement: HTMLElement): SerializedRange | null => {
     try {
@@ -131,7 +145,8 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       text,
       serializedRange: sRange,
       mailId,
-      comment: undefined, // Initialize comment as undefined
+      comment: undefined,
+      tags: [], // Initialize tags as an empty array
     };
     setBookmarks(prev => [...prev, newBookmark]);
     return newBookmark;
@@ -142,10 +157,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     if (activePopup?.bookmarkId === bookmarkId) {
       setActivePopup(null);
     }
-    if (activeCommentModal?.bookmarkId === bookmarkId) { // New: Close comment modal if associated bookmark is removed
+    if (activeCommentModal?.bookmarkId === bookmarkId) {
       setActiveCommentModal(null);
     }
-  }, [activePopup, activeCommentModal]);
+    if (activeTagModal?.bookmarkId === bookmarkId) { // Close tag modal if associated bookmark is removed
+      setActiveTagModal(null);
+    }
+  }, [activePopup, activeCommentModal, activeTagModal]);
 
   const getBookmarkById = useCallback((bookmarkId: string) => {
     return bookmarks.find(b => b.id === bookmarkId);
@@ -153,17 +171,18 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const showPopup = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActivePopup({ bookmarkId, rect });
-    setActiveCommentModal(null); // Hide comment modal if selection popup is shown
+    setActiveCommentModal(null); // Hide comment modal
+    setActiveTagModal(null); // Hide tag modal
   }, []);
 
   const hidePopup = useCallback(() => {
     setActivePopup(null);
   }, []);
 
-  // New: Comment modal functions
   const showCommentModal = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActiveCommentModal({ bookmarkId, rect });
-    setActivePopup(null); // Hide selection popup when comment modal is shown
+    setActivePopup(null); // Hide selection popup
+    setActiveTagModal(null); // Hide tag modal
   }, []);
 
   const hideCommentModal = useCallback(() => {
@@ -180,6 +199,33 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  // New: Tag modal functions
+  const showTagModal = useCallback((bookmarkId: string, rect: DOMRect) => {
+    setActiveTagModal({ bookmarkId, rect });
+    setActivePopup(null); // Hide selection popup
+    setActiveCommentModal(null); // Hide comment modal
+  }, []);
+
+  const hideTagModal = useCallback(() => {
+    setActiveTagModal(null);
+  }, []);
+
+  const updateBookmarkTags = useCallback((bookmarkId: string, newTags: string[]) => {
+    // Normalize, clean, and remove duplicates from incoming tags for the bookmark
+    const normalizedCleanedBookmarkTags = Array.from(new Set(newTags.map(t => t.toLowerCase().trim()).filter(t => t.length > 0))).sort();
+
+    setBookmarks(prevBookmarks =>
+      prevBookmarks.map(b =>
+        b.id === bookmarkId ? { ...b, tags: normalizedCleanedBookmarkTags } : b
+      )
+    );
+    setAllTags(prevAllTags => {
+      // Add new tags to the global list of all tags, ensuring uniqueness and normalization
+      const updatedAllTags = new Set([...prevAllTags, ...normalizedCleanedBookmarkTags]);
+      return Array.from(updatedAllTags).sort();
+    });
+  }, []);
+
   return (
     <BookmarkContext.Provider value={{
       bookmarks,
@@ -191,11 +237,16 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       hidePopup,
       getSerializedRange,
       deserializeRange,
-      // New: Expose comment-related items
       activeCommentModal,
       showCommentModal,
       hideCommentModal,
       addOrUpdateComment,
+      // New: Expose tag-related items
+      allTags,
+      activeTagModal,
+      showTagModal,
+      hideTagModal,
+      updateBookmarkTags,
     }}>
       {children}
     </BookmarkContext.Provider>
