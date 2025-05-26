@@ -52,7 +52,7 @@ const MailReaderHeader = ({
             onClick={() => { setSelectedMail(null); handleBack(); }}
             title="Go back"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </button>
 
           <button
@@ -61,9 +61,9 @@ const MailReaderHeader = ({
             title={isFullScreen ? "Exit full screen" : "Full screen"}
           >
             {isFullScreen ? (
-              <Minimize2 className="w-4 h-4" />
+              <Minimize2 className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <Maximize2 className="w-4 h-4" />
+              <Maximize2 className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
         </div>

@@ -169,7 +169,7 @@ const TagModal: React.FC = () => {
     <div
       ref={modalRef}
       style={modalStyle}
-      className="bg-sidebar shadow-xl rounded-lg p-3 border border-hovered flex flex-col text-sm tag-modal-root-class"
+      className="bg-sidebar shadow-xl rounded-lg p-1 border border-hovered flex flex-col text-sm tag-modal-root-class"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Input Area: Selected Tags + Input Field */}

@@ -7,6 +7,8 @@ import {
   ChatBubbleLeftEllipsisIcon,
   TagIcon,
   ClipboardDocumentIcon,
+  ChatBubbleBottomCenterIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -176,20 +178,20 @@ const SelectionPopup: React.FC = () => {
     <div
       ref={popupRef}
       style={popupStyle}
-      className="bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-1 selection-popup-class-name" // Added class
+      className="bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-0 selection-popup-class-name" // Added class
       onClick={(e) => e.stopPropagation()}
     >
       <button onClick={handleCancel} title="Remove bookmark" className={`${iconButtonClass}`}>
         <XCircleIcon className="h-6 w-6 text-red-400 " />
       </button>
       <button onClick={handleCommentClick} title="Add/Edit comment" className={iconButtonClass}>
-        <ChatBubbleLeftEllipsisIcon className="h-5 w-5" />
+        <ChatBubbleBottomCenterIcon className="h-5 w-5" />
       </button>
       <button onClick={handleTagClick} title="Add/Edit tags" className={iconButtonClass}>
         <TagIcon className="h-5 w-5" />
       </button>
       <button onClick={handleCopy} title={copied ? "Copied!" : "Copy text"} className={`${iconButtonClass} ${copied ? 'text-green-400' : ''}`}>
-        <ClipboardDocumentIcon className="h-5 w-5" />
+        <DocumentDuplicateIcon className="h-5 w-5" />
       </button>
       <AnimatePresence>
         {copied && (

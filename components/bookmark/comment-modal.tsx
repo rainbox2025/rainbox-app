@@ -114,7 +114,7 @@ const CommentModal: React.FC = () => {
     <div
       ref={modalRef}
       style={modalStyle}
-      className="bg-sidebar shadow-xl rounded-lg p-4 border border-hovered comment-modal-root-class" // Added class
+      className="bg-sidebar shadow-xl rounded-lg p-2 border border-hovered comment-modal-root-class" // Added class
       onClick={(e) => e.stopPropagation()}
     >
       <textarea
@@ -122,18 +122,18 @@ const CommentModal: React.FC = () => {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Add a note..."
-        className="w-full h-16 p-2 bg-transparent rounded-md resize-none outline-none text-sm "
+        className="w-full h-12 p-2 bg-transparent rounded-md resize-none outline-none text-sm "
       />
       <div className="flex justify-end mt-3 space-x-2">
         <Button
           onClick={handleCancel}
-          className="px-4 py-2 bg-secondary text-muted-foreground hover:bg-hovered text-sm font-medium  rounded-md"
+          className="px-4 py-0 bg-secondary text-muted-foreground hover:bg-hovered text-xs font-medium  rounded-md"
         >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
-          className="px-4 py-2 bg-primary  text-sm font-medium  rounded-md "
+          className="px-4 py-0 bg-primary  text-xs font-medium  rounded-md "
         >
           Save
         </Button>
