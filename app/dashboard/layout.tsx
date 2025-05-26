@@ -5,27 +5,18 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Loader2, Menu, X } from "lucide-react";
 import LeftPanel from "@/components/left-panel";
+import Inbox from "@/components/sidebar/inbox"; // Make sure path is correct
 
-const layout = ({ children }: { children: React.ReactNode }) => {
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => { // Renamed for clarity
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  const sidebarContainerRef = useRef<HTMLDivElement>(null); // Renamed to avoid conflict if sidebarRef is used inside Sidebar
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const supabase = await createClient();
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => {
-            reject(new Error("Auth timeout"));
-          }, 5000);
-        });
-
-        const { data: user } = (await Promise.race([
-          supabase.auth.getUser(),
-          timeoutPromise,
-        ])) as { data: any };
-
+        const { data: { user } } = await supabase.auth.getUser(); // Simpler destructuring
         if (!user) {
           redirect("/sign-in");
         }
@@ -39,7 +30,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
     fetchUser();
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && isSidebarOpen) {
+      if (sidebarContainerRef.current && !sidebarContainerRef.current.contains(event.target as Node) && isSidebarOpen) {
         setIsSidebarOpen(false);
       }
     };
@@ -57,25 +48,23 @@ const layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       ) : (
         <>
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="fixed top-3 left-4 z-50 md:hidden bg-content shadow-md"
+            className="fixed top-3 left-4 z-50 md:hidden bg-content shadow-md p-1 rounded"
           >
-            {isSidebarOpen ? <X className="w-0 h-0" /> : <Menu className="w-5 h-5" />}
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          {/* Sidebar */}
           <div
-            ref={sidebarRef}
-            className={`absolute md:relative flex z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-              } transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full`}
+            ref={sidebarContainerRef} // Use the renamed ref here
+            className={`absolute md:relative flex z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
           >
             <LeftPanel />
-            <Sidebar onClose={() => setIsSidebarOpen(false)} />
+            <Sidebar onClose={isSidebarOpen ? () => setIsSidebarOpen(false) : undefined}>
+              <Inbox />
+            </Sidebar>
           </div>
 
-          {/* Overlay for mobile */}
           {isSidebarOpen && (
             <div
               className="fixed inset-0 bg-black/20 z-30 md:hidden"
@@ -92,4 +81,4 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default layout;
+export default DashboardLayout;

@@ -1,23 +1,21 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import Inbox from "./inbox";
-import { useAuth } from "@/context/authContext";
 
-const Sidebar = ({ onClose }: { onClose: () => void }) => {
-  const { user } = useAuth();
-  const [width, setWidth] = useState(320); // Default width in pixels
-  const sidebarRef = useRef(null);
+const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: () => void }) => {
+  const [width, setWidth] = useState(320); // Default width
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const isDraggingRef = useRef(false);
-  const MIN_WIDTH = 240; // Minimum width in pixels
-  const MAX_WIDTH = 480; // Maximum width in pixels
+  const isDraggingRef = useRef(false); // To manage dragging state reliably inside event listeners
+  const MIN_WIDTH = 240;
+  const MAX_WIDTH = 480;
+  const LEFT_PANEL_WIDTH = 48; // Assuming LeftPanel is 48px (3rem). Adjust if different.
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) return;
+    if (window.innerWidth < 768) return; // No resize on mobile
 
     e.preventDefault();
     isDraggingRef.current = true;
-    setIsDragging(true);
+    setIsDragging(true); // For styling/cursor changes
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     document.body.style.cursor = 'col-resize';
@@ -27,7 +25,9 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDraggingRef.current) return;
 
-    let newWidth = e.clientX;
+    // clientX is mouse position from left of viewport.
+    // Sidebar width is this position minus the width of elements to its left (i.e., LeftPanel).
+    let newWidth = e.clientX - LEFT_PANEL_WIDTH;
 
     if (newWidth < MIN_WIDTH) newWidth = MIN_WIDTH;
     if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
@@ -36,23 +36,26 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
   };
 
   const handleMouseUp = () => {
+    if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
   };
 
-  // Clean up event listeners if component unmounts while dragging
   useEffect(() => {
+    // Cleanup listeners if component unmounts while dragging
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      if (isDraggingRef.current) { // Check if still dragging to remove
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
 
   return (
     <div
@@ -60,15 +63,11 @@ const Sidebar = ({ onClose }: { onClose: () => void }) => {
       className="h-screen bg-sidebar flex flex-col shadow-sm relative"
       style={{ width: `${width}px` }}
     >
-
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-[2px]">
-        {/* Inbox - Focus solely on the inbox content */}
-        <Inbox />
+        {children} {/* Render children (Inbox or BookmarkSidebarContent) */}
       </div>
-
       <div
-        className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''
-          }`}
+        className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''}`}
         onMouseDown={handleMouseDown}
         title="Drag to resize"
       />

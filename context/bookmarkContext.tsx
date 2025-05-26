@@ -1,9 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-// Helper: Get path from node to root
+// Helper: Get path from node to root (remains the same)
 const getNodePath = (node: Node, root: Node): number[] => {
   const path: number[] = [];
   let currentNode: Node | null = node;
@@ -13,12 +13,13 @@ const getNodePath = (node: Node, root: Node): number[] => {
     currentNode = parent;
   }
   if (currentNode !== root) {
-    if (node !== root) throw new Error("Node is not a descendant of the root element or root itself.");
+    if (node !== root) console.warn("Node is not a descendant of the root element or root itself.");
+    // Soft error for cases where root might be tricky, e.g., shadow DOM or dynamic content
   }
   return path;
 };
 
-// Helper: Get node from path relative to root
+// Helper: Get node from path relative to root (remains the same)
 const getNodeFromPath = (path: number[], root: Node): Node | null => {
   let node: Node | null = root;
   for (const index of path) {
@@ -44,7 +45,8 @@ export interface Bookmark {
   serializedRange: SerializedRange;
   mailId?: string;
   comment?: string;
-  tags?: string[]; // New: For storing tags
+  tags?: string[];
+  createdAt?: number; // Optional: for sorting or other features
 }
 
 interface ActivePopupData {
@@ -57,13 +59,14 @@ interface ActiveCommentModalData {
   rect: DOMRect;
 }
 
-interface ActiveTagModalData { // New: For tag modal
+interface ActiveTagModalData {
   bookmarkId: string;
   rect: DOMRect;
 }
 
 interface BookmarkContextType {
   bookmarks: Bookmark[];
+  isLoading: boolean; // To indicate loading from localStorage
   addBookmark: (text: string, range: Range, rootElement: HTMLElement, mailId?: string) => Bookmark | null;
   removeBookmark: (bookmarkId: string) => void;
   getBookmarkById: (bookmarkId: string) => Bookmark | undefined;
@@ -80,22 +83,81 @@ interface BookmarkContextType {
   hideCommentModal: () => void;
   addOrUpdateComment: (bookmarkId: string, commentText: string) => void;
 
-  // New: Tag related properties and functions
   allTags: string[];
   activeTagModal: ActiveTagModalData | null;
   showTagModal: (bookmarkId: string, rect: DOMRect) => void;
   hideTagModal: () => void;
   updateBookmarkTags: (bookmarkId: string, tags: string[]) => void;
+  renameTagGlobally: (oldTag: string, newTag: string) => void;
+  deleteTagGlobally: (tagToDelete: string) => void;
 }
 
 const BookmarkContext = createContext<BookmarkContextType | undefined>(undefined);
 
+const BOOKMARKS_STORAGE_KEY = 'rainboxApp_bookmarks';
+const ALL_TAGS_STORAGE_KEY = 'rainboxApp_allTags'; // Though allTags will be derived, we can persist it for quicker load.
+
 export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]); // Store all unique tags
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+
   const [activePopup, setActivePopup] = useState<ActivePopupData | null>(null);
   const [activeCommentModal, setActiveCommentModal] = useState<ActiveCommentModalData | null>(null);
-  const [activeTagModal, setActiveTagModal] = useState<ActiveTagModalData | null>(null); // New state for tags
+  const [activeTagModal, setActiveTagModal] = useState<ActiveTagModalData | null>(null);
+
+  // Load bookmarks and tags from localStorage on initial mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedBookmarks = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+        if (storedBookmarks) {
+          setBookmarks(JSON.parse(storedBookmarks));
+        }
+        // AllTags will be derived from bookmarks, but we can load a persisted version first
+        // const storedTags = localStorage.getItem(ALL_TAGS_STORAGE_KEY);
+        // if (storedTags) {
+        //   setAllTags(JSON.parse(storedTags));
+        // }
+      } catch (error) {
+        console.error("Error loading bookmarks from localStorage:", error);
+        // Optionally clear corrupted data
+        // localStorage.removeItem(BOOKMARKS_STORAGE_KEY);
+        // localStorage.removeItem(ALL_TAGS_STORAGE_KEY);
+      } finally {
+        setIsLoading(false); // Set loading to false after attempting to load
+      }
+    } else {
+      setIsLoading(false); // Not in browser, no localStorage
+    }
+  }, []);
+
+  // Persist bookmarks to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isLoading) { // Don't save during initial load
+      localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
+    }
+  }, [bookmarks, isLoading]);
+
+  // Derive and persist allTags whenever bookmarks change
+  useEffect(() => {
+    if (!isLoading) {
+      const derivedTags = Array.from(
+        new Set(bookmarks.flatMap(b => b.tags || []).map(t => t.toLowerCase().trim()).filter(t => t))
+      ).sort();
+      setAllTags(derivedTags);
+    }
+  }, [bookmarks, isLoading]);
+
+  // Persist allTags to localStorage whenever it changes (after being derived)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isLoading && allTags.length > 0) { // Avoid saving empty array unnecessarily during init
+      localStorage.setItem(ALL_TAGS_STORAGE_KEY, JSON.stringify(allTags));
+    } else if (typeof window !== 'undefined' && !isLoading && allTags.length === 0) {
+      localStorage.removeItem(ALL_TAGS_STORAGE_KEY); // Clean up if no tags
+    }
+  }, [allTags, isLoading]);
+
 
   const getSerializedRange = useCallback((range: Range, rootElement: HTMLElement): SerializedRange | null => {
     try {
@@ -118,14 +180,15 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
       if (startNode && endNode) {
         const range = document.createRange();
-        const startOffset = Math.min(serializedRange.start.offset, startNode.nodeValue?.length ?? (startNode.childNodes?.length || 0));
-        const endOffset = Math.min(serializedRange.end.offset, endNode.nodeValue?.length ?? (endNode.childNodes?.length || 0));
+        // Validate offsets against node lengths
+        const validStartOffset = Math.min(serializedRange.start.offset, startNode.nodeValue?.length ?? (startNode.childNodes?.length || 0));
+        const validEndOffset = Math.min(serializedRange.end.offset, endNode.nodeValue?.length ?? (endNode.childNodes?.length || 0));
 
-        range.setStart(startNode, startOffset);
-        range.setEnd(endNode, endOffset);
+        range.setStart(startNode, validStartOffset);
+        range.setEnd(endNode, validEndOffset);
         return range;
       }
-      console.warn("Could not find nodes for deserializing range:", serializedRange);
+      console.warn("Could not find nodes for deserializing range:", serializedRange, "in root:", rootElement);
       return null;
     } catch (error) {
       console.error("Error deserializing range:", error);
@@ -146,23 +209,18 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       serializedRange: sRange,
       mailId,
       comment: undefined,
-      tags: [], // Initialize tags as an empty array
+      tags: [],
+      createdAt: Date.now(),
     };
-    setBookmarks(prev => [...prev, newBookmark]);
+    setBookmarks(prev => [...prev, newBookmark].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))); // Example sort by newest
     return newBookmark;
   }, [getSerializedRange]);
 
   const removeBookmark = useCallback((bookmarkId: string) => {
     setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
-    if (activePopup?.bookmarkId === bookmarkId) {
-      setActivePopup(null);
-    }
-    if (activeCommentModal?.bookmarkId === bookmarkId) {
-      setActiveCommentModal(null);
-    }
-    if (activeTagModal?.bookmarkId === bookmarkId) { // Close tag modal if associated bookmark is removed
-      setActiveTagModal(null);
-    }
+    if (activePopup?.bookmarkId === bookmarkId) setActivePopup(null);
+    if (activeCommentModal?.bookmarkId === bookmarkId) setActiveCommentModal(null);
+    if (activeTagModal?.bookmarkId === bookmarkId) setActiveTagModal(null);
   }, [activePopup, activeCommentModal, activeTagModal]);
 
   const getBookmarkById = useCallback((bookmarkId: string) => {
@@ -171,23 +229,19 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const showPopup = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActivePopup({ bookmarkId, rect });
-    setActiveCommentModal(null); // Hide comment modal
-    setActiveTagModal(null); // Hide tag modal
+    setActiveCommentModal(null);
+    setActiveTagModal(null);
   }, []);
 
-  const hidePopup = useCallback(() => {
-    setActivePopup(null);
-  }, []);
+  const hidePopup = useCallback(() => setActivePopup(null), []);
 
   const showCommentModal = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActiveCommentModal({ bookmarkId, rect });
-    setActivePopup(null); // Hide selection popup
-    setActiveTagModal(null); // Hide tag modal
+    setActivePopup(null);
+    setActiveTagModal(null);
   }, []);
 
-  const hideCommentModal = useCallback(() => {
-    setActiveCommentModal(null);
-  }, []);
+  const hideCommentModal = useCallback(() => setActiveCommentModal(null), []);
 
   const addOrUpdateComment = useCallback((bookmarkId: string, commentText: string) => {
     setBookmarks(prev =>
@@ -199,36 +253,69 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
-  // New: Tag modal functions
   const showTagModal = useCallback((bookmarkId: string, rect: DOMRect) => {
     setActiveTagModal({ bookmarkId, rect });
-    setActivePopup(null); // Hide selection popup
-    setActiveCommentModal(null); // Hide comment modal
+    setActivePopup(null);
+    setActiveCommentModal(null);
   }, []);
 
-  const hideTagModal = useCallback(() => {
-    setActiveTagModal(null);
-  }, []);
+  const hideTagModal = useCallback(() => setActiveTagModal(null), []);
 
   const updateBookmarkTags = useCallback((bookmarkId: string, newTags: string[]) => {
-    // Normalize, clean, and remove duplicates from incoming tags for the bookmark
-    const normalizedCleanedBookmarkTags = Array.from(new Set(newTags.map(t => t.toLowerCase().trim()).filter(t => t.length > 0))).sort();
+    const normalizedCleanedBookmarkTags = Array.from(
+      new Set(newTags.map(t => t.toLowerCase().trim()).filter(t => t.length > 0))
+    ).sort();
 
     setBookmarks(prevBookmarks =>
       prevBookmarks.map(b =>
         b.id === bookmarkId ? { ...b, tags: normalizedCleanedBookmarkTags } : b
       )
     );
-    setAllTags(prevAllTags => {
-      // Add new tags to the global list of all tags, ensuring uniqueness and normalization
-      const updatedAllTags = new Set([...prevAllTags, ...normalizedCleanedBookmarkTags]);
-      return Array.from(updatedAllTags).sort();
-    });
+    // allTags will be updated by the useEffect watching `bookmarks`
   }, []);
+
+  const renameTagGlobally = useCallback((oldTag: string, newTag: string) => {
+    const normalizedOldTag = oldTag.toLowerCase().trim();
+    const normalizedNewTag = newTag.toLowerCase().trim();
+
+    if (!normalizedOldTag || !normalizedNewTag || normalizedOldTag === normalizedNewTag) return;
+
+    setBookmarks(prevBookmarks =>
+      prevBookmarks.map(bm => {
+        if (bm.tags?.includes(normalizedOldTag)) {
+          const updatedTags = Array.from(new Set(
+            (bm.tags || [])
+              .map(t => (t.toLowerCase().trim() === normalizedOldTag ? normalizedNewTag : t))
+          )).sort();
+          return { ...bm, tags: updatedTags };
+        }
+        return bm;
+      })
+    );
+    // allTags will be updated by the useEffect watching `bookmarks`
+  }, []);
+
+  const deleteTagGlobally = useCallback((tagToDelete: string) => {
+    const normalizedTagToDelete = tagToDelete.toLowerCase().trim();
+    if (!normalizedTagToDelete) return;
+
+    setBookmarks(prevBookmarks =>
+      prevBookmarks.map(bm => {
+        if (bm.tags?.includes(normalizedTagToDelete)) {
+          const updatedTags = (bm.tags || []).filter(t => t.toLowerCase().trim() !== normalizedTagToDelete).sort();
+          return { ...bm, tags: updatedTags };
+        }
+        return bm;
+      })
+    );
+    // allTags will be updated by the useEffect watching `bookmarks`
+  }, []);
+
 
   return (
     <BookmarkContext.Provider value={{
       bookmarks,
+      isLoading,
       addBookmark,
       removeBookmark,
       getBookmarkById,
@@ -241,12 +328,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       showCommentModal,
       hideCommentModal,
       addOrUpdateComment,
-      // New: Expose tag-related items
       allTags,
       activeTagModal,
       showTagModal,
       hideTagModal,
       updateBookmarkTags,
+      renameTagGlobally,
+      deleteTagGlobally,
     }}>
       {children}
     </BookmarkContext.Provider>
