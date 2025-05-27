@@ -7,7 +7,6 @@ import { extractEmail } from "@/lib/gmail";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  // todo: ignore emails which have already been processed
   try {
     // Get authenticated user
     const {
@@ -23,13 +22,23 @@ export async function POST(request: Request) {
       .from("senders")
       .select("id, email")
       .eq("user_id", user.id)
-      .eq("mail_service", "gmail");
+      .eq("mail_service", "gmail")
+      .eq("is_onboarded", false); // Only get non-onboarded senders
 
     if (sendersError || !senders) {
       return NextResponse.json(
         { error: "Failed to fetch senders" },
         { status: 500 }
       );
+    }
+
+    // Return early if no senders need processing
+    if (senders.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: "No senders to onboard",
+        processed: 0,
+      });
     }
 
     const cookieStore = cookies();
@@ -52,14 +61,25 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    const messagesRes = await gmail.users.messages.list({
-      userId: "me",
-      maxResults: 100,
-    });
+    let processedEmails: any[] = [];
+    let pageToken: string | undefined = undefined;
 
-    if (messagesRes.data.messages) {
+    // Create query to fetch emails only from tracked senders
+    const senderQuery = senders.map((s) => `from:${s.email}`).join(" OR ");
+
+    // Loop through all pages of results
+    do {
+      const messagesRes: any = await gmail.users.messages.list({
+        userId: "me",
+        maxResults: 100,
+        pageToken: pageToken,
+        q: senderQuery, // Only fetch emails from our senders
+      });
+
+      if (!messagesRes.data.messages) break;
+
       const emailsToInsert = await Promise.all(
-        messagesRes.data.messages.map(async (message) => {
+        messagesRes.data.messages.map(async (message: any) => {
           const msg = await gmail.users.messages.get({
             userId: "me",
             id: message.id!,
@@ -71,11 +91,9 @@ export async function POST(request: Request) {
           const subject = headers.find((h) => h.name === "Subject")?.value;
           const date = headers.find((h) => h.name === "Date")?.value;
 
-          // Extract email from "From" field
           const senderEmail = extractEmail(from);
           if (!senderEmail) return null;
 
-          // Find matching sender from our database
           const sender = senders.find((s) => s.email === senderEmail);
           if (!sender) return null;
 
@@ -97,34 +115,62 @@ export async function POST(request: Request) {
             sender_id: sender.id,
             subject: subject || null,
             body: body || null,
+            read: !msg.data.labelIds?.includes("UNREAD"),
+            created_at: date
+              ? new Date(date).toISOString()
+              : new Date().toISOString(),
           };
         })
       );
 
-      // Filter out nulls and insert valid emails
+      // Add valid emails to our collection
       const validEmails = emailsToInsert.filter(Boolean);
-      if (validEmails.length > 0) {
-        const { error: insertError } = await supabase
-          .from("mails")
-          .upsert(validEmails);
+      processedEmails = [...processedEmails, ...validEmails];
 
-        if (insertError) {
-          console.error("Error inserting emails:", insertError);
-          return NextResponse.json(
-            { error: "Failed to save emails" },
-            { status: 500 }
-          );
-        }
+      // Get next page token
+      pageToken = messagesRes.data.nextPageToken;
+
+      // Add delay to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    } while (pageToken);
+
+    // Insert all collected emails
+    if (processedEmails.length > 0) {
+      const { error: insertError } = await supabase
+        .from("mails")
+        .upsert(processedEmails, {
+          onConflict: "sender_id,created_at",
+          ignoreDuplicates: true,
+        });
+
+      if (insertError) {
+        console.error("Error inserting emails:", insertError);
+        return NextResponse.json(
+          { error: "Failed to save emails" },
+          { status: 500 }
+        );
       }
 
-      return NextResponse.json({
-        success: true,
-        processed: validEmails.length,
-        total: messagesRes.data.messages.length,
-      });
+      // Mark senders as onboarded
+      const { error: updateError } = await supabase
+        .from("senders")
+        .update({ is_onboarded: true })
+        .in(
+          "id",
+          senders.map((s) => s.id)
+        );
+
+      if (updateError) {
+        console.error("Error updating sender status:", updateError);
+      }
     }
 
-    return NextResponse.json({ success: true, processed: 0, total: 0 });
+    return NextResponse.json({
+      success: true,
+      processed: processedEmails.length,
+      sendersOnboarded: senders.length,
+      message: "Successfully onboarded senders",
+    });
   } catch (error: any) {
     console.error("Error processing emails:", error);
     return NextResponse.json(
