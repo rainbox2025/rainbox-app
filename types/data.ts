@@ -38,6 +38,7 @@ export interface Mail {
   sender_id: string;
   created_at: string;
   subject: string;
+  sender: SenderType;
   body: string;
   read: boolean;
   bookmarked: boolean;

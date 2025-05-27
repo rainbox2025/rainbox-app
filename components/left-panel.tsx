@@ -30,7 +30,7 @@ import { AddNewsletterFlow } from "./newsletter/flow";
 import { cn } from "@/lib/utils"; // Ensure you have cn utility
 
 // Define an active class name or use Tailwind's group/peer for active state
-const activeClass = "bg-primary/10 text-primary"; // Example active style
+const activeClass = "bg-secondary  "; // Example active style
 
 export default function LeftPanel() {
   const { setMode } = useMode(); // This might be redundant if Link handles navigation
@@ -101,7 +101,7 @@ export default function LeftPanel() {
           <button
             onClick={handleSectionChange}
             className={cn(
-              "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+              "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
               (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) && activeClass
             )}
             title="Inbox"
@@ -114,7 +114,7 @@ export default function LeftPanel() {
           <button
             onClick={handleSectionChange}
             className={cn(
-              "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+              "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
               (pathname === "/bookmark" || pathname.startsWith("/bookmark/")) && activeClass
             )}
             title="Bookmarks"
