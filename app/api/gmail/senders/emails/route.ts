@@ -64,15 +64,25 @@ export async function POST(request: Request) {
     oauth2Client.setCredentials(tokens);
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+    let processedEmails: any[] = [];
+    let pageToken: string | undefined = undefined;
 
-    const messagesRes = await gmail.users.messages.list({
-      userId: "me",
-      maxResults: 100,
-    });
+    // Create query to fetch emails only from tracked senders
+    const senderQuery = senders.map((s) => `from:${s.email}`).join(" OR ");
 
-    if (messagesRes.data.messages) {
+    // Loop through all pages of results
+    do {
+      const messagesRes: any = await gmail.users.messages.list({
+        userId: "me",
+        maxResults: 100,
+        pageToken: pageToken,
+        q: senderQuery, // Only fetch emails from our senders
+      });
+
+      if (!messagesRes.data.messages) break;
+
       const emailsToInsert = await Promise.all(
-        messagesRes.data.messages.map(async (message) => {
+        messagesRes.data.messages.map(async (message: any) => {
           const msg = await gmail.users.messages.get({
             userId: "me",
             id: message.id!,
@@ -84,7 +94,6 @@ export async function POST(request: Request) {
           const subject = headers.find((h) => h.name === "Subject")?.value;
           const date = headers.find((h) => h.name === "Date")?.value;
 
-          // Extract email from "From" field
           const senderEmail = extractEmail(from);
           if (!senderEmail) return null;
 
@@ -110,55 +119,59 @@ export async function POST(request: Request) {
             sender_id: sender.id,
             subject: subject || null,
             body: body || null,
+            read: !msg.data.labelIds?.includes("UNREAD"),
+            created_at: date
+              ? new Date(date).toISOString()
+              : new Date().toISOString(),
           };
         })
       );
 
-      // Filter out nulls and insert valid emails
+      // Add valid emails to our collection
       const validEmails = emailsToInsert.filter(Boolean);
-      if (validEmails.length > 0) {
-        const { error: insertError } = await supabase
-          .from("mails")
-          .upsert(validEmails);
+      processedEmails = [...processedEmails, ...validEmails];
 
-        if (insertError) {
-          console.error("Error inserting emails:", insertError);
-          return NextResponse.json(
-            { error: "Failed to save emails" },
-            { status: 500 }
-          );
-        }
+      // Get next page token
+      pageToken = messagesRes.data.nextPageToken;
 
-        // Update is_onboarded status only for senders with saved emails
-        const { error: updateError } = await supabase
-          .from("senders")
-          .update({ is_onboarded: true })
-          .in(
-            "id",
-            senders.map((s) => s.id)
-          );
+      // Optional: Add a small delay to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    } while (pageToken);
 
-        if (updateError) {
-          console.error(
-            "Error updating sender onboarding status:",
-            updateError
-          );
-        }
+    // Insert all collected emails
+    if (processedEmails.length > 0) {
+      const { error: insertError } = await supabase
+        .from("mails")
+        .upsert(processedEmails);
+
+      if (insertError) {
+        console.error("Error inserting emails:", insertError);
+        return NextResponse.json(
+          { error: "Failed to save emails" },
+          { status: 500 }
+        );
       }
 
-      return NextResponse.json({
-        success: true,
-        processed: validEmails.length,
-        sendersOnboarded: senders.length,
-        message: "Successfully processed new senders",
-      });
+      // Update senders as onboarded
+      const { error: updateError } = await supabase
+        .from("senders")
+        .update({ is_onboarded: true })
+        .in(
+          "id",
+          senders.map((s) => s.id)
+        );
+
+      if (updateError) {
+        console.error("Error updating sender onboarding status:", updateError);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      processed: 0,
-      total: 0,
-      message: "No messages found for processing",
+      processed: processedEmails.length,
+      sendersOnboarded: senders.length,
+      message: "Successfully processed all emails",
+      pagesProcessed: pageToken ? undefined : "all",
     });
   } catch (error: any) {
     console.error("Error processing emails:", error);
