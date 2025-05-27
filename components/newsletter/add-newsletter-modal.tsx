@@ -5,6 +5,8 @@ import { Connection } from '@/types/data';
 import { MOCK_RAINBOX_EMAIL } from './mock-newsletter-data';
 import Image from 'next/image';
 import { Button } from '../ui/button';
+import { useGmail } from "@/context/gmailContext";
+
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -20,9 +22,21 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   onSelectSender,
 }) => {
 
+  const { email, isConnected, connectGmail } = useGmail();
+
   const handleCopyRainboxEmail = () => {
     navigator.clipboard.writeText(MOCK_RAINBOX_EMAIL);
   };
+
+  const handleConnectGmail = () => {
+    const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI;
+    const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email");
+    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+    window.location.href = oauthUrl;
+  };
+
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Add a Newsletter to Rainbox">
@@ -48,6 +62,21 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               onAction={() => handleCopyRainboxEmail()}
               isConnected={true}
             />
+            <ConnectionCard
+              logo="/GmailLogo.png"
+              logoAlt="Gmail Logo"
+              title="Gmail"
+              subtitle={email || "Not connected"}
+              actionType="select-sender"
+              onAction={() => {
+                if (isConnected && email) {
+                  onSelectSender(email, "Gmail");
+                } else {
+                  connectGmail();
+                }
+              }}
+              isConnected={isConnected}
+            />
           </div>
 
           <div>
@@ -72,7 +101,8 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 
           <div className="w-full flex items-center justify-between px-2 text-sm">
             <button className="text-sm underline">Create new mailbox</button>
-            <button className="text-sm underline">Connect Gmail</button>
+            <button onClick={handleConnectGmail} className="text-sm underline">Connect Gmail</button>
+
             <button className="text-sm underline">Connect Outlook</button>
           </div>
         </div>

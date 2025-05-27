@@ -2,7 +2,7 @@ import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
-import { Geist } from "next/font/google";
+// import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { OnboardingProvider } from "@/context/onboardingContext";
@@ -13,6 +13,7 @@ import { SendersProvider } from "@/context/sendersContext";
 import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
 import Notification from "@/components/notifications/Notification";
+import { GmailProvider } from "@/context/gmailContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -25,10 +26,10 @@ export const metadata = {
   favicon: "/favicon.ico",
 };
 
-const geistSans = Geist({
-  display: "swap",
-  subsets: ["latin"],
-});
+// const geistSans = Geist({
+//   display: "swap",
+//   subsets: ["latin"],
+// });
 
 export default function RootLayout({
   children,
@@ -36,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={geistSans.className} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
@@ -52,15 +53,17 @@ export default function RootLayout({
             <div className="flex-1 w-full flex flex-col items-center">
               <SendersProvider>
                 <MailsProvider>
-                  <AuthProvider>
-                    <FoldersProvider>
-                      <OnboardingProvider>
-                        <SidebarProvider>
-                          <ModeProvider>{children}</ModeProvider>
-                        </SidebarProvider>
-                      </OnboardingProvider>
-                    </FoldersProvider>
-                  </AuthProvider>
+                  <GmailProvider>
+                    <AuthProvider>
+                      <FoldersProvider>
+                        <OnboardingProvider>
+                          <SidebarProvider>
+                            <ModeProvider>{children}</ModeProvider>
+                          </SidebarProvider>
+                        </OnboardingProvider>
+                      </FoldersProvider>
+                    </AuthProvider>
+                  </GmailProvider>
                 </MailsProvider>
               </SendersProvider>
             </div>

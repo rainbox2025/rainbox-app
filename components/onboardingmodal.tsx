@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import { useAuth } from "@/context/authContext";
 import { useOnboarding } from "@/context/onboardingContext";
 import Image from "next/image";
 import ConnectionCard from "./settings/ConnectionCard";
+import { useGmail } from "@/context/gmailContext";
 
 export const OnboardingModal = () => {
   const {
@@ -21,6 +22,12 @@ export const OnboardingModal = () => {
     updateUserName,
 
   } = useOnboarding();
+  const { email, isConnected, connectGmail } = useGmail();
+
+  useEffect(() => {
+    console.log("isConnected:", isConnected);
+    console.log("email:", email);
+  }, [isConnected]);
 
 
   const [userName, setUserName] = useState("");
@@ -285,7 +292,7 @@ export const OnboardingModal = () => {
                 title="Connect your Gmail"
                 subtitle=""
                 actionType="connect"
-                onAction={() => { console.log("Connect Gmail clicked") }}
+                onAction={() => { console.log("Connect Gmail clicked"); connectGmail() }}
                 isConnected={false}
               />
               <ConnectionCard

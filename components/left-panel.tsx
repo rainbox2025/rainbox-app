@@ -30,7 +30,7 @@ import { AddNewsletterFlow } from "./newsletter/flow";
 import { cn } from "@/lib/utils"; // Ensure you have cn utility
 
 // Define an active class name or use Tailwind's group/peer for active state
-const activeClass = "bg-secondary  "; // Example active style
+const activeClass = "bg-hovered  "; // Example active style
 
 export default function LeftPanel() {
   const { setMode } = useMode(); // This might be redundant if Link handles navigation
@@ -273,7 +273,39 @@ export default function LeftPanel() {
             {user?.avatar_url ? <Image src={user.avatar_url} alt="Avatar" width={28} height={28} className="rounded-full" /> : <UserCircleIcon className="w-6 h-6 text-muted-foreground" />}
           </button>
           {showUserModal && (
-            <div className="absolute left-14 bottom-0 z-50"> {/* User Modal Content */} </div>
+            <div
+              className="absolute left-14 bottom-0 bg-content text-popover-foreground rounded-lg shadow-xl p-3 w-40 z-50"
+            >
+              <div className="flex flex-col items-center space-y-2">
+                {user?.avatar_url ? (
+                  <Image
+                    src={user.avatar_url}
+                    alt="User Avatar"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <UserCircleIcon className="w-12 h-12 text-muted-foreground" />
+                )}
+
+                <div className="text-center">
+                  <h2 className="text-sm font-semibold">
+                    {user?.user_name || "User Profile"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground truncate max-w-full">
+                    {user?.email}
+                  </p>
+                </div>
+
+                <button
+                  onClick={logout}
+                  className="w-full bg-destructive text-destructive-foreground rounded-md py-1 text-xs hover:bg-destructive/90 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

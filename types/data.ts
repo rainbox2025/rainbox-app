@@ -82,3 +82,21 @@ export interface Sender {
   name: string;
   email: string;
 }
+export interface EmailData {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  date: string;
+  body: string;
+}
+
+export interface AddSenderRequest {
+  name: string;
+  email: string;
+  domain?: string;
+  folder_id?: string;
+  order?: number;
+  subscribed?: boolean;
+  count?: number;
+}
