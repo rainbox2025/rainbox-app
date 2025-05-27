@@ -12,6 +12,8 @@ import {
   DocumentDuplicateIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon,
+  QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useMode } from "@/context/modeContext";
@@ -166,7 +168,7 @@ export default function LeftPanel() {
           <button
             onClick={toggleEmailModal}
             className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-            title={user?.email || "Email"}
+            title={"Email address"}
           >
             <AtSymbolIcon className="w-5 h-5" />
           </button>
@@ -226,7 +228,7 @@ export default function LeftPanel() {
           <button
             onClick={toggleThemeModal}
             className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-            title="Theme"
+            title="Appearance"
           >
             {theme === "dark" ? (
               <MoonIcon className="w-5 h-5" />
@@ -291,6 +293,16 @@ export default function LeftPanel() {
         >
           <Cog8ToothIcon className="w-5 h-5" />
         </button>
+
+        {/* Feedback */}
+        <button
+          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
+          aria-label="Feedback"
+          title="Feedback"
+        >
+          <QuestionMarkCircleIcon className="w-5 h-5" />
+        </button>
+
 
         {/* User Profile - Click to open */}
         <div className="relative mb-2" ref={userModalRef}>

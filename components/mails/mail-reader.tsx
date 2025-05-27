@@ -1,6 +1,6 @@
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
-import { GripVertical, Sparkles } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import TextToAudio from "../ui/text-to-audio";
 import SummaryDialog from "../summary-dialog";
@@ -64,7 +64,9 @@ export const MailReader = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, containerRef, setMailReaderWidth]); // Complete dependency array
+  }, [isResizing, containerRef, setMailReaderWidth]);
+
+  const mailReaderRef = useRef<HTMLDivElement>(null);
 
   return (
     selectedMail &&
@@ -72,7 +74,7 @@ export const MailReader = ({
       <>
         <div
           ref={resizeRef}
-          className="w-[2px] h-screen cursor-col-resize hidden md:flex items-center justify-center bg-border hover:bg-dragger z-10 transition-all duration-200"
+          className="w-[2px] relative h-screen cursor-col-resize hidden md:flex items-center justify-center bg-border hover:bg-dragger z-10 transition-all duration-200"
           onMouseDown={(e) => {
             e.preventDefault();
             setIsResizing(true);
@@ -82,7 +84,8 @@ export const MailReader = ({
         </div>
 
         <div
-          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto"
+          ref={mailReaderRef} // Add ref to mail reader container
+          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative" // Add relative positioning
           style={{ width: window.innerWidth >= 768 ? `${mailReaderWidth}%` : "100%" }}
         >
           <MailReaderHeader
@@ -90,7 +93,7 @@ export const MailReader = ({
             setTextToAudioOpen={setTextToAudioOpen}
             onBack={onBack}
           />
-          <div className="p-md">
+          <div className="p-md pb-64"> {/* Keep bottom padding to prevent content being hidden */}
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
               {selectedMail?.subject}
             </h1>
@@ -113,20 +116,26 @@ export const MailReader = ({
               dangerouslySetInnerHTML={{ __html: selectedMail.body }}
             />
           </div>
+
+          {/* Position dialogs at the bottom of mail reader */}
+          {textToAudioOpen && (
+            <TextToAudio
+              open={textToAudioOpen}
+              onOpenChange={(open) => {
+                setTextToAudioOpen(open);
+              }}
+              containerRef={mailReaderRef} // Pass ref to the component
+            />
+          )}
+
+          {summaryDialogOpen && (
+            <SummaryDialog
+              open={summaryDialogOpen}
+              onOpenChange={setSummaryDialogOpen}
+              containerRef={mailReaderRef} // Pass ref to the component
+            />
+          )}
         </div>
-        <SummaryDialog
-          open={summaryDialogOpen}
-          onOpenChange={setSummaryDialogOpen}
-        />
-        <TextToAudio
-          open={textToAudioOpen}
-          onOpenChange={(open) => {
-            setTextToAudioOpen(open);
-            if (!open) {
-              setSelectedMail(null);
-            }
-          }}
-        />
       </>
     )
   );

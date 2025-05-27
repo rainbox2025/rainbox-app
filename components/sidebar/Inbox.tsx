@@ -267,6 +267,7 @@ export default function Inbox() {
           <button
             className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent transition-colors"
             onClick={openFolderCreationModal}
+            title="Create a new folder"
           >
             <FolderPlusIcon className="w-5 h-5" />
           </button>
@@ -321,7 +322,7 @@ export default function Inbox() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 text-center text-xs text-muted-foreground">
+        <div className="px-4 py-3 text-center text-xs text-muted-foreground/30">
           <p>Drag items to rearrange or move between folders</p>
           <p className="mt-1">All changes are automatically saved</p>
         </div>
