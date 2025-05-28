@@ -12,6 +12,7 @@ type ConnectionCardProps = {
   actionText?: string;    // Optional text for connect button (only used when actionType is "connect")
   isConnected?: boolean;   // Whether this account is connected (affects styling)
   className?: string;     // Additional class names
+  isLoading?: boolean,
 }
 const ConnectionCard: React.FC<ConnectionCardProps> = ({
   logo,
@@ -22,7 +23,8 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   onAction,
   actionText,
   isConnected,
-  className
+  className,
+  isLoading = false,
 }) => {
   return (
     <div className={`border border-border rounded-md pr-1 flex justify-between items-center w-full ${className}`}>
@@ -53,7 +55,9 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         >
           <div className="flex justify-center items-center gap-2">
             <PlusIcon className="h-5 w-5 hover:text-primary" />
-            <span className="text-sm text-muted-foreground">Connect</span>
+            <span className="text-sm text-muted-foreground">
+              {isLoading ? 'Processing...' : (actionType === 'connect' ? 'Connect' : 'Disconnect')}
+            </span>
           </div>
         </div>
       )}

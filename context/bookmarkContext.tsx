@@ -217,10 +217,10 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   }, [getSerializedRange]);
 
   const removeBookmark = useCallback((bookmarkId: string) => {
-    setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
-    if (activePopup?.bookmarkId === bookmarkId) setActivePopup(null);
-    if (activeCommentModal?.bookmarkId === bookmarkId) setActiveCommentModal(null);
-    if (activeTagModal?.bookmarkId === bookmarkId) setActiveTagModal(null);
+    // setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+    // if (activePopup?.bookmarkId === bookmarkId) setActivePopup(null);
+    // if (activeCommentModal?.bookmarkId === bookmarkId) setActiveCommentModal(null);
+    // if (activeTagModal?.bookmarkId === bookmarkId) setActiveTagModal(null);
   }, [activePopup, activeCommentModal, activeTagModal]);
 
   const getBookmarkById = useCallback((bookmarkId: string) => {

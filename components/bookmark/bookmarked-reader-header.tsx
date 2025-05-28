@@ -46,6 +46,7 @@ const BookmarkReaderHeader: React.FC<Props> = ({ bookmark, onClose, onBack, isFu
         <button onClick={handleEditTags} className="p-xs rounded-full hover:bg-muted" title="Edit Tags">
           <Tag className="w-4 h-4 text-muted-foreground" />
         </button>
+
         <button
           onClick={() => { if (window.confirm("Delete this bookmark?")) { removeBookmark(bookmark.id); onClose(); } }}
           className="p-xs rounded-full hover:bg-destructive/20 text-destructive"

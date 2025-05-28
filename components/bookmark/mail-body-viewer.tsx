@@ -171,9 +171,9 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       }
     });
 
-    if (bookmarksToRemove.length > 0) {
-      bookmarksToRemove.forEach(id => removeBookmark(id));
-    }
+    // if (bookmarksToRemove.length > 0) {
+    //   bookmarksToRemove.forEach(id => removeBookmark(id));
+    // }
     window.getSelection()?.removeAllRanges();
   }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, removeBookmark, showCommentModal, showTagModal]);
 

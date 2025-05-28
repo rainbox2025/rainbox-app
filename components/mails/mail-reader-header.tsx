@@ -43,8 +43,7 @@ const MailReaderHeader = ({
   };
 
   return (
-    selectedMail &&
-    selectedSender && (
+    selectedMail && (
       <div className="sticky top-0 z-10 bg-content h-header border-b border-border p-sm flex items-center justify-between gap-1">
         <div className="flex items-center gap-2">
           <button
