@@ -1,5 +1,5 @@
 "use client";
-import { OnboardingModal } from "@/components/onboardingmodal";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal"; // Corrected path
 import { useOnboarding } from "@/context/onboardingContext";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
@@ -13,46 +13,54 @@ import { useMode } from "@/context/modeContext";
 import { InboxIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
-  const { isOnboardingComplete } = useOnboarding();
+  // Get isOnboardingCompleted directly from the context.
+  // The context is responsible for determining this value after its loading phase.
+  const { isOnboardingCompleted, resetOnboardingProgress } = useOnboarding(); // Added reset for testing
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState("all");
   const { mails, selectedMail, isMailsLoading } = useMails();
-  const { mode } = useMode();
+  // const { mode } = useMode(); // Assuming useMode is defined elsewhere
   const { selectedSender, setSelectedSender } = useSenders();
   const [filteredMails, setFilteredMails] = useState<Mail[]>(mails);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  // The decision to show the modal is now directly tied to the context's state.
+  // No separate showOnboardingModal state needed here for this specific logic.
+  // The OnboardingModal itself can use `isOnboardingCompleted` to decide if it should be open.
+
   const [mailReaderWidth, setMailReaderWidth] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mailListVisible, setMailListVisible] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  // const [isMobile, setIsMobile] = useState(false); // isMobile can be derived inside useEffect
 
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      const isOnboardingCompletes = await isOnboardingComplete();
-      if (!isOnboardingCompletes) {
-        setShowOnboardingModal(true);
-      }
-    };
-    checkOnboarding();
-  }, [isOnboardingComplete]);
+  // This useEffect determines if the modal should be shown.
+  // It relies purely on the isOnboardingCompleted state from the context.
+  // The OnboardingModal component itself will handle its 'open' state based on this.
+  // useEffect(() => {
+  //   // No need to call checkIfPreviouslyCompleted here.
+  //   // The context handles establishing the correct isOnboardingCompleted state.
+  //   if (!isOnboardingCompleted) {
+  //     // If not completed, the <OnboardingModal /> component will render itself open.
+  //   } else {
+  //     // If completed, the <OnboardingModal /> component will render itself closed (or null).
+  //   }
+  // }, [isOnboardingCompleted]);
+  // The above useEffect is actually redundant if OnboardingModal handles its own visibility correctly.
 
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
+      // setIsMobile(mobile); // Not strictly needed as state if only used here
 
       if (mobile) {
-        // On mobile, hide mail list when mail is selected
         setMailListVisible(!selectedMail);
       } else {
-        // Always show mail list on desktop
         setMailListVisible(true);
       }
     };
 
-    handleResize(); // Initial check
+    handleResize();
     window.addEventListener('resize', handleResize);
-
     return () => window.removeEventListener('resize', handleResize);
   }, [selectedMail]);
 
@@ -64,12 +72,13 @@ const Page = () => {
 
   useEffect(() => {
     setUnreadCount(mails.filter((mail) => !mail.read).length);
-    const filteredMails = mails.filter((mail) => {
+    const currentFilteredMails = mails.filter((mail) => {
       if (filter === "all") return true;
       if (filter === "unread") return !mail.read;
       if (filter === "read") return mail.read;
+      return true; // Default case
     });
-    setFilteredMails(filteredMails);
+    setFilteredMails(currentFilteredMails);
   }, [filter, mails]);
 
 
@@ -78,13 +87,23 @@ const Page = () => {
       className="flex min-w-fit h-screen overflow-x-auto"
       ref={containerRef}
     >
-      {showOnboardingModal && <OnboardingModal />}
+      {/* 
+        The OnboardingModal component should internally check `isOnboardingCompleted`.
+        If it's false, it renders and is open. If true, it renders null or is closed.
+      */}
+      <OnboardingModal />
+      {/* For testing:
+        <button onClick={resetOnboardingProgress} className="absolute top-0 right-0 z-50 p-2 bg-red-500 text-white">
+          Reset Onboarding
+        </button>
+      */}
 
       <div
         className={`flex flex-col h-full transition-all duration-300 ease-in-out 
         ${mailListVisible ? 'block' : 'hidden md:block'} 
-        ${selectedMail ? 'md:w-[50%]' : 'w-full'}`}
-        style={{ width: selectedMail && window.innerWidth >= 768 ? `${100 - mailReaderWidth}%` : "100%" }}
+        ${selectedMail && typeof window !== 'undefined' && window.innerWidth >= 768 ? `w-[${100 - mailReaderWidth}%]` : 'w-full'}`}
+      // Dynamic width for desktop when mail is selected
+      // style={ selectedMail && typeof window !== 'undefined' && window.innerWidth >= 768 ? { width: `${100 - mailReaderWidth}%` } : { width: "100%" }}
       >
         <SenderHeader
           filter={filter}
