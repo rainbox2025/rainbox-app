@@ -1,11 +1,23 @@
 import { FolderType, SenderType } from "@/types/data";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { motion, AnimatePresence } from 'framer-motion';
-import { CSS } from '@dnd-kit/utilities';
-import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import Sender from "./sender";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { motion, AnimatePresence } from "framer-motion";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  BellSlashIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  EllipsisHorizontalIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import Sender from "./Sender";
 import { BasicModal } from "../modals/basic-modal";
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
@@ -18,7 +30,7 @@ interface FolderProps {
   onRenameFolder: (folderId: string, newName: string) => void;
   onDeleteFolder: (folderId: string) => void;
   onMarkFolderAsRead?: (folderId: string) => void;
-  senders: SenderType[]
+  senders: SenderType[];
 }
 
 export default function Folder({
@@ -29,9 +41,10 @@ export default function Folder({
   onRenameFolder,
   onDeleteFolder,
   onMarkFolderAsRead,
-  senders
+  senders,
 }: FolderProps) {
-  const { deleteFolder, renameFolder, getSenders, toggleReadFolder } = useFolders();
+  const { deleteFolder, renameFolder, getSenders, toggleReadFolder } =
+    useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
@@ -50,9 +63,9 @@ export default function Folder({
   } = useSortable({
     id: `folder-${folder.id}`,
     data: {
-      type: 'folder',
-      folder
-    }
+      type: "folder",
+      folder,
+    },
   });
 
   const style = {
@@ -82,7 +95,7 @@ export default function Folder({
     }
   }, [expanded]);
 
-  const senderIds = folderSenders.map(sender => `sender-${sender.id}`);
+  const senderIds = folderSenders.map((sender) => `sender-${sender.id}`);
   const isFolderActive = activeFolder === folder.id;
 
   useEffect(() => {
@@ -92,9 +105,9 @@ export default function Folder({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -148,16 +161,22 @@ export default function Folder({
 
   return (
     <>
-      <div ref={setNodeRef} style={style} className={`mb-0 ${isDragging ? 'z-10' : ''}`}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`mb-0 ${isDragging ? "z-10" : ""}`}
+      >
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
           className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer
-    ${isFolderActive
-              ? 'bg-primary/10 text-primary'
-              : isDragging
-                ? 'bg-secondary'
-                : 'hover:bg-accent'}`}
+    ${
+      isFolderActive
+        ? "bg-primary/10 text-primary"
+        : isDragging
+          ? "bg-secondary"
+          : "hover:bg-accent"
+    }`}
           {...attributes}
           {...listeners}
         >
@@ -197,7 +216,9 @@ export default function Folder({
                       onClick={handleMarkAsRead}
                     >
                       <CheckIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
+                      <span className="text-sm">
+                        {folder.isRead ? "Mark as unread" : "Mark as read"}
+                      </span>
                     </button>
                     <button
                       className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"
@@ -239,7 +260,7 @@ export default function Folder({
           {expanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
@@ -247,7 +268,10 @@ export default function Folder({
                 <SkeletonLoader />
               ) : folderSenders.length > 0 ? (
                 <div className="ml-6 mt-1.25 space-y-md-1.25">
-                  <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={senderIds}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {folderSenders.map((sender) => (
                       <Sender key={sender.id} sender={sender} />
                     ))}
