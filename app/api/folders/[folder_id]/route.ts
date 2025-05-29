@@ -7,7 +7,6 @@ export const DELETE = async (
 ) => {
   const supabase = await createClient();
   const { folder_id } = await params;
-  console.log(folder_id);
   const { data: senders_in_folder } = await supabase
     .from("senders")
     .select("*")

@@ -164,6 +164,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [selectedSender]);
 
+
   useEffect(() => {
     const fetchMails = async () => {
       if (selectedSender) {

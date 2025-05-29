@@ -7,9 +7,16 @@ import { EnvelopeIcon, EnvelopeOpenIcon } from "@heroicons/react/24/outline";
 
 import { Bookmark, CheckIcon, MoreHorizontal } from "lucide-react";
 import moment from "moment";
+
 export const MailItem = ({ mail }: { mail: Mail }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
-  const { selectedSender } = useSenders();
+  const { selectedSender, senders } = useSenders();
+
+  // Find sender associated with this mail (for cases when no sender is selected)
+  const mailSender = selectedSender ||
+    senders.find(sender => sender.id === mail.sender_id) ||
+    { name: "Unknown Sender", domain: "unknown.com" };
+
   return (
     <div
       key={mail.id}
@@ -20,11 +27,11 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         }
       }}
       className={cn(
-        "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer  relative group",
+        "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer relative group",
         selectedMail?.id === mail.id && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300 ",
       )}
     >
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex  z-10">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex z-10">
         <button
           className="p-xs rounded-full hover:bg-content/80 transition-colors"
           onClick={(e) => {
@@ -71,14 +78,14 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         >
           <img
             src={
-              selectedSender?.domain === "gmail.com"
-                ? "/logos/gmail.webp"
-                : `https://www.google.com/s2/favicons?domain=${selectedSender?.domain}&sz=128`
+              mailSender?.domain === "gmail.com"
+                ? "/gmail.webp"
+                : `https://www.google.com/s2/favicons?domain=${mailSender?.domain}&sz=128`
             }
             alt={mail.subject}
             className="w-4 h-4 object-cover mr-2"
           />
-          <span className="mr-2">{selectedSender?.name}</span>
+          <span className="mr-2">{mailSender?.name}</span>
           <span className="text-xs text-muted-foreground">
             {moment(mail.created_at).fromNow()}
           </span>

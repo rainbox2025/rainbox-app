@@ -38,6 +38,7 @@ export interface Mail {
   sender_id: string;
   created_at: string;
   subject: string;
+  sender: SenderType;
   body: string;
   read: boolean;
   bookmarked: boolean;
@@ -64,6 +65,23 @@ export interface User {
   totalFeeds: number;
 }
 
+
+export interface Connection {
+  id: string;
+  type: 'gmail' | 'outlook';
+  accountName: string; 
+  userEmail?: string | null;
+  isConnected: boolean;
+  logo: string; // Use string instead of React.ReactNode
+  logoAlt: string;
+}
+
+
+export interface Sender {
+  id: string;
+  name: string;
+  email: string;
+}
 export interface EmailData {
   id: string;
   threadId: string;

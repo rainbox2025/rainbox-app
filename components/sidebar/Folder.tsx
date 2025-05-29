@@ -3,10 +3,10 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { motion, AnimatePresence } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { BellSlashIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, EllipsisHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import Sender from "./Sender";
-import { Modal } from "./Modal";
+import Sender from "./sender";
+import { BasicModal } from "../modals/basic-modal";
 import { useState, useRef, useEffect } from 'react';
-import { DeleteConfirmationModal } from "./DeleteModal";
+import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
 
@@ -264,7 +264,7 @@ export default function Folder({
       </div>
 
       {/* Rename Modal */}
-      <Modal
+      <BasicModal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={async (newName) => {

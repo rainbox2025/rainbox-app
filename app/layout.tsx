@@ -13,6 +13,7 @@ import { SendersProvider } from "@/context/sendersContext";
 import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
 import Notification from "@/components/notifications/Notification";
+import { GmailProvider } from "@/context/gmailContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -52,15 +53,17 @@ export default function RootLayout({
             <div className="flex-1 w-full flex flex-col items-center">
               <SendersProvider>
                 <MailsProvider>
-                  <AuthProvider>
-                    <FoldersProvider>
-                      <OnboardingProvider>
-                        <SidebarProvider>
-                          <ModeProvider>{children}</ModeProvider>
-                        </SidebarProvider>
-                      </OnboardingProvider>
-                    </FoldersProvider>
-                  </AuthProvider>
+                  <GmailProvider>
+                    <AuthProvider>
+                      <FoldersProvider>
+                        <OnboardingProvider>
+                          <SidebarProvider>
+                            <ModeProvider>{children}</ModeProvider>
+                          </SidebarProvider>
+                        </OnboardingProvider>
+                      </FoldersProvider>
+                    </AuthProvider>
+                  </GmailProvider>
                 </MailsProvider>
               </SendersProvider>
             </div>

@@ -7,6 +7,11 @@ import SummaryDialog from "../summary-dialog";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
+import { BookmarkProvider } from "@/context/bookmarkContext";
+import MailBodyViewer from "../bookmark/mail-body-viewer";
+import SelectionPopup from "@/components/bookmark/selection-modal";
+import CommentModal from "../bookmark/comment-modal";
+import TagModal from "@/components/bookmark/tag-modal";
 
 export const MailReader = ({
   containerRef,
@@ -22,9 +27,15 @@ export const MailReader = ({
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
-  const { selectedSender } = useSenders();
+  const { selectedSender, senders } = useSenders();
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const previousWidthRef = useRef(mailReaderWidth);
+
+  const mailSender = selectedSender ||
+    (selectedMail && senders.find(sender => sender.id === selectedMail.sender_id)) ||
+    { name: "Unknown Sender", domain: "unknown.com" };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -32,21 +43,12 @@ export const MailReader = ({
 
       const containerRect = containerRef.current.getBoundingClientRect();
       const containerWidth = containerRect.width;
-
-      // Calculate the position from the left edge of the container
       const mousePosition = e.clientX - containerRect.left;
-
-      // Convert to percentage - this is the width of the mail list
       const mailListWidthPercent = (mousePosition / containerWidth) * 100;
-
-      // Since mailReaderWidth is the width of the reader (right panel),
-      // we need to invert the percentage (100 - mailListWidth)
       const readerWidthPercent = 100 - mailListWidthPercent;
-
-      // Constrain between 15% and 85% for the reader width
       const constrainedWidth = Math.max(50, Math.min(60, readerWidthPercent));
-
       setMailReaderWidth(constrainedWidth);
+      setIsFullScreen(false);
     };
 
     const handleMouseUp = () => {
@@ -68,9 +70,18 @@ export const MailReader = ({
 
   const mailReaderRef = useRef<HTMLDivElement>(null);
 
+  const toggleFullScreen = () => {
+    if (isFullScreen) {
+      setMailReaderWidth(previousWidthRef.current);
+    } else {
+      previousWidthRef.current = mailReaderWidth;
+      setMailReaderWidth(95);
+    }
+    setIsFullScreen(!isFullScreen);
+  };
+
   return (
-    selectedMail &&
-    selectedSender && (
+    selectedMail && (
       <>
         <div
           ref={resizeRef}
@@ -84,47 +95,55 @@ export const MailReader = ({
         </div>
 
         <div
-          ref={mailReaderRef} // Add ref to mail reader container
-          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative" // Add relative positioning
-          style={{ width: window.innerWidth >= 768 ? `${mailReaderWidth}%` : "100%" }}
+          ref={mailReaderRef}
+          className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
+          style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : { width: `${mailReaderWidth}%` }}
         >
           <MailReaderHeader
             setSummaryDialogOpen={setSummaryDialogOpen}
             setTextToAudioOpen={setTextToAudioOpen}
             onBack={onBack}
+            isFullScreen={isFullScreen}
+            toggleFullScreen={toggleFullScreen}
           />
-          <div className="p-md pb-64"> {/* Keep bottom padding to prevent content being hidden */}
-            <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
-              {selectedMail?.subject}
-            </h1>
-            <div className="flex items-center mb-2 text-sm">
-              <SenderAvatar
-                domain={selectedSender.domain || ""}
-                alt={selectedMail.subject || ""}
-              />
-              <div>
-                <div className="font-medium">{selectedSender?.name}</div>
-                <div className="text-muted-foreground text-xs">
-                  {moment(selectedMail.created_at).format(
-                    "MMM D, YYYY [at] h:mm A"
-                  )}
+          <div className="p-md pb-64">
+            <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
+              <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
+                {selectedMail?.subject}
+              </h1>
+              <div className="flex items-center mb-2 text-sm">
+                <SenderAvatar
+                  domain={mailSender?.domain || ""}
+                  alt={selectedMail.subject || ""}
+                />
+                <div>
+                  <div className="font-medium">{mailSender?.name}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {moment(selectedMail.created_at).format(
+                      "MMM D, YYYY [at] h:mm A"
+                    )}
+                  </div>
                 </div>
               </div>
+              <BookmarkProvider>
+                {selectedMail && (
+                  <MailBodyViewer
+                    htmlContent={selectedMail.body}
+                    mailId={selectedMail.id}
+                  />
+                )}
+                <SelectionPopup />
+                <CommentModal />
+                <TagModal /> {/* <<< Add TagModal */}
+              </BookmarkProvider>
             </div>
-            <div
-              className="prose text-sm prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: selectedMail.body }}
-            />
           </div>
 
-          {/* Position dialogs at the bottom of mail reader */}
           {textToAudioOpen && (
             <TextToAudio
               open={textToAudioOpen}
-              onOpenChange={(open) => {
-                setTextToAudioOpen(open);
-              }}
-              containerRef={mailReaderRef} // Pass ref to the component
+              onOpenChange={setTextToAudioOpen}
+              containerRef={mailReaderRef}
             />
           )}
 
@@ -132,7 +151,7 @@ export const MailReader = ({
             <SummaryDialog
               open={summaryDialogOpen}
               onOpenChange={setSummaryDialogOpen}
-              containerRef={mailReaderRef} // Pass ref to the component
+              containerRef={mailReaderRef}
             />
           )}
         </div>

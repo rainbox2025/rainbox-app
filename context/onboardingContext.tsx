@@ -68,6 +68,7 @@ export const OnboardingProvider = ({
       .eq("id", user.user.id)
       .single();
     return data?.user_name !== null;
+    // return false
   };
 
   return (

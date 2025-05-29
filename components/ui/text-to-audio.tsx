@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { stripHtml } from "@/lib/utils";
 import { useSenders } from "@/context/sendersContext";
-import { SenderIcon } from "../sidebar/SenderIcon";
+import { SenderIcon } from "../sidebar/sender-icon";
 
 const TextToAudio = ({
   open,
@@ -220,13 +220,24 @@ const TextToAudio = ({
 
   return (
     <div
-      className="bg-sidebar/1 pb-1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300"
       style={{
         ...dialogStyle,
         borderRadius: '8px 8px 0 0',
       }}
     >
-      <div className="p-4">
+      <div className="bg-sidebar/1 backdrop-blur-3xl border-t border-gray-200 dark:border-gray-800 shadow-lg animate-in slide-in-from-bottom duration-300 p-4 max-w-xl rounded-t-md mx-auto relative pb-8">
+        {/* Close button at top right corner */}
+        <div className="flex justify-end absolute right-0 top-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4 text-gray-500" />
+          </Button>
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="flex-shrink-0 bg-blue-900/10 dark:bg-blue-900/30 p-2 rounded-lg">
@@ -237,7 +248,7 @@ const TextToAudio = ({
               <div className="text-xs text-gray-500 truncate">{selectedSender?.name}</div>
             </div>
           </div>
-          <div className="flex items-center gap-0 flex-shrink-0 ml-2">
+          <div className="flex items-center gap-0 flex-shrink-0 ml-2 pr-4">
             <Button
               variant="ghost"
               size="sm"
@@ -277,14 +288,7 @@ const TextToAudio = ({
             >
               <SkipForward className="h-4 w-4 text-gray-500" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full ml-3"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4 text-gray-500" />
-            </Button>
+            {/* Removed the close button from here */}
           </div>
         </div>
 

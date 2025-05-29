@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
-interface ModalProps {
+interface BasicModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (value: string) => Promise<void> | void;
@@ -10,7 +10,7 @@ interface ModalProps {
   title: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({
+export const BasicModal: React.FC<BasicModalProps> = ({
   isOpen,
   onClose,
   onSave,

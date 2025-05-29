@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
-  BookmarkIcon,
+  BookmarkIcon as HeroBookmarkIcon, // Renamed to avoid conflict
   SquaresPlusIcon,
   Cog8ToothIcon,
   UserCircleIcon,
@@ -12,8 +14,7 @@ import {
   DocumentDuplicateIcon,
   InformationCircleIcon,
   MagnifyingGlassIcon,
-  ChatBubbleLeftRightIcon,
-  QuestionMarkCircleIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useMode } from "@/context/modeContext";
@@ -22,137 +23,120 @@ import { useMails } from "@/context/mailsContext";
 import { useAuth } from "@/context/authContext";
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import SettingsModal from "./SettingsModal";
-import { InboxIcon } from "lucide-react";
+import SettingsModal from "./settings/settings-modal";
+import { InboxIcon, PlusIcon } from "lucide-react"; // Lucide InboxIcon
+import { FeedbackModal } from "./feedback-modal";
+import { AddNewsletterFlow } from "./newsletter/flow";
+import { cn } from "@/lib/utils"; // Ensure you have cn utility
+
+// Define an active class name or use Tailwind's group/peer for active state
+const activeClass = "bg-hovered  "; // Example active style
 
 export default function LeftPanel() {
-  const { setMode } = useMode();
+  const { setMode } = useMode(); // This might be redundant if Link handles navigation
   const { setSelectedSender } = useSenders();
   const { setSelectedMail } = useMails();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
 
-  // State for modals
+  const [isAddNewsletterFlowOpen, setIsAddNewsletterFlowOpen] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
   const [showInfoMessage, setShowInfoMessage] = useState(false);
 
-  // Refs for modal containers
   const userModalRef = useRef<HTMLDivElement>(null);
   const emailModalRef = useRef<HTMLDivElement>(null);
   const themeModalRef = useRef<HTMLDivElement>(null);
 
-  const handleNavigationClick = (newMode: "bookmarks" | "discover") => {
-    setMode(newMode);
+  // Reset states when changing main sections
+  const handleSectionChange = () => {
     setSelectedSender(null);
     setSelectedMail(null);
+    // setMode(newMode); // setMode might be for sub-navigation within a section
   };
 
   const handleCopyEmail = () => {
-    if (
-      user?.email &&
-      typeof navigator !== "undefined" &&
-      navigator.clipboard
-    ) {
+    if (user?.email && typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(user.email);
       setShowCopiedMessage(true);
       setTimeout(() => setShowCopiedMessage(false), 1000);
     }
   };
 
-  // Click outside handler to close modals
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      // Check if click was outside user modal
-      if (showUserModal &&
-        userModalRef.current &&
-        !userModalRef.current.contains(event.target as Node)) {
+      if (showUserModal && userModalRef.current && !userModalRef.current.contains(event.target as Node)) {
         setShowUserModal(false);
       }
-
-      // Check if click was outside email modal
-      if (showEmailModal &&
-        emailModalRef.current &&
-        !emailModalRef.current.contains(event.target as Node)) {
+      if (showEmailModal && emailModalRef.current && !emailModalRef.current.contains(event.target as Node)) {
         setShowEmailModal(false);
       }
-
-      // Check if click was outside theme modal
-      if (showThemeModal &&
-        themeModalRef.current &&
-        !themeModalRef.current.contains(event.target as Node)) {
+      if (showThemeModal && themeModalRef.current && !themeModalRef.current.contains(event.target as Node)) {
         setShowThemeModal(false);
       }
     }
-
-    // Add event listener
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      // Remove event listener on cleanup
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showUserModal, showEmailModal, showThemeModal]);
 
-  // Toggle functions for modals
-  const toggleUserModal = () => {
-    setShowUserModal(!showUserModal);
-    setShowEmailModal(false);
-    setShowThemeModal(false);
-  };
-
-  const toggleEmailModal = () => {
-    setShowEmailModal(!showEmailModal);
-    setShowUserModal(false);
-    setShowThemeModal(false);
-  };
-
-  const toggleThemeModal = () => {
-    setShowThemeModal(!showThemeModal);
-    setShowUserModal(false);
-    setShowEmailModal(false);
-  };
+  const toggleUserModal = () => setShowUserModal(prev => !prev);
+  const toggleEmailModal = () => setShowEmailModal(prev => !prev);
+  const toggleThemeModal = () => setShowThemeModal(prev => !prev);
 
   return (
     <>
       <div className="h-full w-12 bg-content flex flex-col items-center border-r border-border py-3 gap-2">
-        {/* Logo */}
         <div className="mb-2">
-          <Image
-            src="/RainboxLogo.png"
-            alt="Logo"
-            className="w-8 h-8"
-            width={32}
-            height={32}
-          />
+          <Image src="/RainboxLogo.png" alt="Logo" className="w-8 h-8" width={32} height={32} />
         </div>
 
-        {/* Navigation Icons */}
-        <button
-          onClick={() => handleNavigationClick("bookmarks")}
-          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-          title="Inbox"
-        >
-          <InboxIcon className="w-5 h-5" />
-        </button>
+        <Link href="/dashboard" passHref>
+          <button
+            onClick={handleSectionChange}
+            className={cn(
+              "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+              (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) && activeClass
+            )}
+            title="Inbox"
+          >
+            <InboxIcon className="w-5 h-5" />
+          </button>
+        </Link>
 
-        <button
-          onClick={() => handleNavigationClick("bookmarks")}
-          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-          title="Bookmarks"
-        >
-          <BookmarkIcon className="w-5 h-5" />
-        </button>
+        <Link href="/bookmark" passHref>
+          <button
+            onClick={handleSectionChange}
+            className={cn(
+              "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+              (pathname === "/bookmark" || pathname.startsWith("/bookmark/")) && activeClass
+            )}
+            title="Bookmarks"
+          >
+            <HeroBookmarkIcon className="w-5 h-5" />
+          </button>
+        </Link>
 
+        {/* Discover Button - Assuming it navigates somewhere or sets a mode */}
+        {/* <Link href="/discover" passHref> */}
         <button
-          onClick={() => handleNavigationClick("discover")}
-          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
+          onClick={() => { handleSectionChange(); /* setMode('discover'); */ }}
+          className={cn(
+            "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+            // pathname.startsWith("/discover") && activeClass // Example if /discover is a page
+          )}
           title="Discover"
         >
           <SquaresPlusIcon className="w-5 h-5" />
         </button>
+        {/* </Link> */}
+
 
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
@@ -161,9 +145,16 @@ export default function LeftPanel() {
           <MagnifyingGlassIcon className="w-5 h-5" />
         </button>
 
+        <button
+          className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
+          title="Add New"
+          onClick={() => setIsAddNewsletterFlowOpen(true)}
+        >
+          <PlusIcon className="w-5 h-5" strokeWidth={1.8} />
+        </button>
+
         <div className="flex-grow"></div>
 
-        {/* Email Info - Click to open */}
         <div className="relative" ref={emailModalRef}>
           <button
             onClick={toggleEmailModal}
@@ -172,14 +163,12 @@ export default function LeftPanel() {
           >
             <AtSymbolIcon className="w-5 h-5" />
           </button>
-
           {showEmailModal && (
             <div className="absolute left-14 bottom-0 z-40">
               <div className="bg-content p-sm rounded-lg shadow-md flex items-center gap-xs w-60">
                 <span className="text-xs text-muted-foreground truncate flex-grow">
                   {user?.email || "Not logged in"}
                 </span>
-
                 <button
                   className="text-muted-foreground hover:text-foreground rounded-full hover:bg-hover relative p-xs"
                   onMouseEnter={() => setShowInfoMessage(true)}
@@ -187,35 +176,18 @@ export default function LeftPanel() {
                 >
                   <InformationCircleIcon className="w-4 h-4" />
                   {showInfoMessage && (
-                    <motion.div
-                      className="absolute right-1 top-10 mb-2 bg-content text-popover-foreground px-2 py-1 rounded text-xs shadow-md z-10 w-40"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {`You are currently on the free plan. Upgrade anytime for more benefits!`}
-                    </motion.div>
+                    <motion.div /* ... */ >{`You are currently on the free plan...`}</motion.div>
                   )}
                 </button>
-
                 <button
-                  className="text-muted-foreground hover:text-foreground rounded-full hover:bg-hover cursor-pointer relative p-1"
+                  className="text-muted-foreground hover:text-foreground rounded-full hover:bg-hover p-1"
                   onClick={handleCopyEmail}
-                  title="Copy email to clipboard"
+                  title="Copy email"
                   disabled={!user?.email}
                 >
                   <DocumentDuplicateIcon className="w-4 h-4" />
                   {showCopiedMessage && (
-                    <motion.div
-                      className="absolute right-0 top-full mt-2 bg-content text-popover-foreground px-2 py-1 rounded text-xs shadow-md z-10"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      Copied!
-                    </motion.div>
+                    <motion.div /* ... */ >Copied!</motion.div>
                   )}
                 </button>
               </div>
@@ -223,22 +195,14 @@ export default function LeftPanel() {
           )}
         </div>
 
-        {/* Theme Switcher - Click to open */}
         <div className="relative" ref={themeModalRef}>
           <button
             onClick={toggleThemeModal}
             className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
             title="Appearance"
           >
-            {theme === "dark" ? (
-              <MoonIcon className="w-5 h-5" />
-            ) : theme === "light" ? (
-              <SunIcon className="w-5 h-5" />
-            ) : (
-              <ComputerDesktopIcon className="w-5 h-5" />
-            )}
+            {theme === "dark" ? <MoonIcon className="w-5 h-5" /> : theme === "light" ? <SunIcon className="w-5 h-5" /> : <ComputerDesktopIcon className="w-5 h-5" />}
           </button>
-
           {showThemeModal && (
             <div className="absolute left-14 bottom-0 z-40">
               <div className="bg-content rounded-lg shadow-md p-xs">
@@ -284,46 +248,30 @@ export default function LeftPanel() {
           )}
         </div>
 
-        {/* Settings */}
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-          aria-label="Settings"
           onClick={() => setIsSettingsOpen(true)}
           title="Settings"
         >
           <Cog8ToothIcon className="w-5 h-5" />
         </button>
 
-        {/* Feedback */}
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-          aria-label="Feedback"
           title="Feedback"
+          onClick={() => setIsFeedbackOpen(true)}
         >
-          <QuestionMarkCircleIcon className="w-5 h-5" />
+          <ChatBubbleLeftEllipsisIcon className="w-5 h-5" />
         </button>
 
-
-        {/* User Profile - Click to open */}
         <div className="relative mb-2" ref={userModalRef}>
           <button
             className="p-1 rounded-full hover:bg-hover transition-colors"
             onClick={toggleUserModal}
             title="Account"
           >
-            {user?.avatar_url ? (
-              <Image
-                src={user.avatar_url}
-                alt="User Avatar"
-                width={28}
-                height={28}
-                className="rounded-full"
-              />
-            ) : (
-              <UserCircleIcon className="w-6 h-6 text-muted-foreground" />
-            )}
+            {user?.avatar_url ? <Image src={user.avatar_url} alt="Avatar" width={28} height={28} className="rounded-full" /> : <UserCircleIcon className="w-6 h-6 text-muted-foreground" />}
           </button>
-
           {showUserModal && (
             <div
               className="absolute left-14 bottom-0 bg-content text-popover-foreground rounded-lg shadow-xl p-3 w-40 z-50"
@@ -362,10 +310,9 @@ export default function LeftPanel() {
         </div>
       </div>
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      {isFeedbackOpen && <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AddNewsletterFlow isOpen={isAddNewsletterFlowOpen} onClose={() => setIsAddNewsletterFlowOpen(false)} />
     </>
   );
 }
