@@ -23,8 +23,8 @@ import {
 } from "@dnd-kit/sortable";
 import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./sender-icon";
-import FolderComponent from "./folder";
-import Sender from "./sender";
+import FolderComponent from "./Folder";
+import Sender from "./Sender";
 import { BasicModal } from "../modals/basic-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
@@ -38,12 +38,8 @@ interface OrderedItem {
 }
 
 export default function Inbox() {
-  const {
-    folders,
-    isFoldersLoading,
-    createFolder,
-    addSenderToFolder,
-  } = useFolders();
+  const { folders, isFoldersLoading, createFolder, addSenderToFolder } =
+    useFolders();
   const { senders, isSendersLoading } = useSenders();
 
   // New state for tracking the order of all items
@@ -338,7 +334,6 @@ export default function Inbox() {
             </p>
           </div>
         </div>
-
       </div>
 
       {/* Folder Creation Modal */}
@@ -361,7 +356,6 @@ export default function Inbox() {
         }}
         title="Create New Folder"
       />
-
 
       <DragOverlay>
         {activeId && activeSender && (
