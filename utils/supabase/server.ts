@@ -35,9 +35,6 @@ export const createAdminClient = async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      db: {
-        schema: "rainbox",
-      },
       cookies: {
         getAll() {
           return cookieStore.getAll();

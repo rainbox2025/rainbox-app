@@ -1,11 +1,11 @@
-import { createAdminClient } from "@/utils/supabase/server";
+import { createAdminClient, createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 import { initOauthCLient } from "@/lib/oauth";
-import { log } from "console";
 
 export async function DELETE(request: Request) {
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   try {
     const { feedback } = await request.json();
@@ -19,6 +19,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    // Save feedback if provided
     if (feedback?.trim()) {
       const { error: feedbackError } = await supabase.from("feedbacks").insert({
         email: user.email,
@@ -31,6 +32,7 @@ export async function DELETE(request: Request) {
       }
     }
 
+    // Handle Gmail integration cleanup
     const { data: tokenData } = await supabase
       .from("gmail_tokens")
       .select("*")
@@ -43,8 +45,8 @@ export async function DELETE(request: Request) {
         process.env.CLIENT_SECRET,
         process.env.REDIRECT_URI
       );
-      oauth2Client.setCredentials(tokenData.tokens);
 
+      oauth2Client.setCredentials(tokenData.tokens);
       const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
       try {
@@ -62,27 +64,36 @@ export async function DELETE(request: Request) {
       }
     }
 
-    // Delete from all tables in correct order
-    await supabase.from("gmail_watch").delete().eq("user_id", user.id);
-    await supabase.from("gmail_tokens").delete().eq("user_id", user.id);
-    await supabase.from("mails").delete().eq("user_id", user.id);
-    await supabase.from("senders").delete().eq("user_id", user.id);
-    await supabase.from("users").delete().eq("id", user.id); // Delete from rainbox.users
+    // Delete from custom tables first (in dependency order)
+    const deletePromises = [
+      supabase.from("gmail_watch").delete().eq("email", user.email),
+      supabase.from("gmail_tokens").delete().eq("email", user.email),
+      supabase.from("mails").delete().eq("user_id", user.id),
+      supabase.from("senders").delete().eq("user_id", user.id),
+      supabase.from("users").delete().eq("id", user.id),
+    ];
 
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) {
-      console.error("Error signing out user:", signOutError);
-      throw new Error("Failed to sign out user");
-    }
+    // Wait for all custom table deletions to complete
+    const deleteResults = await Promise.allSettled(deletePromises);
 
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(
-      user.id,
-      true
+    // Log any errors but don't fail the whole operation
+    deleteResults.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(`Error deleting from table ${index}:`, result.reason);
+      }
+    });
+
+    // Now delete from auth.users using admin client
+    // The admin client needs to target the auth schema specifically
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
+      user.id
     );
 
     if (deleteError) {
-      console.error("Error deleting user:", deleteError);
-      throw new Error("Failed to delete user account");
+      console.error("Error deleting user from auth:", deleteError);
+      throw new Error(
+        "Failed to delete user account from authentication system"
+      );
     }
 
     return NextResponse.json({
