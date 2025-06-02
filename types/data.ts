@@ -65,17 +65,15 @@ export interface User {
   totalFeeds: number;
 }
 
-
 export interface Connection {
   id: string;
-  type: 'gmail' | 'outlook';
-  accountName: string; 
+  type: "gmail" | "outlook";
+  accountName: string;
   userEmail?: string | null;
   isConnected: boolean;
   logo: string; // Use string instead of React.ReactNode
   logoAlt: string;
 }
-
 
 export interface Sender {
   id: string;
@@ -99,4 +97,11 @@ export interface AddSenderRequest {
   order?: number;
   subscribed?: boolean;
   count?: number;
+}
+
+export interface Preferences {
+  font_size?: string;
+  ai_prompt?: string;
+  voice_speed?: string;
+  selected_voice?: string;
 }
