@@ -5,6 +5,12 @@ import { createClient } from "@/utils/supabase/server";
 import { initOauthCLient } from "@/lib/oauth";
 import { extractEmail } from "@/lib/gmail";
 
+function chunkArray<T>(array: T[], size: number): T[][] {
+  return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+    array.slice(i * size, i * size + size)
+  );
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   try {
@@ -138,18 +144,25 @@ export async function POST(request: Request) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     } while (pageToken);
 
-    // Insert all collected emails
+    // Insert emails in batches
     if (processedEmails.length > 0) {
-      const { error: insertError } = await supabase
-        .from("mails")
-        .upsert(processedEmails);
+      const batches = chunkArray(processedEmails, 50); // Process 50 emails at a time
 
-      if (insertError) {
-        console.error("Error inserting emails:", insertError);
-        return NextResponse.json(
-          { error: "Failed to save emails" },
-          { status: 500 }
-        );
+      for (const batch of batches) {
+        const { error: insertError } = await supabase
+          .from("mails")
+          .upsert(batch);
+
+        if (insertError) {
+          console.error("Error inserting email batch:", insertError);
+          return NextResponse.json(
+            { error: "Failed to save emails" },
+            { status: 500 }
+          );
+        }
+
+        // Add a small delay between batches
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       // Update senders as onboarded
