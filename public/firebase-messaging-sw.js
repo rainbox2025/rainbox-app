@@ -25,7 +25,6 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 🔥 This should be OUTSIDE the onBackgroundMessage
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   const url = event.notification.data?.click_action || "http://localhost:3000/dashboard";
