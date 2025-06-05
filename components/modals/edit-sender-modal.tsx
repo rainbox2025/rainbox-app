@@ -183,13 +183,8 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <>
-                    <span className="opacity-0">Edit Feed</span>
-                    <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <ArrowPathIcon className="animate-spin h-4 w-4 text-sm" />
-                    </span>
-                  </>
-                ) : "Edit Feed"}
+                  <ArrowPathIcon className="animate-spin h-4 w-4 text-sm" />
+                ) : "Done"}
               </button>
             </div>
           </div>

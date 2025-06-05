@@ -18,6 +18,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-geist-sans)', 'sans-serif']
+      },
       height: {
         header: "35px", 
         onbarding: "400px",

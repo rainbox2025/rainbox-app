@@ -23,8 +23,8 @@ import {
 } from "@dnd-kit/sortable";
 import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./sender-icon";
-import FolderComponent from "./Folder";
-import Sender from "./Sender";
+import FolderComponent from "./folder";
+import Sender from "./sender";
 import { BasicModal } from "../modals/basic-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
@@ -319,14 +319,14 @@ export default function Inbox() {
 
         {/* Footer */}
         <div className="px-4 py-3 text-center text-xs text-muted-foreground/30">
-          <p>Drag items to rearrange or move between folders</p>
-          <p className="mt-1">All changes are automatically saved</p>
+          <p>New subscriptions will automatically appear here</p>
+          <p className="mt-1">Hold and drag to rearrange feeds</p>
         </div>
 
         {/* Upgrade Box */}
         <div className="px-4 py-3 mt-auto border-border absolute bottom-2  ">
           <div className="bg-content p-3 rounded-lg shadow-sm">
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-sm  text-foreground">
               30 days left in your free trial. Keep your reading habit alive.
               <span className="ml-1 text-blue-500 font-semibold cursor-pointer">
                 Upgrade -&gt;

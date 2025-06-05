@@ -15,7 +15,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import Sender from "./Sender";
+import Sender from "./sender";
 import { BasicModal } from "../modals/basic-modal";
 import { useState, useRef, useEffect } from "react";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
@@ -170,13 +170,12 @@ export default function Folder({
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
           className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer
-    ${
-      isFolderActive
-        ? "bg-primary/10 text-primary"
-        : isDragging
-          ? "bg-secondary"
-          : "hover:bg-accent"
-    }`}
+    ${isFolderActive
+              ? "bg-primary/10 text-primary"
+              : isDragging
+                ? "bg-secondary"
+                : "hover:bg-accent"
+            }`}
           {...attributes}
           {...listeners}
         >

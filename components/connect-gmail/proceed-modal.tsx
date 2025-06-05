@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LockClosedIcon } from '@heroicons/react/24/solid';
 import { GmailMecoLogosDisplay } from './gmail-rainbox-logo';
@@ -7,11 +7,12 @@ import { ModalCloseButton } from '../modals/modal-close-button';
 import { Button } from '../ui/button';
 import { Loader } from 'lucide-react';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useGmail } from '@/context/gmailContext';
 
 interface GmailPermissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  handleConnection: () => Promise<'success' | 'error'>;
+  handleConnection: () => void;
   onSuccess: () => void;
   onError: () => void;
 }
@@ -24,16 +25,27 @@ export const GmailPermissionsModal: React.FC<GmailPermissionsModalProps> = ({
   onError,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { email, isConnected, connectGmail } = useGmail();
+  const [result, setResult] = useState<'success' | 'error' | null>(null);
+
+
 
   if (!isOpen) return null;
+
+  useEffect(() => {
+    if (isOpen && isConnected && email) {
+      setResult('success');
+    }
+  }, [isOpen, isConnected, email]);
 
   const onProceedClick = async () => {
     setIsLoading(true);
     try {
-      const result = await handleConnection();
+      handleConnection();
       if (result === 'success') {
         onSuccess();
-      } else {
+      }
+      if (result === 'error') {
         onError();
       }
     } catch (err) {

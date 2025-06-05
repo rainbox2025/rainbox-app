@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.log(error.code + " " + error.message);
-      return encodedRedirect("error", "/sign-in", error.message);
+      return encodedRedirect("error", "/auth", error.message);
     }
   }
 

@@ -34,7 +34,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           >
             {title && (
               <div className="flex justify-between items-center p-md pb-0 border-b border-secondary">
-                <h2 className="text-lg font-semibold ml-2">{title}</h2>
+                <h2 className="text-lg font-semibold ml-0">{title}</h2>
                 <button
                   onClick={onClose}
                   className=""
@@ -53,7 +53,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
                 <CloseIcon className="w-6 h-6" />
               </button>
             )}
-            <div className="p-6  flex-grow overflow-y-auto">
+            <div className="p-4 flex-grow overflow-y-auto">
               {children}
             </div>
           </motion.div>

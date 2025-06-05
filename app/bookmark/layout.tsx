@@ -19,11 +19,11 @@ const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          redirect("/sign-in");
+          redirect("/auth");
         }
       } catch (error) {
         console.error("Error fetching user for bookmark layout:", error);
-        redirect("/sign-in");
+        redirect("/auth");
       } finally {
         setLoading(false);
       }

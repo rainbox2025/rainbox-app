@@ -56,7 +56,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -5, scale: 0.95 }}
           transition={{ duration: 0.1 }}
-          className={`${positionClasses} ${widthClass} bg-content text-popover-foreground rounded-md shadow-lg py-1 border border-border`}
+          className={`${positionClasses} ${widthClass} bg-content z-50 text-popover-foreground rounded-md shadow-lg py-1 border border-border`}
         >
           {items.map((item, index) => (
             <button

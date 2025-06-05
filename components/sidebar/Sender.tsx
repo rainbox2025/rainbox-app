@@ -101,7 +101,7 @@ export default function Sender({ sender, onRenameSender }: SenderProps) {
           }}
         >
           <SenderIcon sender={sender} />
-          <span className="text-sm text-foreground truncate overflow-hidden mr-2">
+          <span className="text-sm font-medium truncate overflow-hidden mr-2">
             {sender.name}
           </span>
         </div>
