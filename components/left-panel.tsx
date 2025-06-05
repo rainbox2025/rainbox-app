@@ -155,46 +155,6 @@ export default function LeftPanel() {
 
         <div className="flex-grow"></div>
 
-        <div className="relative" ref={emailModalRef}>
-          <button
-            onClick={toggleEmailModal}
-            className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-            title={"Email address"}
-          >
-            <AtSymbolIcon className="w-5 h-5" />
-          </button>
-          {showEmailModal && (
-            <div className="absolute left-14 bottom-0 z-40">
-              <div className="bg-content p-sm rounded-lg shadow-md flex items-center gap-xs w-60">
-                <span className="text-xs text-muted-foreground truncate flex-grow">
-                  {user?.email || "Not logged in"}
-                </span>
-                <button
-                  className="text-muted-foreground hover:text-foreground rounded-full hover:bg-hover relative p-xs"
-                  onMouseEnter={() => setShowInfoMessage(true)}
-                  onMouseLeave={() => setShowInfoMessage(false)}
-                >
-                  <InformationCircleIcon className="w-4 h-4" />
-                  {showInfoMessage && (
-                    <motion.div /* ... */ >{`You are currently on the free plan...`}</motion.div>
-                  )}
-                </button>
-                <button
-                  className="text-muted-foreground hover:text-foreground rounded-full hover:bg-hover p-1"
-                  onClick={handleCopyEmail}
-                  title="Copy email"
-                  disabled={!user?.email}
-                >
-                  <DocumentDuplicateIcon className="w-4 h-4" />
-                  {showCopiedMessage && (
-                    <motion.div /* ... */ >Copied!</motion.div>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
         <div className="relative" ref={themeModalRef}>
           <button
             onClick={toggleThemeModal}

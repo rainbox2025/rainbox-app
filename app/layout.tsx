@@ -3,6 +3,7 @@ import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 // import { Geist } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { OnboardingProvider } from "@/context/onboardingContext";
@@ -26,11 +27,6 @@ export const metadata = {
   favicon: "/favicon.ico",
 };
 
-// const geistSans = Geist({
-//   display: "swap",
-//   subsets: ["latin"],
-// });
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +37,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className="">
+      <body className={GeistSans.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

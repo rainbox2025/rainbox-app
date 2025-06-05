@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await supabase.auth.signOut();
       setUser(null);
       setAccessToken(null);
-      router.push("/sign-in");
+      router.push("/auth");
     } catch (error) {
       console.error("Logout error:", error);
     }

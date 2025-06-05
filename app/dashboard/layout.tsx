@@ -21,11 +21,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           data: { user },
         } = await supabase.auth.getUser(); // Simpler destructuring
         if (!user) {
-          redirect("/sign-in");
+          redirect("/auth");
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        redirect("/sign-in");
+        redirect("/auth");
       } finally {
         setLoading(false);
       }
