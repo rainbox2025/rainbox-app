@@ -37,14 +37,14 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, onTryAg
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-content rounded-xl shadow-xl w-full max-w-[400px] border border-hovered"
+          className="bg-content rounded-xl shadow-xl w-full max-w-[350px] border border-hovered"
         >
-          <div className="p-6">
+          <div className="p-4">
             <div className="flex justify-end items-center mb-4">
               <ModalCloseButton onClick={onClose} disabled={isLoading} />
             </div>
 
-            <div className="text-center my-6 flex flex-col items-center">
+            <div className="text-center my-2 flex flex-col items-center">
               <FaceFrownIcon className="h-16 w-16 text-muted-foreground mb-4" />
               <h2 className="text-md   mb-2">
                 {mainText}
