@@ -18,7 +18,8 @@ export const GET = async (
   const { data, error } = await supabase
     .from("mails")
     .select("*")
-    .eq("sender_id", sender_id);
+    .eq("sender_id", sender_id)
+    .order("created_at", { ascending: false });;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

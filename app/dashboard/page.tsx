@@ -67,7 +67,7 @@ const Page = () => {
     const filteredMails = mails.filter((mail) => {
       if (filter === "all") return true;
       if (filter === "unread") return !mail.read;
-      if (filter === "read") return mail.read;
+      if (filter === "bookmarked") return mail.bookmarked;
     });
     setFilteredMails(filteredMails);
   }, [filter, mails]);

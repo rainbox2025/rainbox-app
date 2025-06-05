@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -75,12 +75,24 @@ export const SenderHeader = ({
     setIsUnfollowModalOpen(true);
   };
 
+
+  useEffect(() => {
+    console.log("Selected sender changed:", selectedSender?.isRead);
+  }, [])
   return (
     <>
       <div className="flex flex-row ml-[2px] items-center justify-between p-sm h-header border-b border-border sticky top-0 bg-content/95 backdrop-blur-sm z-10">
-        <h1 className="text-muted-foreground font-semibold text-md pl-3 truncate max-w-[40%] flex-1 ml-[20px] md:ml-0">
+        <h1
+          className={`font-semibold text-md pl-3 truncate max-w-[40%] flex-1 ml-[20px] md:ml-0 ${selectedSender
+            ? selectedSender.isRead
+              ? "text-primary"
+              : "text-muted-foreground"
+            : ""
+            }`}
+        >
           {selectedSender ? selectedSender.name : "All Mails"}
         </h1>
+
         <div className="flex flex-row items-center gap-1">
           <Select onValueChange={setFilter} value={filter}>
             <SelectTrigger className="h-6 w-[110px] md:w-[140px] border-none bg-muted text-muted-foreground">
@@ -89,7 +101,7 @@ export const SenderHeader = ({
             <SelectContent>
               <SelectItem className="text-muted-foreground" value="all">All</SelectItem>
               <SelectItem className="text-muted-foreground" value="unread">Unread ({unreadCount})</SelectItem>
-              <SelectItem className="text-muted-foreground" value="read">Read</SelectItem>
+              <SelectItem className="text-muted-foreground" value="bookmarked">Bookmarked</SelectItem>
             </SelectContent>
           </Select>
           <button

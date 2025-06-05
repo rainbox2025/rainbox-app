@@ -16,9 +16,10 @@ export const GET = async (
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
   const { data, error } = await supabase
-    .from("mails")
-    .select("*")
-    .eq("user_id", user_id);
+  .from("mails")
+  .select("*")
+  .eq("user_id", user_id)
+  .order("created_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
