@@ -101,8 +101,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
               aria-label="Re-sync account"
             >
               <div className="flex justify-center items-center gap-2">
-                <ArrowPathIcon className="h-5 w-5" /> {/* Icon for Re-sync */}
-                <span className="hidden sm:inline text-sm text-muted-foreground">Re-sync</span>
+                <ArrowPathIcon title="Re-sync" className="h-5 w-5" /> {/* Icon for Re-sync */}
               </div>
             </button>
             <button // Changed div to button
@@ -111,7 +110,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
               onClick={onSecondaryAction || onAction} // Assumes a secondary action or the same onAction handles it
               aria-label="Cancel or disconnect"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon title="Disconnect" className="h-5 w-5" />
               {/* Optional: Add text for this button on larger screens if desired */}
               {/* <span className="hidden sm:inline text-sm text-muted-foreground">Cancel</span> */}
             </button>

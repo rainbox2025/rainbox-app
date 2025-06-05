@@ -6,6 +6,7 @@ import { MOCK_RAINBOX_EMAIL } from './mock-newsletter-data';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import { useGmail } from "@/context/gmailContext";
+import { GmailConnectionFlow } from '../connect-gmail/flow';
 
 
 interface AddNewsletterModalProps {
@@ -23,6 +24,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 }) => {
 
   const { email, isConnected, connectGmail } = useGmail();
+  const [isGmailFlowOpen, setIsGmailFlowOpen] = React.useState(false);
 
 
 
@@ -88,7 +90,8 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                 onAction={() => onSelectSender("ganesh123@outlook.com", "Ganesh's Outlook")}
                 isConnected={true}
               />
-              {/* <ConnectionCard
+              {isConnected && (
+                <ConnectionCard
                   logo="/gmail.webp"
                   logoAlt="Gmail Logo"
                   title="Gmail"
@@ -102,19 +105,27 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                     }
                   }}
                   isConnected={isConnected}
-                /> */}
+                />
+              )}
+
             </div>
           </div>
 
           <div className="w-full flex items-center justify-between px-2 text-sm">
             <button className="text-sm underline">Create new mailbox</button>
-            {!isConnected ? <button onClick={() => connectGmail()} className="text-sm underline">Create Gmail</button> : <button title='Already connected' className="text-sm underline text-muted-foreground">Gmail Connected</button>}
+            {!isConnected ? <button onClick={() => setIsGmailFlowOpen(true)} className="text-sm underline">Connect Gmail</button> : <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Gmail Connected</button>}
             <button className="text-sm underline">Connect Outlook</button>
           </div>
         </div>
 
 
       </div>
+
+      <GmailConnectionFlow
+        isOpen={isGmailFlowOpen}
+        onClose={() => setIsGmailFlowOpen(false)}
+        onConnectionComplete={() => setIsGmailFlowOpen(false)}
+      />
     </BaseModal>
 
   );

@@ -4,22 +4,12 @@ import { ConnectGmailModal } from './connect-gmail';
 import { GmailPermissionsModal } from './proceed-modal';
 import { ErrorModal } from '../modals/error-modal';
 import { SuccessModal } from '../modals/succeed-modal';
+import { useGmail } from '@/context/gmailContext';
 
 
 type ActiveGmailSubModalType = 'connect' | 'permissions' | 'success' | 'error' | null;
 
 
-const simulateGmailConnection = (): Promise<'success' | 'error'> => {
-  return new Promise((resolve) => {
-    console.log("Simulating Gmail connection API call...");
-    setTimeout(() => {
-      // const outcome = 'error';
-      const outcome = 'success';
-      console.log("Simulated Gmail connection result:", outcome);
-      resolve(outcome);
-    }, 1500);
-  });
-};
 
 interface GmailConnectionFlowProps {
   isOpen: boolean;
@@ -34,6 +24,8 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
   onConnectionComplete,
 }) => {
   const [activeSubModal, setActiveSubModal] = useState<ActiveGmailSubModalType>(null);
+  const { email, isConnected, connectGmail } = useGmail();
+
 
 
   useEffect(() => {
@@ -43,6 +35,12 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
       setActiveSubModal(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && isConnected && email) {
+      setActiveSubModal('success');
+    }
+  }, [isOpen, isConnected, email]);
 
   if (!isOpen || !activeSubModal) {
 
@@ -59,9 +57,8 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
     setActiveSubModal('permissions');
   };
 
-  const handleGmailApiConnection = async (): Promise<'success' | 'error'> => {
-    const result = await simulateGmailConnection();
-    return result;
+  const handleGmailApiConnection = async () => {
+    connectGmail();
   };
 
   const handlePermissionSuccess = () => {
