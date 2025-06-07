@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
-import React from "react";
+import React, { useState } from "react";
 import {
   EnvelopeOpenIcon,
   EnvelopeIcon,
   SparklesIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { motion, AnimatePresence } from "framer-motion"
 
 const MailReaderHeader = ({
   setSummaryDialogOpen,
@@ -31,7 +33,14 @@ const MailReaderHeader = ({
   toggleFullScreen: () => void;
 }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
-  const { selectedSender } = useSenders();
+  const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = () => {
+    navigator.clipboard.writeText("your-link-here")
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1000)
+  }
 
   const handleBack = () => {
     if (window.innerWidth < 768 && onBack) {
@@ -49,22 +58,24 @@ const MailReaderHeader = ({
           <button
             className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
             onClick={() => { setSelectedMail(null); handleBack(); }}
-            title="Go back"
+            title="Close"
           >
-            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <XMarkIcon className="w-4 h-4 text-muted-foreground stroke-[2]" />
           </button>
+          {!isMobileView && (
+            <button
+              className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
+              onClick={toggleFullScreen}
+              title={isFullScreen ? "Exit full screen" : "Full screen"}
+            >
+              {isFullScreen ? (
+                <Minimize2 className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <Maximize2 className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+          )}
 
-          <button
-            className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
-            onClick={toggleFullScreen}
-            title={isFullScreen ? "Exit full screen" : "Full screen"}
-          >
-            {isFullScreen ? (
-              <Minimize2 className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <Maximize2 className="w-4 h-4 text-muted-foreground" />
-            )}
-          </button>
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
@@ -120,12 +131,26 @@ const MailReaderHeader = ({
           </button>
 
           <button
-            className="p-xs rounded-full hover:bg-muted transition-colors"
-            onClick={() => setSelectedMail(null)}
-            title="Close"
+            className="p-1 rounded-full hover:bg-muted transition-colors"
+            onClick={handleShare}
+            title={copied ? "Copied!" : "Copy link"}
           >
-            <Share2 className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+            <Share2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
+
+          <AnimatePresence>
+            {copied && (
+              <motion.div
+                className="absolute right-0 top-full mt-1 bg-muted text-foreground px-2 py-1 rounded text-xs shadow z-10"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                Link copied
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     )

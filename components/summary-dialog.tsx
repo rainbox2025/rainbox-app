@@ -90,7 +90,7 @@ const SummaryDialog = ({
           </button>
         </div>
 
-        <div className="mt-2 overflow-y-auto max-h-[200px]">
+        <div className="mt-2 overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
           {summarizeLoading ? (
             <div className="flex flex-col gap-2">
               <Skeleton className="h-4 w-full" />
