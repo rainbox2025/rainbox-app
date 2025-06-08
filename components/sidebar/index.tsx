@@ -12,10 +12,8 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
   const MIN_WIDTH = 240;
   const MAX_WIDTH = 480;
   const LEFT_PANEL_WIDTH = 48; // Assuming LeftPanel is 48px (3rem). Adjust if different.
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const { createFolder } = useFolders();
 
-  const openFolderCreationModal = () => setIsFolderModalOpen(true);
+
 
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -71,16 +69,6 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
       className="h-screen bg-sidebar flex flex-col shadow-sm relative"
       style={{ width: `${width}px` }}
     >
-      <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
-        <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
-        <button
-          className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent"
-          onClick={openFolderCreationModal}
-          title="Create a new folder"
-        >
-          <FolderPlusIcon className="w-5 h-5" />
-        </button>
-      </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-[2px] pb-[130px]">
         {children}
@@ -91,16 +79,7 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
         title="Drag to resize"
       />
 
-      {/* Folder Creation Modal */}
-      <BasicModal
-        isOpen={isFolderModalOpen}
-        onClose={() => setIsFolderModalOpen(false)}
-        onSave={(folderName) => {
-          createFolder(folderName);
-          setIsFolderModalOpen(false);
-        }}
-        title="Create New Folder"
-      />
+
     </div>
   );
 };

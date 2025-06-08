@@ -106,7 +106,7 @@ export default function LeftPanel() {
             )}
             title="Inbox"
           >
-            <InboxIcon className="w-5 h-5" />
+            <InboxIcon className="w-5 h-5 stroke-[1.5]" />
           </button>
         </Link>
 

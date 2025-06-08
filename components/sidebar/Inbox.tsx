@@ -10,9 +10,10 @@ import { useSenders } from "@/context/sendersContext";
 export default function Inbox() {
   const { folders, isFoldersLoading, createFolder } = useFolders();
   const { senders, isSendersLoading } = useSenders();
-
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
+  const openFolderCreationModal = () => setIsFolderModalOpen(true);
 
   // Initialize expanded state from folder data if available
   useEffect(() => {
@@ -55,6 +56,16 @@ export default function Inbox() {
 
   return (
     <div className="flex-1 text-foreground rounded-lg">
+      <div className="px-4 w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10 bg-sidebar">
+        <h3 className="font-medium text-sm text-muted-foreground">Inbox</h3>
+        <button
+          className="p-xs text-muted-foreground hover:cursor-pointer hover:text-foreground rounded-full hover:bg-accent"
+          onClick={openFolderCreationModal}
+          title="Create a new folder"
+        >
+          <FolderPlusIcon className="w-5 h-5" />
+        </button>
+      </div>
 
       <div className="px-md py-sm flex items-center justify-between hover:bg-accent rounded-md cursor-pointer">
         <div className="flex items-center space-x-md">
@@ -101,7 +112,16 @@ export default function Inbox() {
         </div>
       </div>
 
-
+      {/* Folder Creation Modal */}
+      <BasicModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onSave={(folderName) => {
+          createFolder(folderName);
+          setIsFolderModalOpen(false);
+        }}
+        title="Create New Folder"
+      />
     </div>
   );
 }
