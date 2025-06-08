@@ -1,47 +1,22 @@
 import { SenderType } from "@/types/data";
-import { useSortable } from "@dnd-kit/sortable";
-import { motion } from "framer-motion";
-import { CSS } from "@dnd-kit/utilities";
-import { SenderIcon } from "./sender-icon";
 import { useState } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useSenders } from "@/context/sendersContext";
 import { EditSenderModal } from "../modals/edit-sender-modal";
 import { SenderDropdownMenu } from "./sender-dropdown-menu";
+import { SenderIcon } from "./sender-icon";
 
 interface SenderProps {
   sender: SenderType;
-  onRenameSender?: (senderId: string, newName: string) => void;
 }
 
-export default function Sender({ sender, onRenameSender }: SenderProps) {
-  const { renameSender, unsubcribeSender, toggleReadSender } = useSenders();
+export default function Sender({ sender }: SenderProps) {
+  const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
-  const { setSelectedSender } = useSenders();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: `sender-${sender.id}`,
-    data: {
-      type: "sender",
-      sender,
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
 
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,14 +38,13 @@ export default function Sender({ sender, onRenameSender }: SenderProps) {
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    setIsRenaming(true);
-    console.log('move to folder')
+    // You can implement folder moving logic here, perhaps opening a modal
+    console.log('move to folder');
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // Add your mute notifications logic here
     console.log(`Muted notifications for ${sender.name}`);
   };
 
@@ -82,19 +56,11 @@ export default function Sender({ sender, onRenameSender }: SenderProps) {
 
   return (
     <>
-      <motion.div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        className={`group p-xs px-md flex items-center justify-between rounded-md cursor-grab 
-          ${isDragging
-            ? "bg-secondary/30 dark:bg-secondary/50 text-foreground dark:text-foreground shadow-sm z-10"
-            : "hover:bg-accent"
-          }`}
+      <div
+        className="group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent"
       >
         <div
-          className="flex items-center space-x-md overflow-hidden flex-1"
+          className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
           onClick={() => {
             setSelectedSender(sender);
             console.log(sender);
@@ -133,49 +99,42 @@ export default function Sender({ sender, onRenameSender }: SenderProps) {
               : sender.count}
           </span>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Unfollow Confirmation Modal */}
+      {/* Modals for actions */}
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={() => setIsUnfollowModalOpen(false)}
-        onConfirm={async () => {
-          await unsubcribeSender(sender.id);
+        onConfirm={() => {
+          unsubcribeSender(sender.id);
           setIsUnfollowModalOpen(false);
         }}
         itemName={sender.name}
         itemType="sender"
       />
-
-      {/* Mark as Read Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onConfirm={async () => {
-          await toggleReadSender(sender.id, !sender.isRead);
+        onConfirm={() => {
+          toggleReadSender(sender.id, !sender.isRead);
           setIsMarkAsReadModalOpen(false);
         }}
         itemName={sender.name}
         itemType={sender.isRead ? "markasunread" : "markasread"}
       />
-
-      {/* Edit Sender Modal */}
       <EditSenderModal
         isOpen={isRenaming}
         onClose={() => setIsRenaming(false)}
-        onSave={async (newName: string) => {
-          await renameSender(sender.id, newName);
+        onSave={(newName: string) => {
+          renameSender(sender.id, newName);
           setIsRenaming(false);
         }}
         initialValues={{
           source: sender.domain || "",
           title: sender.name,
-          folder: "No Folder"
+          folder: "No Folder" // This might need logic to find the current folder name
         }}
       />
-
-
-
     </>
   );
 }

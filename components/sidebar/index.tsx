@@ -1,5 +1,8 @@
 "use client";
+import { FolderPlusIcon } from "@heroicons/react/24/outline";
 import React, { useState, useRef, useEffect } from "react";
+import { BasicModal } from "../modals/basic-modal";
+import { useFolders } from "@/context/foldersContext";
 
 const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: () => void }) => {
   const [width, setWidth] = useState(320); // Default width
@@ -9,6 +12,9 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
   const MIN_WIDTH = 240;
   const MAX_WIDTH = 480;
   const LEFT_PANEL_WIDTH = 48; // Assuming LeftPanel is 48px (3rem). Adjust if different.
+
+
+
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (window.innerWidth < 768) return; // No resize on mobile
@@ -63,14 +69,17 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
       className="h-screen bg-sidebar flex flex-col shadow-sm relative"
       style={{ width: `${width}px` }}
     >
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-[2px]">
-        {children} {/* Render children (Inbox or BookmarkSidebarContent) */}
+
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-[2px] pb-[130px]">
+        {children}
       </div>
       <div
         className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''}`}
         onMouseDown={handleMouseDown}
         title="Drag to resize"
       />
+
+
     </div>
   );
 };
