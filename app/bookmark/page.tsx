@@ -6,8 +6,9 @@ import { MailReader } from "@/components/mails/mail-reader"; // Ensure this path
 import { useMails } from "@/context/mailsContext";
 import { Mail } from "@/types/data"; // Make sure this import points to your Mail type definition
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu, X } from "lucide-react";
 import { BookOpenIcon as OutlineBookOpenIcon } from "@heroicons/react/24/outline";
+import { useSidebar } from "@/context/sidebarContext";
 
 const BookmarkPage = () => {
   const { bookmarks: allBookmarksFromContext, isLoading: isLoadingBookmarks } = useBookmarks();
@@ -16,6 +17,7 @@ const BookmarkPage = () => {
 
   // Local state for highlighting the selected bookmark in the BookmarkedItemsList
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
 
   const [readerWidth, setReaderWidth] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,7 +91,25 @@ const BookmarkPage = () => {
         ${mailFromContext ? 'md:w-[50%]' : 'w-full md:w-[calc(100%-1px)]'}`}
         style={{ width: mailFromContext && window.innerWidth >= 768 ? `${100 - readerWidth}%` : '100%' }}
       >
-        <div className="flex-grow overflow-y-auto custom-scrollbar" style={{ height: "100vh" }}>
+        <div className="flex items-center flex-1 min-w-0 h-header p-2 border-b border-border">
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-full mr-2 md:hidden"
+            aria-label="Toggle sidebar"
+          >
+            {isSidebarOpen ? (
+              <X className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Menu className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          <h1
+            className={`font-semibold text-md truncate text-muted-foreground ml-2`}
+          >
+            Bookmarks
+          </h1>
+        </div>
+        <div className="flex-grow overflow-y-auto custom-scrollbar" style={{ height: "98vh" }}>
           {bookmarksToDisplay.length > 0 ? (
             <BookmarkedItemsList
               bookmarks={bookmarksToDisplay}

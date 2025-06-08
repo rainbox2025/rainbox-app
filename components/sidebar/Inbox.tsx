@@ -23,11 +23,12 @@ import {
 } from "@dnd-kit/sortable";
 import { FolderType, SenderType } from "@/types/data";
 import { SenderIcon } from "./sender-icon";
-import FolderComponent from "./folder";
+import FolderComponent from "./Folder";
 import Sender from "./sender";
 import { BasicModal } from "../modals/basic-modal";
 import { useFolders } from "@/context/foldersContext";
 import { useSenders } from "@/context/sendersContext";
+import BookmarkSidebarContent from "../bookmark/bookmark-sidebar";
 
 // New interface to represent mixed items
 interface OrderedItem {
@@ -322,6 +323,10 @@ export default function Inbox() {
           <p>New subscriptions will automatically appear here</p>
           <p className="mt-1">Hold and drag to rearrange feeds</p>
         </div>
+
+
+        {/* <div className="border-t border-border border-[1px]"></div>
+        <BookmarkSidebarContent /> */}
 
         {/* Upgrade Box */}
         <div className="px-4 py-3 mt-auto border-border absolute bottom-2  ">

@@ -88,7 +88,7 @@ export const SenderHeader = ({
             )}
           </button>
           <h1
-            className={`font-semibold text-md truncate ${selectedSender?.isRead ? "text-primary" : "text-muted-foreground"}`}
+            className={`font-semibold ml-1 text-md truncate ${selectedSender?.isRead ? "text-primary" : "text-muted-foreground"}`}
           >
             {selectedSender ? selectedSender.name : "All Mails"}
           </h1>
