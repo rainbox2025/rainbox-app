@@ -1,15 +1,15 @@
 "use client";
 import React, { useState } from 'react';
 import { useBookmarks } from '@/context/bookmarkContext';
+import { Edit3, Trash2 } from 'lucide-react';
 import {
-  BookOpenIcon as SolidBookOpenIcon,
+  BookOpenIcon,
   PencilSquareIcon,
   DocumentTextIcon,
-  TagIcon as SolidTagIcon,
-  ChevronDownIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/solid';
-import { Edit3, Trash2 } from 'lucide-react';
+  TagIcon,
+  ChevronDownIcon
+} from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from "framer-motion";
 
 // Assuming your new/modified components are in a common UI directory
 // Adjust these paths according to your project structure
@@ -102,18 +102,26 @@ const BookmarkSidebarContent = () => {
 
         <nav className="space-y-sm p-sm pt-0 flex-grow overflow-y-auto custom-scrollbar">
           <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-foreground">
-            <SolidBookOpenIcon className="w-5 h-5 text-muted-foreground" />
-            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>All Bookmarks</span>
+            <BookOpenIcon className="w-5 h-5 text-muted-foreground" />
+            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
+              All Bookmarks
+            </span>
             <span className="text-xs text-muted-foreground font-medium">{allBookmarksCount}</span>
           </a>
+
           <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
             <PencilSquareIcon className="w-5 h-5 text-muted-foreground" />
-            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>Highlights</span>
+            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
+              Highlights
+            </span>
             <span className="text-xs text-muted-foreground font-medium">{highlightsCount}</span>
           </a>
+
           <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
             <DocumentTextIcon className="w-5 h-5 text-muted-foreground" />
-            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>Notes</span>
+            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
+              Notes
+            </span>
             <span className="text-xs text-muted-foreground font-medium">{notesCount}</span>
           </a>
 
@@ -122,44 +130,59 @@ const BookmarkSidebarContent = () => {
               onClick={() => toggleSection('tags')}
               className="flex items-center justify-between w-full p-xs rounded-md hover:bg-hover text-muted-foreground focus:outline-none"
             >
-              <div className="flex items-center space-x-md "><SolidTagIcon className="w-5 h-5" /><span className='text-sm font-medium'>Tags</span></div>
-              {expandedSections.tags ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronRightIcon className="w-4 h-4" />}
-            </button>
-            {expandedSections.tags && (
-              <div className="mt-xs space-y-px pl-md"> {/* space-y-px for tighter list */}
-                {allTags.length > 0 ? allTags.sort().map(tag => (
-                  <div key={tag} className="group flex items-center justify-between p-xs rounded-md hover:bg-accent">
-                    <a href="#" className="flex-grow  text-muted-foreground truncate group-hover:text-accent-foreground">
-                      <span className='text-sm text-muted-foreground truncate overflow-hidden mr-1'>#</span>
-                      <span className='text-sm text-muted-foreground truncate overflow-hidden mr-1'>{tag}</span>
-                    </a>
-
-                    <div className="relative"> {/* Wrapper for button and dropdown */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTagMenu(activeTagMenu === tag ? null : tag);
-                        }}
-                        className="p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-muted-hover rounded"
-                        title="Tag options"
-                      >
-                        <EllipsisHorizontalIcon className="w-4 h-4" />
-                      </button>
-                      <DropdownMenu
-                        isOpen={activeTagMenu === tag}
-                        onClose={() => setActiveTagMenu(null)}
-                        items={getTagDropdownItems(tag)}
-                        positionClasses="absolute right-0 top-full mt-1 z-30" // z-30, adjust if needed
-                        widthClass="w-36" // Slightly narrower for "Rename/Delete"
-                      />
-                    </div>
-                    <span className="text-xs mx-1 text-muted-foreground font-medium">
-                      {getTagCount(tag)}
-                    </span>
-                  </div>
-                )) : <p className="p-xs text-xs text-muted-foreground">No tags yet.</p>}
+              <div className="flex items-center space-x-md">
+                <TagIcon className="w-5 h-5" />
+                <span className='text-sm font-medium'>Tags</span>
               </div>
-            )}
+              <ChevronDownIcon
+                className={`w-4 h-4 transform transition-transform duration-200 ${expandedSections.tags ? 'rotate-0' : '-rotate-90'
+                  }`}
+              />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {expandedSections.tags && (
+                <motion.div
+                  className="mt-xs space-y-px pl-md"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                >
+                  {allTags.length > 0 ? allTags.sort().map(tag => (
+                    <div key={tag} className="group flex items-center justify-between p-xs rounded-md hover:bg-accent">
+                      <a href="#" className="flex-grow text-muted-foreground truncate group-hover:text-accent-foreground">
+                        <span className='text-sm text-muted-foreground truncate overflow-hidden mr-1'>#</span>
+                        <span className='text-sm text-muted-foreground truncate overflow-hidden mr-1'>{tag}</span>
+                      </a>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTagMenu(activeTagMenu === tag ? null : tag);
+                          }}
+                          className="p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-muted-hover rounded"
+                          title="Tag options"
+                        >
+                          <EllipsisHorizontalIcon className="w-4 h-4" />
+                        </button>
+                        <DropdownMenu
+                          isOpen={activeTagMenu === tag}
+                          onClose={() => setActiveTagMenu(null)}
+                          items={getTagDropdownItems(tag)}
+                          positionClasses="absolute right-0 top-full mt-1 z-30"
+                          widthClass="w-36"
+                        />
+                      </div>
+                      <span className="text-xs mx-1 text-muted-foreground font-medium">
+                        {getTagCount(tag)}
+                      </span>
+                    </div>
+                  )) : <p className="p-xs text-xs text-muted-foreground">No tags yet.</p>}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           </div>
         </nav>
       </div>

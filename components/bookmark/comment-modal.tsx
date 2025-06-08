@@ -127,18 +127,19 @@ const CommentModal: React.FC = () => {
       <div className="flex justify-end mt-3 space-x-2">
         <Button
           onClick={handleCancel}
-          className="px-4 py-0 bg-secondary text-muted-foreground hover:bg-hovered text-xs font-medium  rounded-md"
+          className="px-2 py-1 h-auto min-h-0 leading-none bg-secondary text-muted-foreground hover:bg-hovered text-xs font-medium rounded"
         >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
-          className="px-4 py-0 bg-primary  text-xs font-medium  rounded-md "
+          className="px-2 py-1 h-auto min-h-0 leading-none bg-primary text-xs font-medium rounded"
         >
           Save
         </Button>
 
       </div>
+
     </div>
   );
 };

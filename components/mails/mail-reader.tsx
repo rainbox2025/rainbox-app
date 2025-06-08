@@ -32,10 +32,20 @@ export const MailReader = ({
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const previousWidthRef = useRef(mailReaderWidth);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const mailSender = selectedSender ||
     (selectedMail && senders.find(sender => sender.id === selectedMail.sender_id)) ||
     { name: "Unknown Sender", domain: "unknown.com" };
+
+
+  useEffect(() => {
+    return () => {
+      if (isFullScreen) {
+        setMailReaderWidth(previousWidthRef.current);
+      }
+    };
+  }, [isFullScreen, setMailReaderWidth, previousWidthRef]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -97,7 +107,15 @@ export const MailReader = ({
         <div
           ref={mailReaderRef}
           className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
-          style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : { width: `${mailReaderWidth}%` }}
+
+          style={
+            isFullScreen
+              ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 }
+              : isMobile
+                ? { width: "100%" }
+                : { width: `${mailReaderWidth}%` }
+          }
+
         >
           <MailReaderHeader
             setSummaryDialogOpen={setSummaryDialogOpen}

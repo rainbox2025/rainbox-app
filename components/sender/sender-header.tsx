@@ -7,11 +7,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMails } from "@/context/mailsContext";
-import { XIcon, RefreshCcw, CheckIcon, MoreHorizontal } from "lucide-react";
+import { XIcon, RefreshCcw, CheckIcon, MoreHorizontal, Menu, X } from "lucide-react"; // Import Menu and X
 import { useSenders } from "@/context/sendersContext";
 import { SenderDropdownMenu } from "../sidebar/sender-dropdown-menu";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { EditSenderModal } from "../modals/edit-sender-modal";
+import { useSidebar } from "@/context/sidebarContext";
 
 export const SenderHeader = ({
   filter,
@@ -22,22 +23,18 @@ export const SenderHeader = ({
   setFilter: (filter: string) => void;
   unreadCount: number;
 }) => {
-  // State for dropdown menu
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
 
-  const {
-    refreshMails,
-    markAsReadAllBySenderId,
-    selectedMail,
-    setSelectedMail,
-  } = useMails();
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
+  const { refreshMails, markAsReadAllBySenderId } = useMails();
+
+
 
   const {
     selectedSender,
-    setSelectedSender,
     renameSender,
     unsubcribeSender,
     toggleReadSender
@@ -65,7 +62,6 @@ export const SenderHeader = ({
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // Add your mute notifications logic here
     console.log(`Muted notifications for ${selectedSender?.name}`);
   };
 
@@ -75,25 +71,30 @@ export const SenderHeader = ({
     setIsUnfollowModalOpen(true);
   };
 
-
-  useEffect(() => {
-    console.log("Selected sender changed:", selectedSender?.isRead);
-  }, [])
   return (
     <>
-      <div className="flex flex-row ml-[2px] items-center justify-between p-sm h-header border-b border-border sticky top-0 bg-content/95 backdrop-blur-sm z-10">
-        <h1
-          className={`font-semibold text-md pl-3 truncate max-w-[40%] flex-1 ml-[20px] md:ml-0 ${selectedSender
-            ? selectedSender.isRead
-              ? "text-primary"
-              : "text-muted-foreground"
-            : ""
-            }`}
-        >
-          {selectedSender ? selectedSender.name : "All Mails"}
-        </h1>
+      <div className="flex flex-row items-center justify-between p-sm h-header border-b border-border sticky top-0 bg-content/95 backdrop-blur-sm z-10">
+        <div className="flex items-center flex-1 min-w-0">
+          <button
+            // 4. THE ONCLICK AND STATE NOW COME DIRECTLY FROM THE CONTEXT
+            onClick={toggleSidebar}
+            className="p-1 rounded-full mr-2 md:hidden"
+            aria-label="Toggle sidebar"
+          >
+            {isSidebarOpen ? (
+              <X className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Menu className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          <h1
+            className={`font-semibold ml-1 text-md truncate ${selectedSender?.isRead ? "text-primary" : "text-muted-foreground"}`}
+          >
+            {selectedSender ? selectedSender.name : "All Mails"}
+          </h1>
+        </div>
 
-        <div className="flex flex-row items-center gap-1">
+        <div className="flex flex-row items-center gap-1 flex-shrink-0">
           <Select onValueChange={setFilter} value={filter}>
             <SelectTrigger className="h-6 w-[110px] md:w-[140px] border-none bg-muted text-muted-foreground">
               <SelectValue />

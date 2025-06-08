@@ -15,6 +15,7 @@ import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
 import Notification from "@/components/notifications/Notification";
 import { GmailProvider } from "@/context/gmailContext";
+import { BookmarkProvider } from "@/context/bookmarkContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -47,21 +48,23 @@ export default function RootLayout({
           <Notification />
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
-              <SendersProvider>
-                <MailsProvider>
-                  <GmailProvider>
-                    <AuthProvider>
-                      <FoldersProvider>
-                        <OnboardingProvider>
-                          <SidebarProvider>
-                            <ModeProvider>{children}</ModeProvider>
-                          </SidebarProvider>
-                        </OnboardingProvider>
-                      </FoldersProvider>
-                    </AuthProvider>
-                  </GmailProvider>
-                </MailsProvider>
-              </SendersProvider>
+              <SidebarProvider>
+                <SendersProvider>
+                  <BookmarkProvider>
+                    <MailsProvider>
+                      <GmailProvider>
+                        <AuthProvider>
+                          <FoldersProvider>
+                            <OnboardingProvider>
+                              <ModeProvider>{children}</ModeProvider>
+                            </OnboardingProvider>
+                          </FoldersProvider>
+                        </AuthProvider>
+                      </GmailProvider>
+                    </MailsProvider>
+                  </BookmarkProvider>
+                </SendersProvider>
+              </SidebarProvider>
             </div>
           </main>
         </ThemeProvider>

@@ -1,25 +1,28 @@
+// src/components/layout/DashboardLayout.tsx
+
 "use client";
 import Sidebar from "@/components/sidebar";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2, Menu, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import LeftPanel from "@/components/left-panel";
-import Inbox from "@/components/sidebar/Inbox"; // Make sure path is correct
+import Inbox from "@/components/sidebar/Inbox";
+import { useSidebar } from "@/context/sidebarContext"; // <-- 1. IMPORT THE HOOK
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  // Renamed for clarity
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const sidebarContainerRef = useRef<HTMLDivElement>(null); // Renamed to avoid conflict if sidebarRef is used inside Sidebar
+  const sidebarContainerRef = useRef<HTMLDivElement>(null);
+
+  // 2. GET STATE AND ACTIONS FROM THE CONTEXT
+  const { isSidebarOpen, closeSidebar } = useSidebar();
 
   useEffect(() => {
     const fetchUser = async () => {
+      // ... (your user fetching logic remains the same)
       try {
         const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser(); // Simpler destructuring
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           redirect("/auth");
         }
@@ -31,20 +34,24 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       }
     };
     fetchUser();
+  }, []);
 
+  // This effect handles clicking outside the sidebar to close it
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         sidebarContainerRef.current &&
         !sidebarContainerRef.current.contains(event.target as Node) &&
         isSidebarOpen
       ) {
-        setIsSidebarOpen(false);
+        closeSidebar(); // <-- Use the context action
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, closeSidebar]);
+
 
   return (
     <main className="flex justify-start w-full items-start h-screen overflow-y-hidden relative">
@@ -55,26 +62,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       ) : (
         <>
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="fixed top-3 left-4 z-50 md:hidden bg-content shadow-md p-1 rounded"
-          >
-            {isSidebarOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
-
           <div
-            ref={sidebarContainerRef} // Use the renamed ref here
+            ref={sidebarContainerRef}
+            // 3. USE isSidebarOpen FROM CONTEXT
             className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
           >
             <LeftPanel />
             <Sidebar
-              onClose={
-                isSidebarOpen ? () => setIsSidebarOpen(false) : undefined
-              }
+              onClose={isSidebarOpen ? closeSidebar : undefined} // <-- Use the context action
             >
               <Inbox />
             </Sidebar>
@@ -83,11 +78,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           {isSidebarOpen && (
             <div
               className="fixed inset-0 bg-black/20 z-30 md:hidden"
-              onClick={() => setIsSidebarOpen(false)}
+              onClick={closeSidebar} // <-- Use the context action
             />
           )}
 
           <div className="flex-1 w-full md:w-auto overflow-x-auto">
+            {/* 4. REMOVE React.cloneElement. Just render children. */}
             {children}
           </div>
         </>
