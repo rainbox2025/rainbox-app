@@ -60,9 +60,13 @@ export const GET = async (
     .from("mails")
     .select("*")
     .eq("sender_id", sender_id)
+<<<<<<< HEAD
     .order("created_at", { ascending: false })
     .range(start, end);
 
+=======
+    .order("created_at", { ascending: false });;
+>>>>>>> 4d1a1146999f3d92b2c9cb4aab01557533bc1039
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

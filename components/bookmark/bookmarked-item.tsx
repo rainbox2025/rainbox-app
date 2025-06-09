@@ -8,6 +8,7 @@ import { useMails } from '@/context/mailsContext';
 import { useSenders } from '@/context/sendersContext';
 import { SenderType } from '@/types/data'; // Assuming SenderType is exported from here
 import { MessageSquareText, Tags, Bookmark as BookmarkIconLucide } from 'lucide-react';
+import { ChatBubbleBottomCenterIcon, TagIcon } from '@heroicons/react/24/outline';
 
 interface Props {
   bookmark: BookmarkType;
@@ -66,35 +67,27 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
         isSelected && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300 ",
       )}
     >
-      {/* Hover Action Buttons: comment, tags, bookmark toggle (unbookmark) */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex z-10">
-        <button
-          className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors"
-          onClick={handleCommentClick}
-          title="Add/Edit Comment"
-        >
-          <MessageSquareText className="w-4 h-4 text-muted-foreground" />
-        </button>
+      {/* Always visible Bookmark button */}
+      <div className="absolute bottom-2 right-4 flex z-10 space-x-1">
 
-        <button
-          className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors"
-          onClick={handleTagsClick}
-          title="Manage Tags"
-        >
-          <Tags className="w-4 h-4 text-muted-foreground" />
-        </button>
 
+        {/* Hover-only buttons */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+          {/* <p>notes count</p>
+          <p>tags count</p> */}
+        </div>
         <button
           className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors"
           onClick={handleToggleBookmarkClick}
-          title="Remove Bookmark" // This item is a bookmark, so toggle means remove
+          title="Remove Bookmark"
         >
           <BookmarkIconLucide
-            fill="currentColor" // Filled, as it's currently bookmarked
+            fill="currentColor"
             className="w-4 h-4 text-muted-foreground"
           />
         </button>
       </div>
+
 
       {/* Content Area: Mimics MailItem structure */}
       <div className="pr-12"> {/* Padding to avoid overlap with absolute positioned hover buttons */}

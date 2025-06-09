@@ -47,7 +47,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
   const handleAddNewsletters = (selected: Sender[]) => {
     console.log('Selected newsletters to add:', selected);
 
-    const isSuccess = Math.random() > 0.3; // Simulate success or failure
+    const isSuccess = true;
     if (isSuccess) {
       setActiveModal('success');
     } else {

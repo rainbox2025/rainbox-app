@@ -1,17 +1,39 @@
+
+
 "use client";
 import Sidebar from "@/components/sidebar";
 import React, { useEffect, useState, useRef } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2, Menu, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import LeftPanel from "@/components/left-panel";
 import BookmarkSidebarContent from "@/components/bookmark/bookmark-sidebar";
-import { BookmarkProvider } from "@/context/bookmarkContext"; // Essential for bookmark features
+import { BookmarkProvider } from "@/context/bookmarkContext";
 
-const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
+import { SidebarProvider, useSidebar } from "@/context/sidebarContext";
+
+
+
+const BookmarkLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const sidebarContainerRef = useRef<HTMLDivElement>(null);
+
+  const { isSidebarOpen, closeSidebar } = useSidebar();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarContainerRef.current &&
+        !sidebarContainerRef.current.contains(event.target as Node) &&
+        isSidebarOpen
+      ) {
+        closeSidebar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSidebarOpen, closeSidebar]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -19,28 +41,20 @@ const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          redirect("/sign-in");
+          redirect("/auth");
         }
       } catch (error) {
         console.error("Error fetching user for bookmark layout:", error);
-        redirect("/sign-in");
+        redirect("/auth");
       } finally {
         setLoading(false);
       }
     };
     fetchUser();
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarContainerRef.current && !sidebarContainerRef.current.contains(event.target as Node) && isSidebarOpen) {
-        setIsSidebarOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isSidebarOpen]);
+  }, []);
 
   return (
-    <BookmarkProvider> {/* Wrap with BookmarkProvider */}
+    <BookmarkProvider>
       <main className="flex justify-start w-full items-start h-screen overflow-y-hidden relative">
         {loading ? (
           <div className="flex justify-center w-full items-center h-screen flex-col gap-4">
@@ -49,19 +63,12 @@ const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         ) : (
           <>
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="fixed top-3 left-4 z-50 md:hidden bg-content shadow-md p-1 rounded"
-            >
-              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-
             <div
               ref={sidebarContainerRef}
-              className={`absolute md:relative flex z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
+              className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
             >
               <LeftPanel />
-              <Sidebar onClose={isSidebarOpen ? () => setIsSidebarOpen(false) : undefined}>
+              <Sidebar onClose={isSidebarOpen ? closeSidebar : undefined}>
                 <BookmarkSidebarContent />
               </Sidebar>
             </div>
@@ -69,10 +76,16 @@ const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
             {isSidebarOpen && (
               <div
                 className="fixed inset-0 bg-black/20 z-30 md:hidden"
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={closeSidebar}
               />
             )}
-            <div className="flex-1 w-full md:w-auto overflow-x-auto">
+
+
+            <div className="flex-1 w-full md:w-auto overflow-x-auto" onClick={(e) => {
+
+
+
+            }}>
               {children}
             </div>
           </>
@@ -81,4 +94,14 @@ const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
     </BookmarkProvider>
   );
 };
+
+
+const BookmarkLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SidebarProvider>
+      <BookmarkLayoutContent>{children}</BookmarkLayoutContent>
+    </SidebarProvider>
+  );
+};
+
 export default BookmarkLayout;

@@ -31,41 +31,60 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         selectedMail?.id === mail.id && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300 ",
       )}
     >
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-2 right-4 flex z-10">
+      <div
+        className={`absolute bottom-2 right-4 flex z-5 transition-opacity group-hover:opacity-100 ${mail.bookmarked ? '' : 'opacity-0'
+          }`}
+      >
+        {/* Read icon: only on hover */}
         <button
-          className="p-xs rounded-full hover:bg-content/80 transition-colors"
+          className="p-xs rounded-full hover:bg-content/80 transition-colors opacity-0 group-hover:opacity-100"
           onClick={(e) => {
             e.stopPropagation();
             markAsRead(mail.id, !mail.read);
           }}
           title={mail.read ? "Mark as unread" : "Mark as read"}
         >
-          {!mail.read ? (
-            <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
-          ) : (
-            <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
-          )}
+          <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
         </button>
 
-        <button
-          className="p-xs rounded-full hover:bg-content/80 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            bookmark(mail.id, !mail.bookmarked);
-          }}
-          title={mail.bookmarked ? "Unbookmark" : "Bookmark"}
-        >
-          <Bookmark
-            fill={mail.bookmarked ? "currentColor" : "none"}
-            className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
-          />
-        </button>
+        {/* Bookmark icon: always if true, else only on hover */}
+        {mail.bookmarked ? (
+          <button
+            className="p-xs rounded-full hover:bg-content/80 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              bookmark(mail.id, false);
+            }}
+            title="Unbookmark"
+          >
+            <Bookmark
+              fill="currentColor"
+              className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
+            />
+          </button>
+        ) : (
+          <button
+            className="p-xs rounded-full hover:bg-content/80 transition-colors opacity-0 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              bookmark(mail.id, true);
+            }}
+            title="Bookmark"
+          >
+            <Bookmark
+              fill="none"
+              className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
+            />
+          </button>
+        )}
       </div>
+
+
       <div className="pr-12">
         <h2
           className={cn(
             "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold",
-            mail.read ? "text-muted-foreground " : "font-bold"
+            mail.read ? "text-muted-foreground/80" : "text-muted-foreground"
           )}
         >
           {mail.subject}

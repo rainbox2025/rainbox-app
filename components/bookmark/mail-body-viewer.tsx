@@ -246,7 +246,8 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
   return (
     <div
       ref={contentRef}
-      className="prose text-sm prose-sm dark:prose-invert max-w-none"
+      style={{ wordBreak: 'break-word', hyphens: 'auto' }}
+      className="prose text-sm prose-sm dark:prose-invert max-w-none "
     />
   );
 };

@@ -3,6 +3,7 @@ import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 // import { Geist } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { OnboardingProvider } from "@/context/onboardingContext";
@@ -14,6 +15,7 @@ import { SidebarProvider } from "@/context/sidebarContext";
 import { ModeProvider } from "@/context/modeContext";
 import Notification from "@/components/notifications/Notification";
 import { GmailProvider } from "@/context/gmailContext";
+import { BookmarkProvider } from "@/context/bookmarkContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -26,11 +28,6 @@ export const metadata = {
   favicon: "/favicon.ico",
 };
 
-// const geistSans = Geist({
-//   display: "swap",
-//   subsets: ["latin"],
-// });
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +38,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className="">
+      <body className={GeistSans.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -51,21 +48,23 @@ export default function RootLayout({
           <Notification />
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
-              <SendersProvider>
-                <MailsProvider>
-                  <GmailProvider>
-                    <AuthProvider>
-                      <FoldersProvider>
-                        <OnboardingProvider>
-                          <SidebarProvider>
-                            <ModeProvider>{children}</ModeProvider>
-                          </SidebarProvider>
-                        </OnboardingProvider>
-                      </FoldersProvider>
-                    </AuthProvider>
-                  </GmailProvider>
-                </MailsProvider>
-              </SendersProvider>
+              <SidebarProvider>
+                <SendersProvider>
+                  <BookmarkProvider>
+                    <MailsProvider>
+                      <GmailProvider>
+                        <AuthProvider>
+                          <FoldersProvider>
+                            <OnboardingProvider>
+                              <ModeProvider>{children}</ModeProvider>
+                            </OnboardingProvider>
+                          </FoldersProvider>
+                        </AuthProvider>
+                      </GmailProvider>
+                    </MailsProvider>
+                  </BookmarkProvider>
+                </SendersProvider>
+              </SidebarProvider>
             </div>
           </main>
         </ThemeProvider>

@@ -52,6 +52,7 @@ export const SendersProvider = ({
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
       const data = await api.get(`/senders/user/${user.user.id}`);
+      console.log(" sender data ====== ", data.data);
       setSenders(data.data);
     } catch (error) {
       setSendersListError(
