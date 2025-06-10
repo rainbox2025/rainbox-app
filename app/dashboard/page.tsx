@@ -93,15 +93,10 @@ const Page = () => {
           unreadCount={unreadCount}
         />
 
-<<<<<<< HEAD
         <div
           className="flex-grow overflow-y-auto custom-scrollbar"
           style={{ height: "calc(100vh - 64px)" }}
         >
-=======
-
-        <div className="flex-grow overflow-y-auto custom-scrollbar" style={{ height: "calc(100vh - 64px)" }}>
->>>>>>> 4d1a1146999f3d92b2c9cb4aab01557533bc1039
           {isMailsLoading ? (
             <div className="flex flex-col">
               {Array(6)
