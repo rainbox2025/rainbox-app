@@ -37,7 +37,7 @@ export const OnboardingModal = () => {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [country, setCountry] = useState("");
 
-  const { user } = useAuth ? useAuth() : { user: { id: "mock-user-id" } };
+  const { user } = useAuth ? useAuth() : { user: null };
 
 
 
@@ -175,18 +175,17 @@ export const OnboardingModal = () => {
       case 1:
         return (
           <div className="space-y-4 p-6">
-            <h2 className="text-md font-medium text-foreground">Let's create your <br /> Rainbox email address</h2>
+            {/* CHANGED: Added a personalized welcome and removed the redundant name input */}
+            <h2 className="text-md font-medium text-foreground">
+              Welcome, {user?.user_name || 'User'}! <br /> Let's create your Rainbox email address.
+            </h2>
             <p className="text-xs text-muted-foreground">
               Create your dedicated Rainbox address for newsletters.
               Subscribe to newsletters with this email address to get
               them on Rainbox.
             </p>
             <form onSubmit={handleUsernameSubmit} className="space-y-4 mt-6">
-              <Input
-                type="text"
-                placeholder="Your name"
-                className="w-full text-sm"
-              />
+              {/* REMOVED: The redundant <Input type="text" placeholder="Your name" /> */}
               <div className="flex relative">
                 <Input
                   type="text"
@@ -217,7 +216,6 @@ export const OnboardingModal = () => {
             </form>
           </div>
         );
-
       case 2:
         return (
           <div className="space-y-4 p-6">

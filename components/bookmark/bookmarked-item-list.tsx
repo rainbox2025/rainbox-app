@@ -15,7 +15,6 @@ export const BookmarkedItemsList: React.FC<Props> = ({ bookmarks, selectedBookma
 
   return (
     <div className=""> {/* Removed divide-y and divide-border */}
-      {/* Add border-b to the header div if you want a line below it */}
 
 
       {bookmarks.map(bookmark => (
