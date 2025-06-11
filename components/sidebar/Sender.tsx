@@ -12,7 +12,7 @@ interface SenderProps {
 }
 
 export default function Sender({ sender }: SenderProps) {
-  const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender } = useSenders();
+  const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
@@ -57,7 +57,8 @@ export default function Sender({ sender }: SenderProps) {
   return (
     <>
       <div
-        className="group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent"
+        className={`group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent ${selectedSender?.id === sender.id ? "bg-hovered hover:bg-hovered" : ""
+          }`}
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"

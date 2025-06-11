@@ -84,7 +84,7 @@ export default function Folder({
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
-          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer ${isFolderActive ? "bg-primary/10 text-primary" : "hover:bg-accent"
+          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent"
             }`}
         >
           <div className="flex items-center space-x-md flex-grow">
