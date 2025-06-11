@@ -51,9 +51,9 @@ const Page = () => {
     };
 
     handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [selectedMail]);
 
   useEffect(() => {
@@ -72,19 +72,20 @@ const Page = () => {
     setFilteredMails(filteredMails);
   }, [filter, mails]);
 
-
   return (
-    <div
-      className="flex min-w-fit h-screen overflow-x-auto"
-      ref={containerRef}
-    >
+    <div className="flex min-w-fit h-screen overflow-x-auto" ref={containerRef}>
       {showOnboardingModal && <OnboardingModal />}
 
       <div
         className={`flex flex-col h-full transition-all duration-300 ease-in-out 
-        ${mailListVisible ? 'block' : 'hidden md:block'} 
-        ${selectedMail ? 'md:w-[50%]' : 'w-full'}`}
-        style={{ width: selectedMail && window.innerWidth >= 768 ? `${100 - mailReaderWidth}%` : "100%" }}
+        ${mailListVisible ? "block" : "hidden md:block"} 
+        ${selectedMail ? "md:w-[50%]" : "w-full"}`}
+        style={{
+          width:
+            selectedMail && window.innerWidth >= 768
+              ? `${100 - mailReaderWidth}%`
+              : "100%",
+        }}
       >
         <SenderHeader
           filter={filter}
@@ -92,8 +93,10 @@ const Page = () => {
           unreadCount={unreadCount}
         />
 
-
-        <div className="flex-grow overflow-y-auto custom-scrollbar" style={{ height: "calc(100vh - 64px)" }}>
+        <div
+          className="flex-grow overflow-y-auto custom-scrollbar"
+          style={{ height: "calc(100vh - 64px)" }}
+        >
           {isMailsLoading ? (
             <div className="flex flex-col">
               {Array(6)
@@ -103,9 +106,7 @@ const Page = () => {
                 ))}
             </div>
           ) : filteredMails.length > 0 ? (
-            filteredMails.map((mail) => (
-              <MailItem key={mail.id} mail={mail} />
-            ))
+            filteredMails.map((mail) => <MailItem key={mail.id} mail={mail} />)
           ) : (
             <div className="mt-50 flex flex-col items-center justify-center h-full py-12 space-y-4 text-muted-foreground">
               <div className="rounded-full bg-muted p-sm w-16 h-16 flex items-center justify-center">
