@@ -98,6 +98,7 @@ export default function Inbox() {
       {/* Simplified Footer */}
       <div className="px-4 py-3 text-center text-xs text-muted-foreground/30">
         <p>New subscriptions will automatically appear here</p>
+        <p className="mt-1">Hold and drag to rearrange feeds</p>
       </div>
 
       {/* Upgrade Box (can be kept or removed as needed) */}
@@ -106,7 +107,7 @@ export default function Inbox() {
           <p className="text-sm text-foreground">
             30 days left in your free trial. Keep your reading habit alive.
             <span className="ml-1 text-blue-500 font-semibold cursor-pointer">
-              Upgrade now
+              Upgrade -&gt;
             </span>
           </p>
         </div>

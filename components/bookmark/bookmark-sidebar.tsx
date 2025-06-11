@@ -109,7 +109,7 @@ const BookmarkSidebarContent = () => {
             <span className="text-xs text-muted-foreground font-medium">{allBookmarksCount}</span>
           </a>
 
-          <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
+          {/* <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
             <PencilSquareIcon className="w-5 h-5 text-muted-foreground" />
             <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
               Highlights
@@ -123,7 +123,7 @@ const BookmarkSidebarContent = () => {
               Notes
             </span>
             <span className="text-xs text-muted-foreground font-medium">{notesCount}</span>
-          </a>
+          </a> */}
 
           <div className="pt-md">
             <button
