@@ -1,4 +1,6 @@
-import { useMails } from "@/context/mailsContext"; // Assuming Mail type is exported
+"use client";
+
+import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
 import { GripVertical, Loader2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -7,19 +9,20 @@ import SummaryDialog from "../summary-dialog";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
-import { BookmarkProvider, Bookmark } from "@/context/bookmarkContext"; // Assuming Bookmark type is exported
+import { useBookmarks, Bookmark } from "@/context/bookmarkContext";
 import MailBodyViewer from "../bookmark/mail-body-viewer";
 import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
 import TagModal from "@/components/bookmark/tag-modal";
 import { Mail } from "@/types/data";
+import NotesSidebar from "../notes/NotesSidebar";
+import { AnimatePresence } from "framer-motion";
 
 interface MailReaderProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   mailReaderWidth: number;
   setMailReaderWidth: (width: number) => void;
   onBack: () => void;
-  // ** NEW PROP to fix bug #2 **
   bookmark?: Bookmark;
 }
 
@@ -32,26 +35,24 @@ export const MailReader = ({
 }: MailReaderProps) => {
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const mailBodyRef = useRef<HTMLDivElement>(null);
+  const mailReaderRef = useRef<HTMLDivElement>(null);
 
   const { selectedMail: globalSelectedMail, mails } = useMails();
   const { senders } = useSenders();
+  const { bookmarks, deserializeRange } = useBookmarks();
 
-  // Local state to hold the mail being displayed.
   const [mailToDisplay, setMailToDisplay] = useState<Mail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ** FIX for Bug #2: Logic to determine which mail to show **
   useEffect(() => {
     setIsLoading(true);
     let mail: Mail | undefined | null = null;
     if (bookmark) {
-      // If a bookmark is passed, find its mail. This is for the /bookmarks page.
       mail = mails.find(m => m.id === bookmark.mailId);
     } else {
-      // Otherwise, use the globally selected mail. This is for the main inbox.
       mail = globalSelectedMail;
     }
-
     setMailToDisplay(mail || null);
     setIsLoading(false);
   }, [bookmark, globalSelectedMail, mails]);
@@ -61,6 +62,7 @@ export const MailReader = ({
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isNotesSidebarOpen, setNotesSidebarOpen] = useState(false);
   const previousWidthRef = useRef(mailReaderWidth);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -86,8 +88,6 @@ export const MailReader = ({
     };
   }, [isResizing, containerRef, setMailReaderWidth]);
 
-  const mailReaderRef = useRef<HTMLDivElement>(null);
-
   const toggleFullScreen = () => {
     if (isFullScreen) {
       setMailReaderWidth(previousWidthRef.current);
@@ -98,6 +98,55 @@ export const MailReader = ({
     setIsFullScreen(!isFullScreen);
   };
 
+  const handleOpenNotes = () => {
+    if (!isFullScreen) {
+      toggleFullScreen();
+    }
+    setNotesSidebarOpen(true);
+  };
+
+  const handleNoteClick = (bookmarkId: string) => {
+    const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+    const rootElement = mailBodyRef.current;
+    const scrollableParent = mailReaderRef.current;
+
+    if (!bookmark || !rootElement || !scrollableParent) {
+      console.warn("Could not find bookmark or necessary elements to scroll.");
+      return;
+    }
+
+    const range = deserializeRange(bookmark.serializedRange, rootElement);
+    if (!range) {
+      console.warn("Could not deserialize range for bookmark:", bookmarkId);
+      return;
+    }
+
+    const elementToScrollTo = range.startContainer.nodeType === Node.ELEMENT_NODE
+      ? range.startContainer as HTMLElement
+      : range.startContainer.parentElement;
+
+    if (elementToScrollTo) {
+      const scrollContainerRect = scrollableParent.getBoundingClientRect();
+      const targetRect = elementToScrollTo.getBoundingClientRect();
+      const scrollTop = targetRect.top - scrollContainerRect.top + scrollableParent.scrollTop;
+
+      scrollableParent.scrollTo({
+        top: scrollTop - 100, // 100px offset from the top
+        behavior: 'smooth',
+      });
+
+      // Add a temporary visual indicator
+      elementToScrollTo.style.transition = 'background-color 0.5s ease-in-out';
+      elementToScrollTo.style.backgroundColor = 'rgba(255, 235, 59, 0.3)'; // A light yellow flash
+      setTimeout(() => {
+        if (elementToScrollTo) {
+          elementToScrollTo.style.backgroundColor = '';
+        }
+      }, 1500);
+    }
+  };
+
+
   if (isLoading) {
     return (
       <div className="flex-1 h-screen flex items-center justify-center">
@@ -107,8 +156,6 @@ export const MailReader = ({
   }
 
   if (!mailToDisplay) {
-    // This case handles when the reader should be closed or show an empty state.
-    // If called from the bookmarks page with a missing mail, it will show this message.
     return (
       <div className="flex-1 h-screen flex items-center justify-center p-4 text-center">
         <p className="text-muted-foreground">Original email not found.</p>
@@ -123,7 +170,14 @@ export const MailReader = ({
       </div>
       <div ref={mailReaderRef} className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
         style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : isMobile ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
-        <MailReaderHeader setSummaryDialogOpen={setSummaryDialogOpen} setTextToAudioOpen={setTextToAudioOpen} onBack={onBack} isFullScreen={isFullScreen} toggleFullScreen={toggleFullScreen} />
+        <MailReaderHeader
+          setSummaryDialogOpen={setSummaryDialogOpen}
+          setTextToAudioOpen={setTextToAudioOpen}
+          onBack={onBack}
+          isFullScreen={isFullScreen}
+          toggleFullScreen={toggleFullScreen}
+          onOpenNotes={handleOpenNotes}
+        />
         <div className="p-md pb-64">
           <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
@@ -140,17 +194,27 @@ export const MailReader = ({
                 </div>
               </div>
             }
-            <BookmarkProvider>
+            <div ref={mailBodyRef}>
               <MailBodyViewer htmlContent={mailToDisplay.body} mailId={mailToDisplay.id} />
-              <SelectionPopup />
-              <CommentModal />
-              <TagModal />
-            </BookmarkProvider>
+            </div>
+            <SelectionPopup />
+            <CommentModal />
+            <TagModal />
           </div>
         </div>
         {textToAudioOpen && <TextToAudio open={textToAudioOpen} onOpenChange={setTextToAudioOpen} containerRef={mailReaderRef} />}
         {summaryDialogOpen && <SummaryDialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen} containerRef={mailReaderRef} />}
       </div>
+      <AnimatePresence>
+        {isNotesSidebarOpen && isFullScreen && (
+          <NotesSidebar
+            isOpen={isNotesSidebarOpen}
+            onClose={() => setNotesSidebarOpen(false)}
+            mailId={mailToDisplay.id}
+            onNoteClick={handleNoteClick}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };

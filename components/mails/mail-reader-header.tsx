@@ -6,7 +6,8 @@ import {
   Share2,
   Volume2,
   Maximize2,
-  Minimize2
+  Minimize2,
+  FileText
 } from "lucide-react";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
@@ -24,13 +25,15 @@ const MailReaderHeader = ({
   setTextToAudioOpen,
   onBack,
   isFullScreen,
-  toggleFullScreen
+  toggleFullScreen,
+  onOpenNotes
 }: {
   setSummaryDialogOpen: (open: boolean) => void;
   setTextToAudioOpen: (open: boolean) => void;
   onBack: () => void;
   isFullScreen: boolean;
   toggleFullScreen: () => void;
+  onOpenNotes: () => void;
 }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
@@ -96,6 +99,14 @@ const MailReaderHeader = ({
           </button>
 
           <button
+            className="p-xs rounded-full hover:bg-muted transition-colors"
+            onClick={onOpenNotes}
+            title="View Notes"
+          >
+            <FileText className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+          </button>
+
+          <button
             className="p-xs rounded-full hover:bg-content/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
@@ -152,7 +163,7 @@ const MailReaderHeader = ({
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </div >
     )
   );
 };
