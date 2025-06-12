@@ -17,40 +17,76 @@ const createIndicatorSvg = (type: 'comment' | 'tag', bookmarkId: string) => {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="13" width="13" class="${type}-indicator-icon" data-bookmark-id="${bookmarkId}" style="margin: 0 2px; fill: currentColor; display: inline-block; cursor: pointer;"><path d="${paths[type]}"></path></svg>`;
 };
 
-// ** NEW, ROBUST HIGHLIGHTING ENGINE **
+// ** NEW, MORE ROBUST HIGHLIGHTING ENGINE **
+// This function is updated to specifically handle the single-node case,
+// which was previously failing, while preserving the working multi-node logic.
 const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean): void => {
-  if (range.collapsed) return;
+  if (range.collapsed) {
+    return;
+  }
 
+  const highlightClassName = `bookmark-highlight ${isConfirmed ? 'bookmark-highlight-confirmed' : 'bookmark-highlight-unconfirmed'}`;
+
+  // --- FIX START ---
+  // Case 1: The selection is completely within a single text node.
+  // This is the common case for single-line selections and was the source of the bug.
+  // We handle it directly with `surroundContents` for maximum reliability, avoiding the TreeWalker.
+  if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+    try {
+      const span = document.createElement('span');
+      span.className = highlightClassName;
+      span.dataset.bookmarkId = bookmarkId;
+      range.surroundContents(span);
+    } catch (e) {
+      console.error("Highlighting failed for single text node range:", e);
+    }
+    return; // Exit after handling the simple case.
+  }
+  // --- FIX END ---
+
+  // Case 2: The selection spans multiple nodes (this was already working correctly).
+  // We use a TreeWalker to find all intersecting text nodes.
   const walker = document.createTreeWalker(
     range.commonAncestorContainer,
     NodeFilter.SHOW_TEXT,
-    (node) => range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    {
+      acceptNode: (node) => {
+        // The TreeWalker will only visit text nodes. We check if the range intersects this node.
+        return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    }
   );
 
-  const textNodes: Text[] = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+  // Collect nodes first to avoid issues with modifying the DOM while iterating.
+  const nodes: Text[] = [];
+  while (walker.nextNode()) {
+    nodes.push(walker.currentNode as Text);
+  }
 
-  textNodes.forEach((node, index) => {
-    const isStartNode = node === range.startContainer;
-    const isEndNode = node === range.endContainer;
+  // Now, iterate over the collected nodes and wrap the relevant parts.
+  nodes.forEach(node => {
+    const localRange = document.createRange();
 
-    const start = isStartNode ? range.startOffset : 0;
-    const end = isEndNode ? range.endOffset : node.length;
+    // Determine the part of the node to wrap.
+    const start = (node === range.startContainer) ? range.startOffset : 0;
+    const end = (node === range.endContainer) ? range.endOffset : node.length;
 
-    if (start === end) return;
+    // Skip empty or invalid segments.
+    if (start === end) {
+      return;
+    }
 
-    const highlightSpan = document.createElement('span');
-    highlightSpan.className = `bookmark-highlight ${isConfirmed ? 'bookmark-highlight-confirmed' : 'bookmark-highlight-unconfirmed'}`;
-    highlightSpan.dataset.bookmarkId = bookmarkId;
-
-    const highlightRange = document.createRange();
-    highlightRange.setStart(node, start);
-    highlightRange.setEnd(node, end);
+    localRange.setStart(node, start);
+    localRange.setEnd(node, end);
 
     try {
-      highlightRange.surroundContents(highlightSpan);
+      // A new span must be created for each distinct segment of the highlight.
+      const span = document.createElement('span');
+      span.className = highlightClassName;
+      span.dataset.bookmarkId = bookmarkId;
+      localRange.surroundContents(span);
     } catch (e) {
-      console.error("Highlighting failed for a segment. This can happen with very complex or invalid HTML.", e);
+      console.error("Highlighting failed for a multi-node segment:", e);
     }
   });
 };
@@ -70,13 +106,17 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
   useEffect(() => {
     if (!contentRef.current || !htmlContent) return;
 
+    // Start with a clean slate to ensure idempotency.
     contentRef.current.innerHTML = htmlContent;
     const bookmarksToRemove: string[] = [];
 
+    // Sort bookmarks to apply them from the end of the document to the start.
+    // This prevents DOM modifications from invalidating the ranges of subsequent bookmarks.
     const sortedBookmarks = [...currentMailBookmarks].sort((a, b) => {
       const rangeA = deserializeRange(a.serializedRange, contentRef.current!);
       const rangeB = deserializeRange(b.serializedRange, contentRef.current!);
       if (!rangeA || !rangeB) return 0;
+      // Sort in reverse document order.
       return rangeB.compareBoundaryPoints(Range.START_TO_START, rangeA);
     });
 
@@ -86,13 +126,16 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
 
       if (range && contentRef.current.contains(range.commonAncestorContainer)) {
         const isConfirmed = bookmark.isConfirmed !== false;
+        // Call the new, robust highlighting function.
         highlightRange(range, bookmark.id, isConfirmed);
       } else {
+        // If the range can't be deserialized, mark the bookmark for removal.
         bookmarksToRemove.push(bookmark.id);
       }
     });
 
-    // Attach event listeners and indicators after all DOM mutations are done
+    // Attach event listeners and indicators after all DOM mutations are done.
+    // This is more efficient than doing it inside the highlighting function.
     const processedBookmarkIds = new Set<string>();
     sortedBookmarks.forEach(bookmark => {
       if (processedBookmarkIds.has(bookmark.id)) return;
@@ -109,7 +152,8 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
         span.onmousedown = () => { isDragging = false; };
         span.onmousemove = () => { isDragging = true; };
         span.onmouseup = (e) => {
-          if (isDragging) return; // This was a drag-select, not a click
+          if (isDragging) return; // This was a drag-select, not a click.
+          // Prevent icon clicks from triggering the popup for the whole highlight.
           if ((e.target as HTMLElement).closest('.comment-indicator-icon, .tag-indicator-icon')) {
             e.stopPropagation(); return;
           }
@@ -121,6 +165,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
         };
       });
 
+      // Add comment/tag indicators to the last span of a highlight.
       const lastSpan = highlightSpans[highlightSpans.length - 1];
       if (bookmark.isConfirmed && bookmark.comment) {
         const indicator = document.createElement('span');
@@ -139,6 +184,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     if (bookmarksToRemove.length > 0) {
       bookmarksToRemove.forEach(id => removeBookmark(id));
     }
+    // Clear any leftover selection ranges from the process.
     window.getSelection()?.removeAllRanges();
   }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, removeBookmark, showCommentModal, showTagModal]);
 
@@ -146,13 +192,13 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
   const handleMouseUp = useCallback((event: MouseEvent) => {
     if (!contentRef.current) return;
 
-    // ** FIX for Bug #3 **
-    // The popup opening is now delayed slightly to allow any 'click' events to resolve first.
-    // This prevents the hidePopup logic from firing immediately after showPopup.
+    // The popup opening is delayed slightly to allow other 'click' or 'mousedown' events
+    // (like hidePopup) to resolve first. This prevents race conditions.
     setTimeout(() => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) return;
 
+      // Ignore clicks inside popups or modals.
       const targetElement = event.target as HTMLElement;
       if (targetElement.closest('.selection-popup-class-name, .comment-modal-root-class, .tag-modal-root-class')) {
         return;
@@ -161,6 +207,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       const range = selection.getRangeAt(0);
       const text = range.toString().trim();
 
+      // Ensure the selection is valid and within the content area.
       if (text.length > 0 && contentRef.current?.contains(range.commonAncestorContainer)) {
         const rect = range.getBoundingClientRect();
         const newBookmark = addBookmark(text, range, contentRef.current, mailId);
@@ -168,16 +215,19 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
           showPopup(newBookmark.id, rect);
         }
       }
-      selection.removeAllRanges();
-    }, 10); // A small delay is enough
+      // It's good practice to clear the selection after processing it.
+      // But we will let the user do it
+      // selection.removeAllRanges(); 
+    }, 10); // A small delay is usually sufficient.
 
   }, [addBookmark, showPopup, mailId]);
 
   useEffect(() => {
     const currentContentElement = contentRef.current;
     if (currentContentElement) {
-      currentContentElement.addEventListener('mouseup', handleMouseUp);
-      return () => currentContentElement.removeEventListener('mouseup', handleMouseUp);
+      // Use document-level mouseup for creating highlights.
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => document.removeEventListener('mouseup', handleMouseUp);
     }
   }, [handleMouseUp]);
 
