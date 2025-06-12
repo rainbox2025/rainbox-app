@@ -66,6 +66,22 @@ export const MailReader = ({
   const previousWidthRef = useRef(mailReaderWidth);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
+  // *** START OF FIX ***
+  // This effect handles resetting the width when the component unmounts (i.e., mail is closed).
+  useEffect(() => {
+    // The returned function is a "cleanup" function that React executes when the component unmounts.
+    return () => {
+      // If the component was in fullscreen mode when it was closed,
+      // we must reset the width in the parent component to its previous state.
+      if (isFullScreen) {
+        setMailReaderWidth(previousWidthRef.current);
+      }
+    };
+    // This effect's logic depends on `isFullScreen`, so we list it as a dependency.
+    // This ensures the cleanup function always has access to the correct `isFullScreen` value.
+  }, [isFullScreen, setMailReaderWidth]);
+  // *** END OF FIX ***
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing || !containerRef?.current) return;
@@ -156,6 +172,8 @@ export const MailReader = ({
   }
 
   if (!mailToDisplay) {
+    // This case might not be hit if the parent component unmounts MailReader, but it's good practice.
+    // If it were to show, we ensure the width is reset upon leaving.
     return (
       <div className="flex-1 h-screen flex items-center justify-center p-4 text-center">
         <p className="text-muted-foreground">Original email not found.</p>

@@ -30,7 +30,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
           exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           // Note: Added `h-[calc(100%-3rem)]` and `top-[3rem]` to position it below the header
-          className="fixed top-[3rem] right-0 h-[calc(100%-3rem)] w-[360px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
+          className="fixed top-[35px] right-0 h-[calc(100%-3rem)] w-[360px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
         >
           <div className="flex items-center justify-between p-sm border-b border-border flex-shrink-0">
             <h2 className="font-semibold text-base">Notes</h2>
@@ -79,9 +79,9 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
                   </React.Fragment>
                 ))
               ) : (
-                <div className="text-center text-muted-foreground py-16 px-4">
-                  <p className="font-medium">No notes for this email.</p>
-                  <p className="text-xs mt-2">Highlight text in the email to create a new note.</p>
+                <div className="text-center text-muted-foreground py-4 px-4">
+                  <p className="font-medium">No notes for this mail.</p>
+                  <p className="text-xs mt-2">Highlight text in the mail to create a new note.</p>
                 </div>
               )}
             </div>
