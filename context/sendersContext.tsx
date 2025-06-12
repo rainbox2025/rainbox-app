@@ -5,6 +5,8 @@ import {
   useEffect,
   useContext,
   useCallback,
+  Dispatch,
+  SetStateAction,
 } from "react";
 import { SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
@@ -20,10 +22,11 @@ interface SendersContextType {
   renameSender: (id: string, name: string) => Promise<void>;
   toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
   removeSender: (senderId: string) => void;
+  addSender: (sender: SenderType) => void;
   fetchSenders: () => Promise<void>;
   selectedSender: SenderType | null;
   setSelectedSender: (sender: SenderType | null) => void;
-  setSenders: (senders: SenderType[]) => void;
+  setSenders: Dispatch<SetStateAction<SenderType[]>>;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -52,7 +55,6 @@ export const SendersProvider = ({
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
       const data = await api.get(`/senders/user/${user.user.id}`);
-      console.log(" sender data ====== ", data.data);
       setSenders(data.data);
     } catch (error) {
       setSendersListError(
@@ -62,18 +64,14 @@ export const SendersProvider = ({
     } finally {
       setIsSendersLoading(false);
     }
-  }, [api, supabase]);
+  }, []);
   const unsubcribeSender = useCallback(
     async (id: string) => {
       try {
-        console.log("came insdie unsubscribe");
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("unsubscribed to : ", id);
         await api.patch(`/senders/${id}`, { subscribed: false });
-        console.log("unsubscribed");
-
         setSenders((prevSenders) =>
           prevSenders.filter((sender) => sender.id !== id)
         );
@@ -93,8 +91,6 @@ export const SendersProvider = ({
         if (!user.user) return;
 
         await api.patch(`/senders/${id}`, { name });
-        console.log("renamed");
-
         setSenders((prevSenders) =>
           prevSenders.map((sender) =>
             sender.id === id ? { ...sender, name } : sender
@@ -116,7 +112,6 @@ export const SendersProvider = ({
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        console.log("toggleSender:", senderId, "to:", isRead);
         await api.patch(`/senders/read`, {
           sender_id: senderId,
           isRead: isRead,
@@ -129,7 +124,7 @@ export const SendersProvider = ({
         console.error(error);
       }
     },
-    [api, supabase]
+    [api, supabase, senders]
   );
 
   const removeSender = (senderId: string) => {
@@ -138,9 +133,13 @@ export const SendersProvider = ({
     );
   };
 
+  const addSender = (sender: SenderType) => {
+    setSenders((prev) => [...prev, sender]);
+  };
+
   useEffect(() => {
     fetchSenders();
-  }, []);
+  }, [fetchSenders]);
 
   return (
     <SendersContext.Provider
@@ -154,6 +153,7 @@ export const SendersProvider = ({
         renameSender,
         toggleReadSender,
         removeSender,
+        addSender,
         fetchSenders,
         selectedSender,
         setSelectedSender,

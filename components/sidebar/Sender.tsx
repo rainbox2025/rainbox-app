@@ -1,17 +1,19 @@
 import { SenderType } from "@/types/data";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useSenders } from "@/context/sendersContext";
 import { EditSenderModal } from "../modals/edit-sender-modal";
 import { SenderDropdownMenu } from "./sender-dropdown-menu";
 import { SenderIcon } from "./sender-icon";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface SenderProps {
   sender: SenderType;
 }
 
-export default function Sender({ sender }: SenderProps) {
+const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
   const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -38,7 +40,6 @@ export default function Sender({ sender }: SenderProps) {
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // You can implement folder moving logic here, perhaps opening a modal
     console.log('move to folder');
   };
 
@@ -57,14 +58,13 @@ export default function Sender({ sender }: SenderProps) {
   return (
     <>
       <div
-        className={`group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent ${selectedSender?.id === sender.id ? "bg-hovered hover:bg-hovered" : ""
-          }`}
+        ref={ref}
+        className={`group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent ${selectedSender?.id === sender.id ? "bg-hovered hover:bg-hovered" : ""}`}
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
           onClick={() => {
             setSelectedSender(sender);
-            console.log(sender);
           }}
         >
           <SenderIcon sender={sender} />
@@ -133,9 +133,35 @@ export default function Sender({ sender }: SenderProps) {
         initialValues={{
           source: sender.domain || "",
           title: sender.name,
-          folder: "No Folder" // This might need logic to find the current folder name
+          folder: "No Folder"
         }}
       />
     </>
+  );
+});
+
+Sender.displayName = 'Sender';
+
+export default function SortableSender({ sender }: SenderProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `sender-${sender.id}`, data: { type: 'sender', sender, sortable: { containerId: sender.folder_id ? `folder-${sender.folder_id}` : 'root' } } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 20 : 'auto',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Sender sender={sender} />
+    </div>
   );
 }

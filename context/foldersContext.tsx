@@ -5,6 +5,8 @@ import {
   useEffect,
   useContext,
   useCallback,
+  Dispatch,
+  SetStateAction,
 } from "react";
 import { FolderType, SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
@@ -14,6 +16,7 @@ import { useSenders } from "./sendersContext";
 
 interface FoldersContextType {
   folders: FolderType[];
+  setFolders: Dispatch<SetStateAction<FolderType[]>>;
   isFoldersLoading: boolean;
   foldersListError: string | null;
   createFolderError: string | null;
@@ -22,6 +25,7 @@ interface FoldersContextType {
   deleteFolder: (id: string) => Promise<void>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
   addSenderToFolder: (folderId: string, senderId: string) => Promise<void>;
+  moveSenderToRoot: (senderId: string, folderId: string) => void;
   getSenders: (folderId: string) => Promise<SenderType[]>;
   isLoadingSenders: boolean;
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
@@ -35,7 +39,7 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const { removeSender } = useSenders();
+  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot } = useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
@@ -56,7 +60,6 @@ export const FoldersProvider = ({
       if (!user.user) return;
 
       const response = await api.get(`/folders/user/${user.user.id}`);
-      console.log(" folders data ====== ", response.data);
       setFolders(response.data);
     } catch (error) {
       setFoldersListError(
@@ -125,7 +128,7 @@ export const FoldersProvider = ({
           return;
         }
 
-        removeSender(senderId);
+        removeSenderFromRoot(senderId);
 
         setFolders((prevFolders) =>
           prevFolders.map((folder) =>
@@ -141,8 +144,31 @@ export const FoldersProvider = ({
         console.error(error);
       }
     },
-    [api, supabase, removeSender]
+    [api, supabase, removeSenderFromRoot]
   );
+
+  const moveSenderToRoot = (senderId: string, folderId: string) => {
+    let senderToMove: SenderType | undefined;
+
+    setFolders(prevFolders => {
+      return prevFolders.map(folder => {
+        if (folder.id === folderId) {
+          const senderIndex = folder.senders?.findIndex(s => s.id === senderId) || -1;
+          if (senderIndex !== -1 && folder.senders) {
+            senderToMove = folder.senders[senderIndex];
+            const updatedSenders = [...folder.senders];
+            updatedSenders.splice(senderIndex, 1);
+            return { ...folder, senders: updatedSenders };
+          }
+        }
+        return folder;
+      });
+    });
+
+    if (senderToMove) {
+      addSenderToRoot({ ...senderToMove, folder_id: undefined });
+    }
+  };
 
   const getSenders = useCallback(
     async (folderId: string): Promise<SenderType[]> => {
@@ -159,7 +185,7 @@ export const FoldersProvider = ({
         return [];
       }
     },
-    []
+    [api]
   );
 
   const renameFolder = useCallback(
@@ -205,12 +231,13 @@ export const FoldersProvider = ({
 
   useEffect(() => {
     fetchFolders();
-  }, [])
+  }, [fetchFolders]);
 
   return (
     <FoldersContext.Provider
       value={{
         folders,
+        setFolders,
         isFoldersLoading,
         foldersListError,
         createFolderError,
@@ -219,6 +246,7 @@ export const FoldersProvider = ({
         deleteFolder,
         renameFolder,
         addSenderToFolder,
+        moveSenderToRoot,
         getSenders,
         isLoadingSenders,
         toggleReadFolder,

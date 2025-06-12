@@ -9,23 +9,24 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import Sender from "./Sender";
+import SortableSender from "./Sender";
 import { BasicModal } from "../modals/basic-modal";
 import { useState, useRef, useEffect } from "react";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useFolders } from "@/context/foldersContext";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useDroppable } from "@dnd-kit/core";
 
 interface FolderProps {
   folder: FolderType;
-  senders: SenderType[]; // Senders are now passed in directly
   expanded: boolean;
   toggleExpanded: (id: string) => void;
   activeFolder: string | null;
 }
 
-export default function Folder({
+export default function FolderComponent({
   folder,
-  senders,
   expanded,
   toggleExpanded,
   activeFolder,
@@ -36,6 +37,31 @@ export default function Folder({
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: `folder-${folder.id}`, data: { type: 'folder', folder } });
+
+  const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
+    id: `folder-${folder.id}`,
+    data: { type: 'folder', folder }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const combinedRef = (node: HTMLDivElement) => {
+    setNodeRef(node);
+    setDroppableNodeRef(node);
+  };
 
   const isFolderActive = activeFolder === folder.id;
 
@@ -78,16 +104,18 @@ export default function Folder({
     console.log(`Muted notifications for ${folder.name}`);
   };
 
+  const folderSenders = folder.senders || [];
+  const senderIds = folderSenders.map(s => `sender-${s.id}`);
+
   return (
     <>
-      <div>
+      <div ref={combinedRef} style={style}>
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
-          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent"
-            }`}
+          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent ${isOver ? 'bg-primary/10 border border-primary/50' : ''}`}
         >
-          <div className="flex items-center space-x-md flex-grow">
+          <div {...attributes} {...listeners} className="flex items-center space-x-md flex-grow">
             <div className="flex-shrink-0">
               {expanded ? (
                 <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
@@ -117,7 +145,6 @@ export default function Folder({
                     transition={{ duration: 0.1 }}
                     className="absolute right-0 top-8 w-48 bg-content text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
                   >
-                    {/* Menu Items */}
                     <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleMarkAsRead}>
                       <CheckIcon className="w-4 h-4" /> <span>{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
                     </button>
@@ -148,23 +175,24 @@ export default function Folder({
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
             >
-              {senders.length > 0 ? (
-                <div className="ml-6 mt-1 space-y-1">
-                  {senders.map((sender) => (
-                    <Sender key={sender.id} sender={sender} />
-                  ))}
-                </div>
-              ) : (
-                <div className="ml-10 py-2 text-sm text-muted-foreground">
-                  No senders in this folder
-                </div>
-              )}
+              <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+                {folderSenders.length > 0 ? (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {folderSenders.map((sender) => (
+                      <SortableSender key={sender.id} sender={sender} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ml-10 py-2 text-sm text-muted-foreground">
+                    No senders in this folder
+                  </div>
+                )}
+              </SortableContext>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Modals */}
       <BasicModal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
