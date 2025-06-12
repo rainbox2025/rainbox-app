@@ -29,7 +29,7 @@ async function verifyRecaptcha(token: string | null): Promise<boolean> {
     );
     const data = await response.json();
     if (!data.success) {
-      console.warn("reCAPTCHA verification failed:", data['error-codes']);
+      console.warn("reCAPTCHA verification failed:", data["error-codes"]);
     }
     return data.success;
   } catch (error) {
@@ -37,7 +37,6 @@ async function verifyRecaptcha(token: string | null): Promise<boolean> {
     return false;
   }
 }
-
 
 export async function sendOtpAction(
   currentEmail: string,
@@ -50,10 +49,12 @@ export async function sendOtpAction(
   const supabase = await createClient();
   const origin = headers().get("origin")!;
 
-  if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !recaptchaToken) { // Check if site key exists
+  if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !recaptchaToken) {
+    // Check if site key exists
     return { status: "error", message: "Please complete the reCAPTCHA." };
   }
-  if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) { // Only verify if site key exists
+  if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+    // Only verify if site key exists
     const recaptchaVerified = await verifyRecaptcha(recaptchaToken);
     if (!recaptchaVerified) {
       return {
@@ -63,84 +64,50 @@ export async function sendOtpAction(
     }
   }
 
-
   if (!currentEmail) {
     return { status: "error", message: "Email is required." };
   }
 
-  let requiresName = false;
-
   try {
-    // Check if user exists (Supabase might send OTP anyway, this is more for requiresName logic)
-    const { data: existingUser, error: getUserError } = await supabase
-      .from('users') // Assuming you have a public.users table
-      .select('id')
-      .eq('email', currentEmail)
-      .maybeSingle();
+    // First try to get existing user
+    const {
+      data: { user },
+      error: getUserError,
+    } = await supabase.auth.getUser();
 
-    // This check is a bit indirect. A more direct way is to let signInWithOtp try without creating user.
-    // The previous logic with trying signInWithOtp({shouldCreateUser:false}) first was better.
-
-    // Attempt to send OTP. If user doesn't exist and shouldCreateUser is false, it errors.
-    // If shouldCreateUser is true (default), it sends OTP and creates user if not existing.
+    // Send OTP with correct type and options
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: currentEmail,
       options: {
-        // shouldCreateUser: true, // Default, set to false if you ONLY want to log in existing users
-        emailRedirectTo: `${origin}/auth/callback`, // Fallback redirect, not primary for OTP flow
+        shouldCreateUser: true,
+        emailRedirectTo: `${origin}/auth/callback`,
+        // Specify OTP settings
+        data: {
+          type: "otp",
+          action: "signin",
+        },
       },
     });
 
     if (otpError) {
-        // If error indicates "Signups not allowed for otp" or similar, it means user doesn't exist
-        // and shouldCreateUser might be implicitly false or an issue with project settings.
-        // For simplicity now, we assume shouldCreateUser:true is default & handles new/existing.
-        // We need a reliable way to determine if it's a new user.
-        // The most robust way is to check the user object *after* successful OTP verification,
-        // comparing created_at with last_sign_in_at or checking if a profile exists.
-        // For now, let's make a simplified assumption or rely on client hint
-        // Forcing 'requiresName' logic here is tricky without a definitive check.
-        // A common pattern is:
-        // 1. Send OTP.
-        // 2. After user enters OTP & it's verified, check if user's profile (e.g., in 'users' table) has a name.
-        // 3. If not, THEN prompt for name (either on auth page or on first dashboard visit).
-
-        // The previous approach for requiresName was better:
-        const { error: existingUserCheckError } = await supabase.auth.signInWithOtp({
-            email: currentEmail,
-            options: { shouldCreateUser: false },
-        });
-
-        if (existingUserCheckError instanceof AuthApiError &&
-            (existingUserCheckError.message.toLowerCase().includes("user not found") ||
-             existingUserCheckError.status === 400 || existingUserCheckError.status === 404 )) {
-            requiresName = true;
-        } else if (existingUserCheckError) {
-            // Some other error with the check itself, but proceed to send OTP for creation
-            console.warn("Pre-check for user existence failed, proceeding to send OTP:", existingUserCheckError.message);
-        }
-        // Now send the OTP with shouldCreateUser: true
-        const { error: finalOtpError } = await supabase.auth.signInWithOtp({
-            email: currentEmail,
-            options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/callback` }
-        });
-
-        if (finalOtpError) {
-            console.error("Send OTP error:", finalOtpError);
-            return { status: "error", message: finalOtpError.message || "Could not send OTP." };
-        }
-
+      console.error("OTP error:", otpError);
+      return {
+        status: "error",
+        message: otpError.message || "Could not send OTP.",
+      };
     }
-
 
     return {
       status: "success",
-      message: "OTP sent to your email. Please check your inbox (and spam folder).",
-      requiresName, // This will be determined by the pre-check logic
+      message: "OTP sent to your email. Please check your inbox.",
+      requiresName: !user, // require name if no existing user
     };
   } catch (e: any) {
     console.error("Generic error in sendOtpAction:", e);
-    return { status: "error", message: e.message || "An unexpected error occurred." };
+    return {
+      status: "error",
+      message: e.message || "An unexpected error occurred.",
+    };
   }
 }
 
@@ -149,10 +116,9 @@ export async function verifyOtpAndSignInAction(
   otp: string,
   name: string | null,
   isNewUserFlow: boolean
-): Promise<{ // This return type is for client-side error handling. Success results in redirect.
+): Promise<{
   status: "success" | "error";
   message: string;
-  redirectTo?: string; // Not strictly needed if redirect() is used directly
 }> {
   const supabase = await createClient();
 
@@ -170,14 +136,15 @@ export async function verifyOtpAndSignInAction(
   } = await supabase.auth.verifyOtp({
     email: currentEmail,
     token: otp,
-    type: 'magiclink', // Or 'email'. 'magiclink' is common for signInWithOtp tokens. Test this!
+    type: "email", // Change this from 'magiclink' to 'email'
   });
 
   if (error) {
     console.error("Verify OTP error:", error);
     return {
       status: "error",
-      message: error.message || "Invalid OTP or it has expired. Please try again.",
+      message:
+        error.message || "Invalid OTP or it has expired. Please try again.",
     };
   }
 
@@ -205,36 +172,45 @@ export async function verifyOtpAndSignInAction(
     // and that your public.users table links to auth.users via id or email.
     // Check if user exists in public.users first to avoid duplicate errors if triggers handle it
     const { data: publicUser, error: publicUserError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      .from("users")
+      .select("id")
+      .eq("id", session.user.id)
+      .maybeSingle();
 
-    if (publicUserError) console.error("Error checking public.users:", publicUserError.message);
+    if (publicUserError)
+      console.error("Error checking public.users:", publicUserError.message);
 
-    if (!publicUser && !publicUserError) { // If user not in public.users and no error checking
-        const { error: insertPublicUserError } = await supabase
-            .from('users')
-            .insert({
-                id: session.user.id,
-                email: session.user.email,
-                full_name: name.trim(), // Or however you store name
-                // avatar_url: session.user.user_metadata.avatar_url, // If available
-            });
-        if (insertPublicUserError) {
-            console.error("Error inserting user into public.users:", insertPublicUserError.message);
-        }
-    } else if (publicUser) { // If user exists, update their name if it's different
-        const { error: updatePublicUserError } = await supabase
-            .from('users')
-            .update({ full_name: name.trim() })
-            .eq('id', session.user.id);
-        if (updatePublicUserError) {
-            console.error("Error updating name in public.users:", updatePublicUserError.message);
-        }
+    if (!publicUser && !publicUserError) {
+      // If user not in public.users and no error checking
+      const { error: insertPublicUserError } = await supabase
+        .from("users")
+        .insert({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: name.trim(), // Or however you store name
+          // avatar_url: session.user.user_metadata.avatar_url, // If available
+        });
+      if (insertPublicUserError) {
+        console.error(
+          "Error inserting user into public.users:",
+          insertPublicUserError.message
+        );
+      }
+    } else if (publicUser) {
+      // If user exists, update their name if it's different
+      const { error: updatePublicUserError } = await supabase
+        .from("users")
+        .update({ full_name: name.trim() })
+        .eq("id", session.user.id);
+      if (updatePublicUserError) {
+        console.error(
+          "Error updating name in public.users:",
+          updatePublicUserError.message
+        );
+      }
     }
   }
-  
+
   return redirect("/dashboard");
 }
 
