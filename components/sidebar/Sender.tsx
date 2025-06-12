@@ -14,9 +14,9 @@ interface SenderProps {
 }
 
 const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
-  const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
+  const { unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
 
@@ -25,10 +25,10 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
     setMenuOpen(!menuOpen);
   };
 
-  const handleRename = (e: React.MouseEvent) => {
+  const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    setIsRenaming(true);
+    setIsEditing(true);
   };
 
   const handleMarkAsRead = (e: React.MouseEvent) => {
@@ -40,13 +40,11 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    console.log('move to folder');
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    console.log(`Muted notifications for ${sender.name}`);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
@@ -63,12 +61,12 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
-          onClick={() => {
-            setSelectedSender(sender);
-          }}
+          onClick={() => setSelectedSender(sender)}
         >
-          <SenderIcon sender={sender} />
-          <span className="text-sm font-medium truncate overflow-hidden mr-2">
+          <div className=" flex-shrink-0">
+            <SenderIcon sender={sender} />
+          </div>
+          <span className="text-sm font-medium truncate">
             {sender.name}
           </span>
         </div>
@@ -87,7 +85,7 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
               onMarkAsRead={handleMarkAsRead}
-              onRename={handleRename}
+              onRename={handleEdit}
               onMoveToFolder={handleMoveToFolder}
               onMuteNotifications={handleMuteNotifications}
               onUnfollow={handleUnfollow}
@@ -95,14 +93,11 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {sender.count >= 1000
-              ? `${Math.floor(sender.count / 1000)}K+`
-              : sender.count}
+            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
           </span>
         </div>
       </div>
 
-      {/* Modals for actions */}
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={() => setIsUnfollowModalOpen(false)}
@@ -123,19 +118,14 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
         itemName={sender.name}
         itemType={sender.isRead ? "markasunread" : "markasread"}
       />
-      <EditSenderModal
-        isOpen={isRenaming}
-        onClose={() => setIsRenaming(false)}
-        onSave={(newName: string) => {
-          renameSender(sender.id, newName);
-          setIsRenaming(false);
-        }}
-        initialValues={{
-          source: sender.domain || "",
-          title: sender.name,
-          folder: "No Folder"
-        }}
-      />
+
+      {isEditing && (
+        <EditSenderModal
+          isOpen={isEditing}
+          onClose={() => setIsEditing(false)}
+          sender={sender}
+        />
+      )}
     </>
   );
 });

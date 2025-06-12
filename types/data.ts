@@ -20,6 +20,7 @@ export interface SenderType {
   folder?: string;
   order?: number;
   isRead?: boolean;
+  image_url?: string;
 }
 export interface FolderType {
   id: string;

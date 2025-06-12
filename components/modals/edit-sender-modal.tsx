@@ -2,76 +2,94 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowPathIcon, PlusIcon, XMarkIcon, PhotoIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useFolders } from '@/context/foldersContext';
+import { useSenders } from '@/context/sendersContext';
+import { SenderType } from '@/types/data';
 
 interface EditSenderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (value: string) => Promise<void> | void;
-  initialValues?: {
-    source: string;
-    title: string;
-    folder: string;
-  };
+  sender: SenderType;
 }
 
 export const EditSenderModal: React.FC<EditSenderModalProps> = ({
   isOpen,
   onClose,
-  onSave,
-  initialValues = { source: '', title: '', folder: 'No Folder' }
+  sender,
 }) => {
-  const { folders } = useFolders()
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [source, setSource] = useState(initialValues.source);
-  const [title, setTitle] = useState(initialValues.title);
-  const [folder, setFolder] = useState(initialValues.folder);
-  const [icon, setIcon] = useState<File | null>(null);
+  const { folders } = useFolders();
+  const { updateSender } = useSenders();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [title, setTitle] = useState('');
+  const [folderId, setFolderId] = useState<string>(''); // State for folder_id
+  const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [isHovering, setIsHovering] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const sourceInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const handleConfirm = async (title: string) => {
+  useEffect(() => {
+    if (isOpen && sender) {
+      setTitle(sender.name);
+      // Initialize with the sender's current folder_id, or an empty string for "No Folder"
+      setFolderId(sender.folder_id || '');
+      setIconPreview(sender.image_url || null);
+      setIconFile(null);
+      setTimeout(() => titleInputRef.current?.focus(), 100);
+    }
+  }, [isOpen, sender]);
+
+  const handleConfirm = async () => {
+    if (!sender) return;
     setIsLoading(true);
     try {
-      await onSave(title);
+      const formData = new FormData();
+
+      // Append name only if it has changed
+      if (title !== sender.name) {
+        formData.append('name', title);
+      }
+
+      // Append image if a new one was selected
+      if (iconFile) {
+        formData.append('image', iconFile);
+      }
+
+      // Append folder_id only if it has changed
+      const originalFolderId = sender.folder_id || '';
+      if (folderId !== originalFolderId) {
+        formData.append('folder_id', folderId); // Will be folder ID or "" for null
+      }
+
+      // Only make the API call if there's something to update
+      if (formData.has('name') || formData.has('image') || formData.has('folder_id')) {
+        await updateSender(sender.id, formData);
+      }
+
       onClose();
     } catch (error) {
-      console.error("Error confirming action:", error);
+      console.error("Error updating sender:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      setSource(initialValues.source);
-      setTitle(initialValues.title);
-      setFolder(initialValues.folder);
-      setIcon(null);
-      setIconPreview(null);
-      setTimeout(() => sourceInputRef.current?.focus(), 100);
-    }
-  }, [isOpen, initialValues]);
-
   const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
+    const file = e.target.files?.[0];
     if (file) {
-      setIcon(file);
+      setIconFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setIconPreview(reader.result as string);
-      };
+      reader.onloadend = () => setIconPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleIconClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleIconClick = () => fileInputRef.current?.click();
 
-  if (!isOpen) return null;
+  if (!isOpen || !sender) return null;
+
+  const hasChanges = title !== sender.name || !!iconFile || folderId !== (sender.folder_id || '');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
@@ -80,36 +98,27 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-content  rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-100/80"
+          className="bg-content rounded-lg shadow-xl w-full max-w-sm mx-4 border border-border"
         >
           <div className="p-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-semibold">Edit Feed</h2>
-              <button
-                onClick={onClose}
-                className="text-muted-foreground hover:text-secondary-foreground"
-                disabled={isLoading}
-              >
+              <button onClick={onClose} className="text-muted-foreground hover:text-secondary-foreground" disabled={isLoading}>
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Source Input */}
-            <div className="mb-4 flex gap-2">
-              <label className="block text-xs text-muted-foreground ">Source</label>
-              <p className="text-sm border-b border-black">{source}</p>
-
+            <div className="mb-4">
+              <label className="block text-xs text-muted-foreground mb-1">Source</label>
+              <p className="text-sm text-muted-foreground">{sender.domain}</p>
             </div>
 
-            {/* Feed Icon and Title */}
             <div className="mb-4">
               <label className="block text-xs text-muted-foreground mb-1">Feed Icon and Title</label>
               <div className="flex items-center space-x-2">
                 <div
-                  className="relative w-12 h-12 border border-border rounded-full flex items-center justify-center overflow-hidden"
-                  onMouseEnter={() => setIsHovering(true)}
-                  onMouseLeave={() => setIsHovering(false)}
-                  onClick={handleIconClick}
+                  className="relative w-12 h-12 border border-border rounded-full flex items-center justify-center overflow-hidden bg-accent"
+                  onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} onClick={handleIconClick}
                 >
                   {iconPreview ? (
                     <img src={iconPreview} alt="Icon preview" className="w-full h-full object-cover" />
@@ -121,46 +130,26 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
                       <PlusIcon className="h-6 w-6 text-white" />
                     </div>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleIconChange}
-                    disabled={isLoading}
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconChange} disabled={isLoading} />
                 </div>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Feed Title"
-                  className="flex-1 p-sm border border-border dark:border-border rounded-md 
-                             bg-content dark:bg-content 
-                             focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-                  disabled={isLoading}
-                />
+                <input ref={titleInputRef} type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Feed Title" className="flex-1 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm" disabled={isLoading} />
               </div>
             </div>
 
-            {/* Folder Selection */}
             <div className="mb-4">
               <label className="block text-xs text-muted-foreground mb-1">Folder</label>
               <div className="relative">
                 <select
-                  value={folder}
-                  onChange={(e) => setFolder(e.target.value)}
-                  className="w-full p-sm border border-border dark:border-border rounded-md 
-                             bg-content dark:bg-content appearance-none
-                             focus:outline-none focus:ring-2 focus:ring-ring text-sm  cursor-pointer"
+                  value={folderId}
+                  onChange={(e) => setFolderId(e.target.value)}
+                  className="w-full p-sm border border-border rounded-md bg-content appearance-none focus:outline-none focus:ring-2 focus:ring-ring text-sm cursor-pointer"
                   disabled={isLoading}
                 >
-                  <option value="No Folder">No Folder</option>
-                  {
-                    folders.map((folder) => (
-                      <option key={folder.id} value={folder.name}>{folder.name}</option>
-                    ))
-                  }
+                  {/* Use empty string for "No Folder" value */}
+                  <option value="">No Folder</option>
+                  {folders.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                   <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
@@ -168,23 +157,16 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-end space-x-2 mt-4">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
-                disabled={isLoading}
-              >
+              <button onClick={onClose} className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm" disabled={isLoading}>
                 Cancel
               </button>
               <button
-                onClick={() => handleConfirm(title)}
-                className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative"
-                disabled={isLoading}
+                onClick={handleConfirm}
+                className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative min-w-[60px] flex justify-center items-center"
+                disabled={isLoading || !hasChanges}
               >
-                {isLoading ? (
-                  <ArrowPathIcon className="animate-spin h-4 w-4 text-sm" />
-                ) : "Done"}
+                {isLoading ? <ArrowPathIcon className="animate-spin h-4 w-4" /> : "Done"}
               </button>
             </div>
           </div>
