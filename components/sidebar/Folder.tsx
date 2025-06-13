@@ -18,11 +18,16 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 
+type SidebarItem =
+  | { type: 'folder', id: string; data: FolderType }
+  | { type: 'sender', id: string; data: SenderType };
+
 interface FolderProps {
   folder: FolderType;
   expanded: boolean;
   toggleExpanded: (id: string) => void;
   activeFolder: string | null;
+  activeItem: SidebarItem | null;
 }
 
 export default function FolderComponent({
@@ -30,6 +35,7 @@ export default function FolderComponent({
   expanded,
   toggleExpanded,
   activeFolder,
+  activeItem,
 }: FolderProps) {
   const { deleteFolder, renameFolder, toggleReadFolder } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,6 +68,8 @@ export default function FolderComponent({
     setNodeRef(node);
     setDroppableNodeRef(node);
   };
+
+  const isDropTarget = isOver && activeItem?.type === 'sender';
 
   const isFolderActive = activeFolder === folder.id;
 
@@ -113,7 +121,7 @@ export default function FolderComponent({
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
-          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent ${isOver ? 'bg-primary/10 border border-primary/50' : ''}`}
+          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent ${isDropTarget ? 'bg-primary/10 border border-primary/50' : ''}`}
         >
           <div {...attributes} {...listeners} className="flex items-center space-x-md flex-grow">
             <div className="flex-shrink-0">
