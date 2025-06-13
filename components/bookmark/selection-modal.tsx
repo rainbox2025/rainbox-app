@@ -8,6 +8,8 @@ import {
   TagIcon,
   DocumentDuplicateIcon,
   SparklesIcon,
+  PencilSquareIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -69,9 +71,9 @@ const SelectionPopup: React.FC = () => {
   const iconButtonClass = "p-2 rounded-full hover:bg-hovered transition-colors text-muted-foreground";
 
   return (
-    <div ref={popupRef} style={popupStyle} className="bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-0 selection-popup-class-name" onClick={(e) => e.stopPropagation()}>
+    <div ref={popupRef} style={popupStyle} className={`bg-sidebar text-sm border border-hovered rounded-full shadow-xl flex items-center space-x-1 p-0 selection-popup-class-name `} onClick={(e) => e.stopPropagation()}>
       <button onClick={isConfirmed ? () => removeBookmark(bookmark.id) : () => confirmBookmark(bookmark.id)} title={isConfirmed ? "Remove highlight" : "Confirm highlight"} className={iconButtonClass}>
-        {isConfirmed ? <XCircleIcon className="h-6 w-6 text-red-400" /> : <SparklesIcon className="h-6 w-6 text-yellow-400" />}
+        {isConfirmed ? <XCircleIcon className="h-6 w-6 text-red-400" /> : <PencilIcon className="h-5 w-5 text-muted-foreground" />}
       </button>
       <button onClick={() => showCommentModal(bookmark.id, activePopup.rect)} title="Add/Edit comment" className={iconButtonClass}>
         <ChatBubbleBottomCenterIcon className="h-5 w-5" />

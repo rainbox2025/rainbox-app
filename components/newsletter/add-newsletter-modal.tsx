@@ -5,9 +5,12 @@ import { Connection } from '@/types/data';
 import { MOCK_RAINBOX_EMAIL } from './mock-newsletter-data';
 import Image from 'next/image';
 import { Button } from '../ui/button';
-import { useGmail } from "@/context/gmailContext";
-import { GmailConnectionFlow } from '../connect-gmail/flow';
 
+// Import contexts and flows for both Gmail and Outlook
+import { useGmail } from "@/context/gmailContext";
+import { GmailConnectionFlow } from '../connect-gmail/flow'; // Assuming path is correct
+import { useOutlook } from '@/context/outlookContext';
+import { OutlookConnectionFlow } from '../connect-outlook/flow'; // Assuming index.tsx is the flow entry
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -22,31 +25,36 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   connections,
   onSelectSender,
 }) => {
-
-  const { email, isConnected, connectGmail } = useGmail();
+  // State and hooks for Gmail
+  const { email: gmailEmail, isConnected: gmailIsConnected } = useGmail();
   const [isGmailFlowOpen, setIsGmailFlowOpen] = React.useState(false);
 
-
+  // State and hooks for Outlook
+  const { email: outlookEmail, isConnected: outlookIsConnected } = useOutlook();
+  const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
 
   const handleCopyRainboxEmail = () => {
     navigator.clipboard.writeText(MOCK_RAINBOX_EMAIL);
   };
+
+  // Close child flows when the main modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setIsGmailFlowOpen(false);
+      setIsOutlookFlowOpen(false);
+    }
+  }, [isOpen]);
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Add a Newsletter to Rainbox">
       <div className="flex flex-col ">
         {/* Scrollable content */}
         <div className="flex-grow overflow-y-auto space-y-6  custom-scrollbar">
-
           <Image src="/newsletter-placeholder.png" alt="newsletter-placeholder" width={200} height={200} className='h-40 rounded-lg w-full' />
-
           <div>
             <h3 className="text-sm font-semibold mb-1">
               Subscribe to newsletters with your Rainbox email
             </h3>
-            {/* <p className="text-xs text-muted-foreground mb-3">
-              All newsletters sent to this address will appear in Rainbox.
-            </p> */}
             <ConnectionCard
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
@@ -56,55 +64,51 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               onAction={() => handleCopyRainboxEmail()}
               isConnected={true}
             />
-            {/* <ConnectionCard
-              logo="/GmailLogo.png"
-              logoAlt="Gmail Logo"
-              title="Gmail"
-              subtitle={email || "Not connected"}
-              actionType="select-sender"
-              onAction={() => {
-                if (isConnected && email) {
-                  onSelectSender(email, "Gmail");
-                } else {
-                  connectGmail();
-                }
-              }}
-              isConnected={isConnected}
-            /> */}
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold mb-1">
-              Select newsletters from your connected email
-            </h3>
-            {/* <p className="text-xs text-muted-foreground mb-3">
-              Sync Newsletters from your other mailbox
-            </p> */}
+            {(outlookIsConnected || gmailIsConnected) && (
+              <h3 className="text-sm font-semibold mb-1">
+                Select newsletters from your connected email
+              </h3>
+            )}
+
             <div className='flex flex-col gap-2'>
-              <ConnectionCard
-                logo="/OutlookLogo.png"
-                logoAlt="Outlook Logo"
-                title="Ganesh's Outlook"
-                subtitle="ganesh123@outlook.com"
-                actionType="select-sender"
-                onAction={() => onSelectSender("ganesh123@outlook.com", "Ganesh's Outlook")}
-                isConnected={true}
-              />
-              {isConnected && (
+              {/* DYNAMIC OUTLOOK CARD */}
+              {outlookIsConnected && (
+                <ConnectionCard
+                  logo="/OutlookLogo.png"
+                  logoAlt="Outlook Logo"
+                  title="Outlook"
+                  subtitle={outlookEmail || "Not connected"}
+                  actionType={outlookIsConnected ? "select-sender" : "connect"}
+                  onAction={() => {
+                    if (outlookIsConnected && outlookEmail) {
+                      onSelectSender(outlookEmail, "Outlook");
+                    } else {
+                      setIsOutlookFlowOpen(true); // Open the modal flow
+                    }
+                  }}
+                  isConnected={outlookIsConnected}
+                />
+              )}
+
+              {/* DYNAMIC GMAIL CARD */}
+              {gmailIsConnected && (
                 <ConnectionCard
                   logo="/gmail.webp"
                   logoAlt="Gmail Logo"
                   title="Gmail"
-                  subtitle={email || "Not connected"}
-                  actionType={isConnected ? "select-sender" : "connect"} // Adjusted actionType
+                  subtitle={gmailEmail || "Not connected"}
+                  actionType={gmailIsConnected ? "select-sender" : "connect"}
                   onAction={() => {
-                    if (isConnected && email) {
-                      onSelectSender(email, "Gmail");
+                    if (gmailIsConnected && gmailEmail) {
+                      onSelectSender(gmailEmail, "Gmail");
                     } else {
-                      connectGmail(); // Call context function
+                      setIsGmailFlowOpen(true); // Open the modal flow
                     }
                   }}
-                  isConnected={isConnected}
+                  isConnected={gmailIsConnected}
                 />
               )}
 
@@ -113,20 +117,42 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 
           <div className="w-full flex items-center justify-between px-2 text-sm">
             <button className="text-sm underline">Create new mailbox</button>
-            {!isConnected ? <button onClick={() => setIsGmailFlowOpen(true)} className="text-sm underline">Connect Gmail</button> : <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Gmail Connected</button>}
-            <button className="text-sm underline">Connect Outlook</button>
+            {/* Gmail Connection Link */}
+            {!gmailIsConnected ? (
+              <button onClick={() => setIsGmailFlowOpen(true)} className="text-sm underline">Connect Gmail</button>
+            ) : (
+              <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Gmail Connected</button>
+            )}
+            {/* Outlook Connection Link */}
+            {!outlookIsConnected ? (
+              <button onClick={() => {
+                console.log('clicked');
+                setIsOutlookFlowOpen(true)
+              }} className="text-sm underline">Connect Outlook</button>
+            ) : (
+              <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Outlook Connected</button>
+            )}
           </div>
         </div>
-
-
       </div>
 
+      {/* Connection Flow Modals */}
       <GmailConnectionFlow
         isOpen={isGmailFlowOpen}
         onClose={() => setIsGmailFlowOpen(false)}
-        onConnectionComplete={() => setIsGmailFlowOpen(false)}
+        onConnectionComplete={() => {
+          setIsGmailFlowOpen(false);
+          // Optional: you could close the main modal here too if desired
+          // onClose();
+        }}
+      />
+      <OutlookConnectionFlow
+        isOpen={isOutlookFlowOpen}
+        onClose={() => setIsOutlookFlowOpen(false)}
+        onConnectionComplete={() => {
+          setIsOutlookFlowOpen(false);
+        }}
       />
     </BaseModal>
-
   );
 };

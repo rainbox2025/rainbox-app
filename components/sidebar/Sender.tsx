@@ -1,20 +1,22 @@
 import { SenderType } from "@/types/data";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useSenders } from "@/context/sendersContext";
 import { EditSenderModal } from "../modals/edit-sender-modal";
 import { SenderDropdownMenu } from "./sender-dropdown-menu";
 import { SenderIcon } from "./sender-icon";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface SenderProps {
   sender: SenderType;
 }
 
-export default function Sender({ sender }: SenderProps) {
-  const { renameSender, unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
+const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
+  const { unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
 
@@ -23,10 +25,10 @@ export default function Sender({ sender }: SenderProps) {
     setMenuOpen(!menuOpen);
   };
 
-  const handleRename = (e: React.MouseEvent) => {
+  const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    setIsRenaming(true);
+    setIsEditing(true);
   };
 
   const handleMarkAsRead = (e: React.MouseEvent) => {
@@ -38,14 +40,11 @@ export default function Sender({ sender }: SenderProps) {
   const handleMoveToFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    // You can implement folder moving logic here, perhaps opening a modal
-    console.log('move to folder');
   };
 
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    console.log(`Muted notifications for ${sender.name}`);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
@@ -57,18 +56,17 @@ export default function Sender({ sender }: SenderProps) {
   return (
     <>
       <div
-        className={`group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent ${selectedSender?.id === sender.id ? "bg-hovered hover:bg-hovered" : ""
-          }`}
+        ref={ref}
+        className={`group p-xs px-md flex items-center justify-between rounded-md hover:bg-accent ${selectedSender?.id === sender.id ? "bg-hovered hover:bg-hovered" : ""}`}
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
-          onClick={() => {
-            setSelectedSender(sender);
-            console.log(sender);
-          }}
+          onClick={() => setSelectedSender(sender)}
         >
-          <SenderIcon sender={sender} />
-          <span className="text-sm font-medium truncate overflow-hidden mr-2">
+          <div className=" flex-shrink-0">
+            <SenderIcon sender={sender} />
+          </div>
+          <span className="text-sm font-medium truncate">
             {sender.name}
           </span>
         </div>
@@ -87,7 +85,7 @@ export default function Sender({ sender }: SenderProps) {
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
               onMarkAsRead={handleMarkAsRead}
-              onRename={handleRename}
+              onRename={handleEdit}
               onMoveToFolder={handleMoveToFolder}
               onMuteNotifications={handleMuteNotifications}
               onUnfollow={handleUnfollow}
@@ -95,14 +93,11 @@ export default function Sender({ sender }: SenderProps) {
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {sender.count >= 1000
-              ? `${Math.floor(sender.count / 1000)}K+`
-              : sender.count}
+            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
           </span>
         </div>
       </div>
 
-      {/* Modals for actions */}
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={() => setIsUnfollowModalOpen(false)}
@@ -123,19 +118,40 @@ export default function Sender({ sender }: SenderProps) {
         itemName={sender.name}
         itemType={sender.isRead ? "markasunread" : "markasread"}
       />
-      <EditSenderModal
-        isOpen={isRenaming}
-        onClose={() => setIsRenaming(false)}
-        onSave={(newName: string) => {
-          renameSender(sender.id, newName);
-          setIsRenaming(false);
-        }}
-        initialValues={{
-          source: sender.domain || "",
-          title: sender.name,
-          folder: "No Folder" // This might need logic to find the current folder name
-        }}
-      />
+
+      {isEditing && (
+        <EditSenderModal
+          isOpen={isEditing}
+          onClose={() => setIsEditing(false)}
+          sender={sender}
+        />
+      )}
     </>
+  );
+});
+
+Sender.displayName = 'Sender';
+
+export default function SortableSender({ sender }: SenderProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `sender-${sender.id}`, data: { type: 'sender', sender, sortable: { containerId: sender.folder_id ? `folder-${sender.folder_id}` : 'root' } } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 20 : 'auto',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Sender sender={sender} />
+    </div>
   );
 }
