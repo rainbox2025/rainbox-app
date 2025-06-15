@@ -21,7 +21,10 @@ export async function GET(request: Request) {
 
     if (!code) {
       // Redirect to an error page or login page with an error message
-      const errorRedirectUrl = new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+      const errorRedirectUrl = new URL(
+        "/login",
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      );
       errorRedirectUrl.searchParams.set("error", "oauth_no_code");
       return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
@@ -33,10 +36,28 @@ export async function GET(request: Request) {
     const { data: userInfo } = await oauth2.userinfo.get();
 
     if (!userInfo || !userInfo.email) {
-        // Handle case where email is not retrieved
-        const errorRedirectUrl = new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-        errorRedirectUrl.searchParams.set("error", "oauth_no_email");
-        return NextResponse.redirect(errorRedirectUrl.toString(), 302);
+      // Handle case where email is not retrieved
+      const errorRedirectUrl = new URL(
+        "/login",
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      );
+      errorRedirectUrl.searchParams.set("error", "oauth_no_email");
+      return NextResponse.redirect(errorRedirectUrl.toString(), 302);
+    }
+
+    // Get the authenticated user from Supabase
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      const errorRedirectUrl = new URL(
+        "/login",
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      );
+      errorRedirectUrl.searchParams.set("error", "not_authenticated");
+      return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
 
     console.log("Attempting to store tokens for email:", userInfo.email);
@@ -44,6 +65,7 @@ export async function GET(request: Request) {
     await supabase.from("gmail_tokens").upsert(
       {
         email: userInfo.email as string,
+        user_email: user.email, // Add the authenticated user's email
         tokens: {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
@@ -86,18 +108,23 @@ export async function GET(request: Request) {
     // --- KEY CHANGE: REDIRECT ---
     // Construct the redirect URL to your dashboard
     // Make sure NEXT_PUBLIC_APP_URL is set in your .env.local (e.g., NEXT_PUBLIC_APP_URL=http://localhost:3000)
-    const dashboardUrl = new URL("/dashboard", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+    const dashboardUrl = new URL(
+      "/dashboard",
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    );
     dashboardUrl.searchParams.set("gmail_connected", "true");
     dashboardUrl.searchParams.set("email", userInfo.email as string);
 
     return NextResponse.redirect(dashboardUrl.toString(), 302); // 302 for temporary redirect
-
   } catch (error: any) {
     console.error("OAuth Callback Error:", error.message);
     console.error("Full error object:", error);
 
     // Redirect to an error page or login page with an error message
-    const errorRedirectUrl = new URL("/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+    const errorRedirectUrl = new URL(
+      "/login",
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    );
     errorRedirectUrl.searchParams.set("error", "oauth_failed");
     if (error.message) {
       errorRedirectUrl.searchParams.set("error_message", error.message);

@@ -66,10 +66,26 @@ export async function GET(request: Request) {
     const email = userInfo.mail || userInfo.userPrincipalName;
     console.log("Attempting to store tokens for email:", email);
 
-    // Store tokens in Supabase
+    // Get the authenticated user from Supabase
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      const errorRedirectUrl = new URL(
+        "/login",
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      );
+      errorRedirectUrl.searchParams.set("error", "not_authenticated");
+      return NextResponse.redirect(errorRedirectUrl.toString(), 302);
+    }
+
+    // Store tokens in Supabase with user_email
     await supabase.from("outlook_tokens").upsert(
       {
         email,
+        user_email: user.email, // Add the authenticated user's email
         tokens: {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
