@@ -34,11 +34,15 @@
     --feed-icon-3: 197 37% 24%;
     --feed-icon-4: 43 74% 66%;
     --feed-icon-5: 27 87% 67%;
-    /* --sidebar: #f8f8f7; */
     --sidebar: #f8f8f7;
     --content: #ffffff;
     --hovered: #ebebeb;
     --error: #ff0000;
+
+    /* --- NEW: Centralized Highlight Colors --- */
+    --highlight-selection-bg: #FFF9D9;
+    --highlight-confirmed-bg: rgba(255, 229, 100, 0.4);
+    --highlight-confirmed-underline: #FFD400;
   }
 
   .dark {
@@ -64,6 +68,11 @@
     --sidebar: #202020;
     --content: #191919;
     --hovered: #333333;
+    
+    /* --- NEW: Centralized Highlight Colors (Dark) --- */
+    --highlight-selection-bg: #38381E;
+    --highlight-confirmed-bg: rgba(208, 176, 7, 0.3);
+    --highlight-confirmed-underline: #D0B007;
   }
 }
 
@@ -92,30 +101,34 @@
 }
 
 
-::selection {
-  background-color: #FFF9D9; /* light theme */
-  color: #1f2937;
-}
 
-.dark ::selection {
-  background-color: #38381E; /* dark theme */
-  color: #fefce8;
+::selection {
+  background-color: var(--highlight-selection-bg);
+  color: inherit; 
 }
 
 .bookmark-highlight {
-  background-color: #FFF9D9;
-  border-bottom: 3px solid #FFD400;
   cursor: pointer;
 }
-
-.dark .bookmark-highlight {
-  background-color: #38381E;
-  border-bottom: 3px solid #D0B007;
-}
-
 .bookmark-highlight, .bookmark-highlight * {
   color: inherit !important;
 }
+
+
+.bookmark-highlight-unconfirmed {
+  background-color: var(--highlight-selection-bg);
+  text-decoration: none;
+}
+
+
+.bookmark-highlight-confirmed {
+  background-color: var(--highlight-confirmed-bg);
+  text-decoration: underline;
+  text-decoration-color: var(--highlight-confirmed-underline);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+}
+
 
 .rw-highlight-note-icon {
   color: #666457; /* light */
@@ -123,25 +136,6 @@
 
 .dark .rw-highlight-note-icon {
   color: #AFAFA5; /* dark */
-}
-
-
-.bookmark-highlight-unconfirmed {
-  background-color: rgba(187, 247, 208, 0.5); /* A temporary light green */
-}
-
-/* Style for highlights that are confirmed (saved) */
-.bookmark-highlight-confirmed {
-  background-color: rgba(255, 229, 100, 0.4); /* Your preferred persistent highlight color */
-  text-decoration: underline;
-  text-decoration-style: wavy;
-  text-decoration-color: #f59e0b;
-  text-underline-offset: 2px;
-}
-
-/* Common style for all highlight spans */
-.bookmark-highlight {
-  cursor: pointer;
 }
 
 

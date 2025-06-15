@@ -1,3 +1,4 @@
+// api/senders/user/userid/route.ts
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 

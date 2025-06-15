@@ -6,7 +6,7 @@ async function handleImageUpload(
   sender_id: string,
   imageFile: File
 ) {
-  const filename = `${sender_id}-${Date.now()}.${imageFile.type.split("/")[1]}`;
+  const filename = `${sender_id}-${Date.now()}`;
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from("sender-images")
@@ -17,11 +17,11 @@ async function handleImageUpload(
 
   if (uploadError) throw uploadError;
 
-  const { data: publicUrl } = supabase.storage
+  const { data: publicUrlData } = supabase.storage
     .from("sender-images")
     .getPublicUrl(filename);
 
-  return publicUrl.publicUrl;
+  return publicUrlData.publicUrl;
 }
 
 export const PATCH = async (
@@ -66,7 +66,10 @@ export const PATCH = async (
     if (count) updateData.count = parseInt(count as string);
     if (folder_id) updateData.folder_id = folder_id;
 
-    if (image instanceof File) {
+    // --- THIS IS THE FIX ---
+    // Instead of `instanceof File`, we check if `image` is a file-like object
+    // by checking for the `size` property.
+    if (image && typeof image.size === 'number') {
       updateData.image_url = await handleImageUpload(
         supabase,
         sender_id,
@@ -81,9 +84,15 @@ export const PATCH = async (
 
       if (currentSender?.image_url) {
         const oldImagePath = currentSender.image_url.split("/").pop();
-        await supabase.storage.from("sender-images").remove([oldImagePath]);
+        if (oldImagePath) {
+           await supabase.storage.from("sender-images").remove([oldImagePath]);
+        }
       }
       updateData.image_url = null;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ message: "No fields to update" }, { status: 200 });
     }
 
     const { data, error } = await supabase

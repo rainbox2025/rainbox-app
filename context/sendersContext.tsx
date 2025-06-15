@@ -5,6 +5,8 @@ import {
   useEffect,
   useContext,
   useCallback,
+  Dispatch,
+  SetStateAction,
 } from "react";
 import { SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
@@ -15,15 +17,16 @@ interface SendersContextType {
   isSendersLoading: boolean;
   sendersListError: string | null;
   unsubcribeSenderError: string | null;
+  updateSenderError: string | null;
+  selectedSender: SenderType | null;
+  fetchSenders: () => Promise<void>;
   unsubcribeSender: (id: string) => Promise<void>;
-  renameSenderError: string | null;
-  renameSender: (id: string, name: string) => Promise<void>;
+  updateSender: (id: string, formData: FormData) => Promise<void>;
   toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
   removeSender: (senderId: string) => void;
-  fetchSenders: () => Promise<void>;
-  selectedSender: SenderType | null;
+  addSender: (sender: SenderType) => void;
   setSelectedSender: (sender: SenderType | null) => void;
-  setSenders: (senders: SenderType[]) => void;
+  setSenders: Dispatch<SetStateAction<SenderType[]>>;
 }
 
 const SendersContext = createContext<SendersContextType | null>(null);
@@ -38,104 +41,76 @@ export const SendersProvider = ({
   const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
   const [sendersListError, setSendersListError] = useState<string | null>(null);
-  const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<
-    string | null
-  >(null);
-  const [renameSenderError, setRenameSenderError] = useState<string | null>(
-    null
-  );
-
+  const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<string | null>(null);
+  const [updateSenderError, setUpdateSenderError] = useState<string | null>(null);
   const api = useAxios();
+
   const fetchSenders = useCallback(async () => {
     try {
       setIsSendersLoading(true);
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
-      const data = await api.get(`/senders/user/${user.user.id}`);
-      console.log(" sender data ====== ", data.data);
-      setSenders(data.data);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await api.get(`/senders/user/${user.id}`);
+      setSenders(data);
     } catch (error) {
-      setSendersListError(
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      console.error(error);
+      setSendersListError(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setIsSendersLoading(false);
     }
-  }, [api, supabase]);
+  }, []);
+
   const unsubcribeSender = useCallback(
     async (id: string) => {
       try {
-        console.log("came insdie unsubscribe");
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
-        console.log("unsubscribed to : ", id);
         await api.patch(`/senders/${id}`, { subscribed: false });
-        console.log("unsubscribed");
-
-        setSenders((prevSenders) =>
-          prevSenders.filter((sender) => sender.id !== id)
-        );
+        setSenders((prev) => prev.filter((sender) => sender.id !== id));
       } catch (error) {
-        setUnsubcribeSenderError(
-          error instanceof Error ? error.message : "Unknown error"
-        );
-        console.error(error);
+        setUnsubcribeSenderError(error instanceof Error ? error.message : "Unknown error");
       }
     },
-    [api, supabase]
+    [api]
   );
-  const renameSender = useCallback(
-    async (id: string, name: string) => {
+
+  const updateSender = useCallback(
+    async (id: string, formData: FormData) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
-        await api.patch(`/senders/${id}`, { name });
-        console.log("renamed");
-
-        setSenders((prevSenders) =>
-          prevSenders.map((sender) =>
-            sender.id === id ? { ...sender, name } : sender
-          )
-        );
+        console.log("formObj: ", Object.fromEntries(formData.entries()));
+        setUpdateSenderError(null);
+        const { data: updatedSender } = await api.patch(`/senders/${id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setSenders((prev) => prev.map((s) => (s.id === id ? { ...s, ...updatedSender } : s)));
+        if (selectedSender?.id === id) {
+          setSelectedSender((prev) => (prev ? { ...prev, ...updatedSender } : null));
+        }
       } catch (error) {
-        setRenameSenderError(
-          error instanceof Error ? error.message : "Unknown error"
-        );
-        console.error(error);
+        setUpdateSenderError(error instanceof Error ? error.message : "Failed to update sender");
+        throw error;
       }
     },
-    [api, supabase]
+    [selectedSender]
   );
 
   const toggleReadSender = useCallback(
     async (senderId: string, isRead: boolean) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
-        console.log("toggleSender:", senderId, "to:", isRead);
-        await api.patch(`/senders/read`, {
-          sender_id: senderId,
-          isRead: isRead,
-        });
-        const updatedSenders = senders.map((sender) =>
-          sender.id === senderId ? { ...sender, isRead } : sender
+        await api.patch(`/senders/read`, { sender_id: senderId, isRead });
+        setSenders((prev) =>
+          prev.map((sender) => (sender.id === senderId ? { ...sender, isRead } : sender))
         );
-        setSenders(updatedSenders);
       } catch (error) {
         console.error(error);
       }
     },
-    [api, supabase]
+    [api]
   );
 
   const removeSender = (senderId: string) => {
-    setSenders((prevSenders) =>
-      prevSenders.filter((sender) => sender.id !== senderId)
-    );
+    setSenders((prev) => prev.filter((sender) => sender.id !== senderId));
+  };
+
+  const addSender = (sender: SenderType) => {
+    setSenders((prev) => [...prev, sender]);
   };
 
   useEffect(() => {
@@ -149,13 +124,14 @@ export const SendersProvider = ({
         isSendersLoading,
         sendersListError,
         unsubcribeSenderError,
+        updateSenderError,
+        selectedSender,
+        fetchSenders,
         unsubcribeSender,
-        renameSenderError,
-        renameSender,
+        updateSender,
         toggleReadSender,
         removeSender,
-        fetchSenders,
-        selectedSender,
+        addSender,
         setSelectedSender,
         setSenders,
       }}
@@ -168,7 +144,7 @@ export const SendersProvider = ({
 export const useSenders = () => {
   const context = useContext(SendersContext);
   if (!context) {
-    throw new Error("useSenders must be used within an SendersProvider");
+    throw new Error("useSenders must be used within a SendersProvider");
   }
   return context;
 };
