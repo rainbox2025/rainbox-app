@@ -17,23 +17,29 @@ export async function POST(request: Request) {
 
     const { emailAddress, historyId } = decodedData;
 
-    // Fetch tokens and last history ID
-    const { data: watchData } = await supabase
+    // First verify this email is being watched
+    const { data: watchData, error: watchError } = await supabase
       .from("gmail_watch")
-      .select("history_id")
+      .select("history_id, user_id")
       .eq("email", emailAddress)
       .single();
 
-    const { data: tokenData } = await supabase
+    if (watchError || !watchData) {
+      throw new Error("No watch record found for this email");
+    }
+
+    // Then get the tokens for this email
+    const { data: tokenData, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("tokens")
       .eq("email", emailAddress)
       .single();
 
-    if (!tokenData) {
+    if (tokenError || !tokenData) {
       throw new Error("No tokens found for this email");
     }
 
+    // Continue with the OAuth client setup using the found tokens
     const oauth2Client = initOauthCLient(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
@@ -48,28 +54,11 @@ export async function POST(request: Request) {
       startHistoryId: watchData?.history_id || historyId,
     });
 
-    const { data: tokenUser, error: tokenError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", emailAddress)
-      .single();
-
-    if (tokenError) {
-      console.error("Error fetching token user:", tokenError);
-      throw new Error("Failed to fetch user");
-    }
-
     const { data: userSenders, error: sendersError } = await supabase
       .from("senders")
-      .select(
-        `
-        id,
-        email,
-        user_id
-      `
-      )
+      .select("id, email, user_id")
       .eq("mail_service", "gmail")
-      .eq("user_id", tokenUser.id);
+      .eq("user_id", watchData.user_id); // Use the user_id from watch record
 
     if (sendersError) {
       console.error("Error fetching senders:", sendersError);
