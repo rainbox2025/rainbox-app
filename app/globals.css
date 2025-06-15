@@ -126,6 +126,24 @@
 }
 
 
+.bookmark-highlight-unconfirmed {
+  background-color: rgba(187, 247, 208, 0.5); /* A temporary light green */
+}
+
+/* Style for highlights that are confirmed (saved) */
+.bookmark-highlight-confirmed {
+  background-color: rgba(255, 229, 100, 0.4); /* Your preferred persistent highlight color */
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #f59e0b;
+  text-underline-offset: 2px;
+}
+
+/* Common style for all highlight spans */
+.bookmark-highlight {
+  cursor: pointer;
+}
+
 
 @layer base {
   * {

@@ -2,11 +2,10 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { AuthApiError } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-// ... (verifyRecaptcha function remains the same)
+// The verifyRecaptcha function remains the same.
 async function verifyRecaptcha(token: string | null): Promise<boolean> {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   if (!secretKey) {
@@ -38,6 +37,7 @@ async function verifyRecaptcha(token: string | null): Promise<boolean> {
   }
 }
 
+// sendOtpAction remains the same as the previous correct version.
 export async function sendOtpAction(
   currentEmail: string,
   recaptchaToken: string | null
@@ -48,13 +48,12 @@ export async function sendOtpAction(
 }> {
   const supabase = await createClient();
   const origin = headers().get("origin")!;
+  const normalizedEmail = currentEmail.toLowerCase().trim();
 
-  if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !recaptchaToken) {
-    // Check if site key exists
-    return { status: "error", message: "Please complete the reCAPTCHA." };
-  }
   if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-    // Only verify if site key exists
+    if (!recaptchaToken) {
+      return { status: "error", message: "Please complete the reCAPTCHA." };
+    }
     const recaptchaVerified = await verifyRecaptcha(recaptchaToken);
     if (!recaptchaVerified) {
       return {
@@ -64,33 +63,40 @@ export async function sendOtpAction(
     }
   }
 
-  if (!currentEmail) {
+  if (!normalizedEmail) {
     return { status: "error", message: "Email is required." };
   }
 
   try {
-    // First try to get existing user
-    const {
-      data: { user },
-      error: getUserError,
-    } = await supabase.auth.getUser();
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
 
-    // Send OTP with correct type and options
+    if (userCheckError) {
+      console.error("Error checking for existing user:", userCheckError);
+      return {
+        status: "error",
+        message: "Database error. Could not verify user status.",
+      };
+    }
+
+    const isNewUser = !existingUser;
+
     const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: currentEmail,
+      email: normalizedEmail,
       options: {
         shouldCreateUser: true,
         emailRedirectTo: `${origin}/auth/callback`,
-        // Specify OTP settings
         data: {
-          type: "otp",
-          action: "signin",
+          type: "otp", // Specify the type for proper verification
         },
       },
     });
 
     if (otpError) {
-      console.error("OTP error:", otpError);
+      console.error("Send OTP error:", otpError);
       return {
         status: "error",
         message: otpError.message || "Could not send OTP.",
@@ -100,7 +106,7 @@ export async function sendOtpAction(
     return {
       status: "success",
       message: "OTP sent to your email. Please check your inbox.",
-      requiresName: !user, // require name if no existing user
+      requiresName: isNewUser,
     };
   } catch (e: any) {
     console.error("Generic error in sendOtpAction:", e);
@@ -115,106 +121,78 @@ export async function verifyOtpAndSignInAction(
   currentEmail: string,
   otp: string,
   name: string | null,
-  isNewUserFlow: boolean
+  isNewUser: boolean
 ): Promise<{
   status: "success" | "error";
   message: string;
 }> {
   const supabase = await createClient();
+  const normalizedEmail = currentEmail.toLowerCase().trim();
 
-  if (!currentEmail || !otp) {
+  if (!normalizedEmail || !otp) {
     return { status: "error", message: "Email and OTP are required." };
   }
 
-  if (isNewUserFlow && (!name || name.trim() === "")) {
+  if (isNewUser && (!name || name.trim() === "")) {
     return { status: "error", message: "Name is required for new accounts." };
   }
 
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.verifyOtp({
-    email: currentEmail,
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalizedEmail,
     token: otp,
-    type: "email", // Change this from 'magiclink' to 'email'
+    type: "signup", // Match this with the type used in sendOtpAction
   });
 
   if (error) {
     console.error("Verify OTP error:", error);
     return {
       status: "error",
-      message:
-        error.message || "Invalid OTP or it has expired. Please try again.",
+      message: error.message || "Invalid OTP or it has expired.",
     };
   }
 
-  if (!session) {
+  if (!data.session) {
     return {
       status: "error",
-      message: "Could not sign you in. Session not established.",
+      message: "Authentication failed. Could not create a session.",
     };
   }
 
-  // User is signed in. Now, handle name update if it's a new user.
-  // A more robust check for "new user" could be to see if their profile name is empty.
-  if (session.user && isNewUserFlow && name && name.trim() !== "") {
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { full_name: name.trim() }, // Supabase user_metadata
+  if (isNewUser && name) {
+    const user = data.session.user;
+    const trimmedName = name.trim();
+
+    const { error: updateAuthError } = await supabase.auth.updateUser({
+      data: { full_name: trimmedName },
     });
-    if (updateError) {
-      console.error("Error updating user name in auth.users:", updateError);
-      // Decide if this is a critical error. For now, log and proceed.
-      // You might also want to update your public.users table here if you have one.
+
+    if (updateAuthError) {
+      console.error("Error updating user name in auth.users:", updateAuthError);
     }
 
-    // Optionally, update your public.users table if you maintain one separately
-    // This assumes `session.user.id` and `currentEmail` are available
-    // and that your public.users table links to auth.users via id or email.
-    // Check if user exists in public.users first to avoid duplicate errors if triggers handle it
-    const { data: publicUser, error: publicUserError } = await supabase
+    const { error: insertPublicUserError } = await supabase
       .from("users")
-      .select("id")
-      .eq("id", session.user.id)
-      .maybeSingle();
+      .insert({
+        id: user.id,
+        email: user.email,
+        full_name: trimmedName,
+      });
 
-    if (publicUserError)
-      console.error("Error checking public.users:", publicUserError.message);
-
-    if (!publicUser && !publicUserError) {
-      // If user not in public.users and no error checking
-      const { error: insertPublicUserError } = await supabase
-        .from("users")
-        .insert({
-          id: session.user.id,
-          email: session.user.email,
-          full_name: name.trim(), // Or however you store name
-          // avatar_url: session.user.user_metadata.avatar_url, // If available
-        });
-      if (insertPublicUserError) {
-        console.error(
-          "Error inserting user into public.users:",
-          insertPublicUserError.message
-        );
-      }
-    } else if (publicUser) {
-      // If user exists, update their name if it's different
-      const { error: updatePublicUserError } = await supabase
-        .from("users")
-        .update({ full_name: name.trim() })
-        .eq("id", session.user.id);
-      if (updatePublicUserError) {
-        console.error(
-          "Error updating name in public.users:",
-          updatePublicUserError.message
-        );
-      }
+    if (insertPublicUserError) {
+      console.error(
+        "Error inserting user into public.users:",
+        insertPublicUserError.message
+      );
+      return { status: "error", message: "Failed to create user profile." };
     }
+
+    redirect("/dashboard");
   }
 
-  return redirect("/dashboard");
+  redirect("/dashboard");
 }
 
-// signInWithGoogleAction and signOutAction remain the same
+// signInWithGoogleAction and signOutAction remain the same.
 export const signInWithGoogleAction = async () => {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");

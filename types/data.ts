@@ -105,3 +105,19 @@ export interface Preferences {
   voice_speed?: string;
   selected_voice?: string;
 }
+
+export interface Tag {
+  id: string;
+  name: string;
+  user_id: string;
+}
+
+export interface UpsertedTag {
+  id: string;
+  name: string;
+}
+
+export interface SupabaseUpsertResponse<T> {
+  data: T[] | null;
+  error: any;
+}
