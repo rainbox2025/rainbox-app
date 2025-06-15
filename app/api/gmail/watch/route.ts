@@ -12,18 +12,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    // Fetch tokens from database
-    const { data: tokenData, error } = await supabase
+    // Get tokens and user_email from database
+    const { data: tokenData, error: tokenError } = await supabase
       .from("gmail_tokens")
-      .select("tokens")
+      .select("tokens, user_email")
       .eq("email", email)
       .single();
 
-    if (error || !tokenData) {
+    if (tokenError || !tokenData) {
       return NextResponse.json(
         { error: "No tokens found for this email" },
         { status: 401 }
       );
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", tokenData.user_email)
+      .single();
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const oauth2Client = initOauthCLient(
@@ -34,7 +44,6 @@ export async function POST(request: Request) {
     oauth2Client.setCredentials(tokenData.tokens);
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
     const topicName = process.env.PUBSUB_TOPIC_NAME;
 
     console.log("Setting up watch with topic:", topicName);
@@ -54,17 +63,22 @@ export async function POST(request: Request) {
       topicName: topicName,
     });
 
+    // Store watch data with user information
     await supabase.from("gmail_watch").upsert({
       email,
+      user_email: tokenData.user_email,
+      user_id: userData.id,
       history_id: response.data.historyId,
       expiration: new Date(Number(response.data.expiration)),
       updated_at: new Date().toISOString(),
     });
 
+    // Verify storage with user checks
     const { data: verifyData, error: verifyError } = await supabase
       .from("gmail_watch")
-      .select("history_id, expiration")
+      .select("history_id, expiration, user_email, user_id")
       .eq("email", email)
+      .eq("user_email", tokenData.user_email)
       .single();
 
     if (verifyError || !verifyData) {
@@ -79,6 +93,7 @@ export async function POST(request: Request) {
       stored: {
         historyId: verifyData.history_id,
         expiration: verifyData.expiration,
+        user_email: verifyData.user_email,
       },
     });
   } catch (error: any) {
