@@ -28,6 +28,32 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if sender already exists for this user
+    const { data: existingSender, error: checkError } = await supabase
+      .from("senders")
+      .select("id, email")
+      .eq("user_id", user.id)
+      .eq("email", body.email)
+      .eq("mail_service", "gmail")
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      return NextResponse.json(
+        { error: "Failed to check existing sender" },
+        { status: 500 }
+      );
+    }
+
+    if (existingSender) {
+      return NextResponse.json(
+        {
+          error: "Sender already exists for this user",
+          sender: existingSender,
+        },
+        { status: 409 }
+      );
+    }
+
     // Extract domain from email if not provided
     const domain = body.domain || body.email.split("@")[1];
 
