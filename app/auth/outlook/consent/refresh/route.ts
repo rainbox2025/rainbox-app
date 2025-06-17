@@ -6,6 +6,15 @@ export async function GET(request: Request) {
   const supabase = await createClient();
 
   try {
+    // Get the authenticated user first
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const cookieStore = cookies();
     const tokensCookie = cookieStore.get("outlook_consent_tokens");
 
@@ -62,16 +71,16 @@ export async function GET(request: Request) {
     const userInfo = await userResponse.json();
     const email = userInfo.mail || userInfo.userPrincipalName;
 
-    // Store refreshed tokens in Supabase
+    // Update tokens for the authenticated user
     const { error: upsertError } = await supabase.from("outlook_tokens").upsert(
       {
         email,
+        user_email: user.email,
         tokens: newTokens,
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "email",
-        ignoreDuplicates: false,
+        onConflict: "user_email", // Update based on authenticated user's email
       }
     );
 

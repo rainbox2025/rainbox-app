@@ -62,10 +62,11 @@ export async function GET(request: Request) {
 
     console.log("Attempting to store tokens for email:", userInfo.email);
 
+    // Store or update tokens in Supabase
     await supabase.from("gmail_tokens").upsert(
       {
         email: userInfo.email as string,
-        user_email: user.email, // Add the authenticated user's email
+        user_email: user.email,
         tokens: {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
@@ -76,15 +77,15 @@ export async function GET(request: Request) {
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "email",
+        onConflict: "user_email", // Update based on user's email instead of Gmail email
       }
     );
 
-    // Verify token storage (optional, but good for debugging)
+    // Verify token storage with user_email
     const { data: verifyData, error: verifyError } = await supabase
       .from("gmail_tokens")
       .select("tokens")
-      .eq("email", userInfo.email)
+      .eq("user_email", user.email) // Check using user's email
       .single();
 
     if (verifyError || !verifyData) {

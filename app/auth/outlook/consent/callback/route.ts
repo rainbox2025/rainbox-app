@@ -81,11 +81,18 @@ export async function GET(request: Request) {
       return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
 
-    // Store tokens in Supabase with user_email
+    // Check for existing tokens
+    const { data: existingTokens, error: existingTokensError } = await supabase
+      .from("outlook_tokens")
+      .select("id")
+      .eq("user_email", user.email)
+      .single();
+
+    // Store or update tokens in Supabase
     await supabase.from("outlook_tokens").upsert(
       {
         email,
-        user_email: user.email, // Add the authenticated user's email
+        user_email: user.email,
         tokens: {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
@@ -97,7 +104,7 @@ export async function GET(request: Request) {
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "email",
+        onConflict: "user_email", // Update based on user's email
       }
     );
 
@@ -105,7 +112,7 @@ export async function GET(request: Request) {
     const { data: verifyData, error: verifyError } = await supabase
       .from("outlook_tokens")
       .select("tokens")
-      .eq("email", email)
+      .eq("user_email", user.email) // Check using user's email
       .single();
 
     if (verifyError || !verifyData) {

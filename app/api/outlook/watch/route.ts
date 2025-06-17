@@ -4,38 +4,101 @@ import { createClient } from "@/utils/supabase/server";
 export async function POST(request: Request) {
   const supabase = await createClient();
   try {
-    const { email } = await request.json();
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    // Get the authenticated user first
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get tokens and user_email from database
+    // Get tokens using authenticated user's email
     const { data: tokenData, error: tokenError } = await supabase
       .from("outlook_tokens")
-      .select("tokens, user_email")
-      .eq("email", email)
+      .select("tokens, email")
+      .eq("user_email", user.email)
       .single();
 
     if (tokenError || !tokenData) {
       return NextResponse.json(
-        { error: "No tokens found for this email" },
+        { error: "No Outlook account connected" },
         { status: 401 }
       );
     }
 
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", tokenData.user_email)
-      .single();
+    // Verify token format and refresh if needed
+    if (!tokenData.tokens.access_token?.includes(".")) {
+      // Token needs refresh
+      const refreshResponse = await fetch(
+        "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: process.env.OUTLOOK_CLIENT_ID!,
+            client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+            refresh_token: tokenData.tokens.refresh_token,
+            grant_type: "refresh_token",
+          }),
+        }
+      );
 
-    if (userError || !userData) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      if (!refreshResponse.ok) {
+        return NextResponse.json(
+          { error: "Failed to refresh token" },
+          { status: 401 }
+        );
+      }
+
+      const newTokens = await refreshResponse.json();
+
+      // Update tokens in database
+      await supabase
+        .from("outlook_tokens")
+        .update({
+          tokens: newTokens,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_email", user.email); // Use user_email instead of email
+
+      // Use new access token
+      tokenData.tokens = newTokens;
     }
 
-    // Create subscription using Microsoft Graph API
-    const notificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/outlook/webhook`;
+    // Check for existing watch record
+    const { data: existingWatch, error: watchError } = await supabase
+      .from("outlook_watch")
+      .select("subscription_id")
+      .eq("user_email", user.email)
+      .single();
+
+    console.log("Existing watch record:", existingWatch);
+
+    if (existingWatch) {
+      // Delete existing subscription in Microsoft Graph
+      const deleteResponse = await fetch(
+        `https://graph.microsoft.com/v1.0/subscriptions/${existingWatch.subscription_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tokenData.tokens.access_token}`,
+          },
+        }
+      );
+
+      if (!deleteResponse.ok && deleteResponse.status !== 404) {
+        console.error(
+          "Failed to delete existing subscription:",
+          await deleteResponse.text()
+        );
+      }
+    }
+
+    // Create new subscription using Microsoft Graph API
+    const notificationUrl = process.env.OUTLOOK_WEBHOOK_URI;
     const response = await fetch(
       "https://graph.microsoft.com/v1.0/subscriptions",
       {
@@ -45,11 +108,11 @@ export async function POST(request: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          changeType: "created,updated",
+          changeType: "created", // Only listen for created events
           notificationUrl,
           resource: "/me/mailFolders/inbox/messages",
-          expirationDateTime: new Date(Date.now() + 4230 * 60000).toISOString(), // Max 4230 minutes (3 days)
-          clientState: userData.id, // Used to verify webhook authenticity
+          expirationDateTime: new Date(Date.now() + 4230 * 60000).toISOString(),
+          clientState: user.id,
         }),
       }
     );
@@ -63,22 +126,30 @@ export async function POST(request: Request) {
 
     const subscriptionData = await response.json();
 
-    // Store subscription data
-    await supabase.from("outlook_watch").upsert({
-      email,
-      user_email: tokenData.user_email,
-      user_id: userData.id,
-      subscription_id: subscriptionData.id,
-      expiration: subscriptionData.expirationDateTime,
-      updated_at: new Date().toISOString(),
-    });
+    // Update or create watch record
+    const { error: upsertError } = await supabase.from("outlook_watch").upsert(
+      {
+        email: tokenData.email,
+        user_email: user.email,
+        subscription_id: subscriptionData.id,
+        expiration: subscriptionData.expirationDateTime,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_email",
+      }
+    );
+
+    if (upsertError) {
+      console.error("Watch upsert error:", upsertError);
+      throw new Error("Failed to store watch data");
+    }
 
     // Verify storage
     const { data: verifyData, error: verifyError } = await supabase
       .from("outlook_watch")
-      .select("subscription_id, expiration, user_email, user_id")
-      .eq("email", email)
-      .eq("user_email", tokenData.user_email)
+      .select("subscription_id, expiration, user_email")
+      .eq("user_email", user.email) // Only check by user_email
       .single();
 
     if (verifyError || !verifyData) {

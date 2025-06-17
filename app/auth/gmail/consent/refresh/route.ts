@@ -8,6 +8,15 @@ import { createClient } from "@/utils/supabase/server";
 export async function GET(request: Request) {
   const supabase = await createClient();
   try {
+    // Get the authenticated user first
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const cookieStore = cookies();
     const tokensCookie = cookieStore.get("consent_tokens");
 
@@ -38,23 +47,21 @@ export async function GET(request: Request) {
     });
 
     const { credentials } = await oauth2Client.refreshAccessToken();
-
-    // Get user info to get email
     oauth2Client.setCredentials(credentials);
 
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const { data: userInfo } = await oauth2.userinfo.get();
 
-    // Store refreshed tokens in Supabase
+    // Update tokens for the authenticated user
     const { error: upsertError } = await supabase.from("gmail_tokens").upsert(
       {
         email: userInfo.email,
+        user_email: user.email,
         tokens: credentials,
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "email",
-        ignoreDuplicates: false,
+        onConflict: "user_email", // Update based on authenticated user's email
       }
     );
 
