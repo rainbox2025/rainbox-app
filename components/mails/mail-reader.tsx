@@ -9,7 +9,7 @@ import SummaryDialog from "../summary-dialog";
 import moment from "moment";
 import MailReaderHeader from "./mail-reader-header";
 import SenderAvatar from "../sender-avatar";
-import { useBookmarks, Bookmark } from "@/context/bookmarkContext";
+import { useBookmarks } from "@/context/bookmarkContext";
 import MailBodyViewer from "../bookmark/mail-body-viewer";
 import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
@@ -23,7 +23,7 @@ interface MailReaderProps {
   mailReaderWidth: number;
   setMailReaderWidth: (width: number) => void;
   onBack: () => void;
-  bookmark?: Bookmark;
+  mail: Mail | null;
 }
 
 export const MailReader = ({
@@ -31,56 +31,32 @@ export const MailReader = ({
   mailReaderWidth,
   setMailReaderWidth,
   onBack,
-  bookmark
+  mail
 }: MailReaderProps) => {
   const resizeRef = useRef<HTMLDivElement>(null);
-  const [isResizing, setIsResizing] = useState(false);
   const mailBodyRef = useRef<HTMLDivElement>(null);
   const mailReaderRef = useRef<HTMLDivElement>(null);
+  const previousWidthRef = useRef(mailReaderWidth);
 
-  const { selectedMail: globalSelectedMail, mails } = useMails();
-  const { senders } = useSenders();
-  const { bookmarks, deserializeRange } = useBookmarks();
-
-  const [mailToDisplay, setMailToDisplay] = useState<Mail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    let mail: Mail | undefined | null = null;
-    if (bookmark) {
-      mail = mails.find(m => m.id === bookmark.mailId);
-    } else {
-      mail = globalSelectedMail;
-    }
-    setMailToDisplay(mail || null);
-    setIsLoading(false);
-  }, [bookmark, globalSelectedMail, mails]);
-
-  const mailSender = mailToDisplay ? (senders.find(sender => sender.id === mailToDisplay.sender_id) || { name: "Unknown Sender", domain: "unknown.com" }) : null;
-
+  const [isResizing, setIsResizing] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotesSidebarOpen, setNotesSidebarOpen] = useState(false);
-  const previousWidthRef = useRef(mailReaderWidth);
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
-  // *** START OF FIX ***
-  // This effect handles resetting the width when the component unmounts (i.e., mail is closed).
+  const { senders } = useSenders();
+  const { bookmarks, deserializeRange } = useBookmarks();
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const mailSender = mail ? (senders.find(sender => sender.id === mail.sender_id) || { name: "Unknown Sender", domain: "unknown.com" }) : null;
+
   useEffect(() => {
-    // The returned function is a "cleanup" function that React executes when the component unmounts.
     return () => {
-      // If the component was in fullscreen mode when it was closed,
-      // we must reset the width in the parent component to its previous state.
       if (isFullScreen) {
         setMailReaderWidth(previousWidthRef.current);
       }
     };
-    // This effect's logic depends on `isFullScreen`, so we list it as a dependency.
-    // This ensures the cleanup function always has access to the correct `isFullScreen` value.
   }, [isFullScreen, setMailReaderWidth]);
-  // *** END OF FIX ***
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -126,14 +102,12 @@ export const MailReader = ({
     const rootElement = mailBodyRef.current;
     const scrollableParent = mailReaderRef.current;
 
-    if (!bookmark || !rootElement || !scrollableParent) {
-      console.warn("Could not find bookmark or necessary elements to scroll.");
+    if (!bookmark || !rootElement || !scrollableParent || !bookmark.serializedRange) {
       return;
     }
 
     const range = deserializeRange(bookmark.serializedRange, rootElement);
     if (!range) {
-      console.warn("Could not deserialize range for bookmark:", bookmarkId);
       return;
     }
 
@@ -147,13 +121,12 @@ export const MailReader = ({
       const scrollTop = targetRect.top - scrollContainerRect.top + scrollableParent.scrollTop;
 
       scrollableParent.scrollTo({
-        top: scrollTop - 100, // 100px offset from the top
+        top: scrollTop - 100,
         behavior: 'smooth',
       });
 
-      // Add a temporary visual indicator
       elementToScrollTo.style.transition = 'background-color 0.5s ease-in-out';
-      elementToScrollTo.style.backgroundColor = 'rgba(255, 235, 59, 0.3)'; // A light yellow flash
+      elementToScrollTo.style.backgroundColor = 'rgba(255, 235, 59, 0.3)';
       setTimeout(() => {
         if (elementToScrollTo) {
           elementToScrollTo.style.backgroundColor = '';
@@ -162,21 +135,10 @@ export const MailReader = ({
     }
   };
 
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!mailToDisplay) {
-    // This case might not be hit if the parent component unmounts MailReader, but it's good practice.
-    // If it were to show, we ensure the width is reset upon leaving.
+  if (!mail) {
     return (
       <div className="flex-1 h-screen flex items-center justify-center p-4 text-center">
-        <p className="text-muted-foreground">Original email not found.</p>
+        <p className="text-muted-foreground">Select a mail to read.</p>
       </div>
     );
   }
@@ -199,21 +161,21 @@ export const MailReader = ({
         <div className="p-md pb-64">
           <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
-              {mailToDisplay.subject}
+              {mail.subject}
             </h1>
             {mailSender &&
               <div className="flex items-center mb-2 text-sm">
-                <SenderAvatar domain={mailSender.domain || "unknown.com"} alt={mailToDisplay.subject} />
+                <SenderAvatar domain={mailSender.domain || "unknown.com"} alt={mail.subject} />
                 <div>
                   <div className="font-medium">{mailSender.name}</div>
                   <div className="text-muted-foreground text-xs">
-                    {moment(mailToDisplay.created_at).format("MMM D, YYYY [at] h:mm A")}
+                    {moment(mail.created_at).format("MMM D, YYYY [at] h:mm A")}
                   </div>
                 </div>
               </div>
             }
             <div ref={mailBodyRef}>
-              <MailBodyViewer htmlContent={mailToDisplay.body} mailId={mailToDisplay.id} />
+              <MailBodyViewer htmlContent={mail.body} mailId={mail.id} />
             </div>
             <SelectionPopup />
             <CommentModal />
@@ -228,7 +190,7 @@ export const MailReader = ({
           <NotesSidebar
             isOpen={isNotesSidebarOpen}
             onClose={() => setNotesSidebarOpen(false)}
-            mailId={mailToDisplay.id}
+            mailId={mail.id}
             onNoteClick={handleNoteClick}
           />
         )}
