@@ -6,26 +6,54 @@ export const DELETE = async (
   { params }: { params: { folder_id: string } }
 ) => {
   const supabase = await createClient();
-  const { folder_id } = await params;
-  const { data: senders_in_folder } = await supabase
-    .from("senders")
-    .select("*")
-    .eq("folder_id", folder_id);
+  const { folder_id } = params;
+  const { deleteSenders } = await request.json();
 
-  if (senders_in_folder && senders_in_folder.length > 0) {
-    await supabase
+  try {
+    // Get all senders in this folder
+    const { data: senders_in_folder = [] } = await supabase
       .from("senders")
-      .update({ folder_id: null })
+      .select("*")
       .eq("folder_id", folder_id);
-  }
-  const { data, error } = await supabase
-    .from("folders")
-    .delete()
-    .eq("id", folder_id);
-  if (error) {
+
+    if (senders_in_folder && senders_in_folder.length > 0) {
+      if (deleteSenders) {
+        // Delete all senders in this folder
+        const { error: deleteError } = await supabase
+          .from("senders")
+          .delete()
+          .eq("folder_id", folder_id);
+
+        if (deleteError) throw deleteError;
+      } else {
+        // Just unlink senders from folder
+        const { error: updateError } = await supabase
+          .from("senders")
+          .update({ folder_id: null })
+          .eq("folder_id", folder_id);
+
+        if (updateError) throw updateError;
+      }
+    }
+
+    // Delete the folder
+    const { data, error } = await supabase
+      .from("folders")
+      .delete()
+      .eq("id", folder_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      message: `Folder deleted. ${deleteSenders ? "Senders deleted." : "Senders unlinked."}`,
+      data,
+    });
+  } catch (error: any) {
+    console.error("Folder deletion error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data);
 };
 
 // Update name and count

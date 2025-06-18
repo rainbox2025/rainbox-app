@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const { data: tokenData, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("*")
-      .eq("email", user.email)
+      .eq("user_email", user.email)
       .single();
 
     if (tokenError) {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const { error: deleteError } = await supabase
       .from("gmail_tokens")
       .delete()
-      .eq("user_id", user.id);
+      .eq("user_email", user.email);
 
     if (deleteError) {
       console.error("Error deleting token:", deleteError);
