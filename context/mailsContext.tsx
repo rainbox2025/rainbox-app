@@ -81,7 +81,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) throw new Error("User not authenticated");
           response = await api.get(
-            `/mails/user/${user.id}?page=${page}&pageSize=20`
+            `/mails/user/${user.id}?page=${page}&pageSize=100`
           );
         }
 

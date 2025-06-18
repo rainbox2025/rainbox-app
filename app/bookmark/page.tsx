@@ -120,7 +120,7 @@ const BookmarkPage = () => {
 
       {/* --- THIS IS THE FIX --- */}
       {/* Use the logical AND (&&) for proper conditional rendering */}
-      {(
+      {mailFromContext && (
         <MailReader
           containerRef={containerRef}
           mailReaderWidth={readerWidth}

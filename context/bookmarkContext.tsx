@@ -69,8 +69,13 @@ interface ApiBookmark {
   created_at: string;
   updated_at?: string;
   mail_id?: string;
-  serialized_range: string; // The API sends a snake_case string.
-  tags: { id: string; name: string }[];
+  serialized_range: string;
+  bookmark_tags: {
+    tags: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 interface TagWithCount {
@@ -154,7 +159,7 @@ const mapApiBookmarkToLocal = (apiBookmark: ApiBookmark): Bookmark => {
     serializedRange: parsedRange!,
     mailId: apiBookmark.mail_id,
     comment: apiBookmark.comment || undefined,
-    tags: apiBookmark.tags?.map((t) => t.name).sort() || [],
+    tags: apiBookmark.bookmark_tags?.map((bt) => bt.tags.name).sort() || [],
     createdAt: new Date(apiBookmark.created_at).getTime(),
     isConfirmed: true,
   };
@@ -178,6 +183,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         api.get<ApiBookmark[]>("/bookmarks"),
         api.get<TagWithCount[]>("/bookmarks/tags"),
       ]);
+      console.log("bookmarksResponse.data: ", bookmarksResponse.data)
       setBookmarks(bookmarksResponse.data.map(mapApiBookmarkToLocal));
       setAllApiTags(tagsResponse.data);
     } catch (error) {
