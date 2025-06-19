@@ -34,10 +34,11 @@ export async function POST(request: Request) {
       .select("id, email")
       .eq("user_id", user.id)
       .eq("email", body.email)
-      .eq("mail_service", "gmail")
+      .eq("mail_service", "outlook")
       .single();
 
     if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 is "not found" error
       return NextResponse.json(
         { error: "Failed to check existing sender" },
         { status: 500 }
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
         name: body.name,
         email: body.email,
         domain,
-        mail_service: "gmail",
+        mail_service: "outlook",
         created_at: new Date().toISOString(),
       })
       .select()

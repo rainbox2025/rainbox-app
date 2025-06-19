@@ -24,11 +24,14 @@ interface FoldersContextType {
   deleteFolderError: string | null;
   deleteFolder: (id: string) => Promise<void>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
-  addSenderToFolder: (folderId: string, senderId: string) => Promise<void>;
-  moveSenderToRoot: (senderId: string, folderId: string) => void;
+  addSenderToFolder: (senderId: string, folderId: string) => Promise<void>;
+  moveSenderToRoot: (senderId: string) => Promise<void>;
   getSenders: (folderId: string) => Promise<SenderType[]>;
   isLoadingSenders: boolean;
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
+  sidebarOrder: any;
+  isSidebarOrderLoading: boolean;
+  saveSidebarOrder: (order: any) => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -39,9 +42,10 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot } = useSenders();
+  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot } =
+    useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
-  const [isFoldersLoading, setIsFoldersLoading] = useState(false);
+  const [isFoldersLoading, setIsFoldersLoading] = useState(true);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
   const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
   const [createFolderError, setCreateFolderError] = useState<string | null>(
@@ -50,6 +54,8 @@ export const FoldersProvider = ({
   const [deleteFolderError, setDeleteFolderError] = useState<string | null>(
     null
   );
+  const [sidebarOrder, setSidebarOrder] = useState<any>(null);
+  const [isSidebarOrderLoading, setIsSidebarOrderLoading] = useState(true);
 
   const api = useAxios();
 
@@ -65,10 +71,37 @@ export const FoldersProvider = ({
       setFoldersListError(
         error instanceof Error ? error.message : "Unknown error"
       );
-      console.error(error);
     } finally {
       setIsFoldersLoading(false);
     }
+  }, []);
+
+  const fetchSidebarOrder = useCallback(async () => {
+    try {
+      setIsSidebarOrderLoading(true);
+      const response = await api.get("/order/get");
+      setSidebarOrder(response.data.order);
+    } catch (error) {
+      console.error("Failed to fetch sidebar order", error);
+    } finally {
+      setIsSidebarOrderLoading(false);
+    }
+  }, []);
+
+  const saveSidebarOrder = useCallback(
+    async (order: any) => {
+      try {
+        await api.post("/reorder", { order });
+      } catch (error) {
+        console.error("Failed to save sidebar order", error);
+      }
+    },
+    [api]
+  );
+
+  useEffect(() => {
+    fetchFolders();
+    fetchSidebarOrder();
   }, []);
 
   const createFolder = useCallback(
@@ -88,7 +121,6 @@ export const FoldersProvider = ({
         setCreateFolderError(
           error instanceof Error ? error.message : "Unknown error"
         );
-        console.error(error);
       }
     },
     [api, supabase]
@@ -97,8 +129,6 @@ export const FoldersProvider = ({
   const deleteFolder = useCallback(
     async (id: string) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
         await api.delete(`/folders/${id}`);
         setFolders((prevFolders) =>
           prevFolders.filter((folder) => folder.id !== id)
@@ -107,68 +137,40 @@ export const FoldersProvider = ({
         setDeleteFolderError(
           error instanceof Error ? error.message : "Unknown error"
         );
-        console.error(error);
       }
     },
-    [api, supabase]
+    [api]
   );
 
   const addSenderToFolder = useCallback(
     async (senderId: string, folderId: string) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
-        const response = await api.post(`/folders/sender/${senderId}`, {
+        await api.post(`/folders/sender/${senderId}`, {
           folder_id: folderId,
         });
-
-        if (!response?.data?.sender) {
-          console.error("No sender returned from API");
-          return;
-        }
-
-        removeSenderFromRoot(senderId);
-
-        setFolders((prevFolders) =>
-          prevFolders.map((folder) =>
-            folder.id === folderId
-              ? {
-                ...folder,
-                senders: [...(folder.senders || []), response.data.sender],
-              }
-              : folder
-          )
-        );
       } catch (error) {
         console.error(error);
+        // Implement rollback logic if necessary
       }
     },
-    [api, supabase, removeSenderFromRoot]
+    [api]
   );
 
-  const moveSenderToRoot = (senderId: string, folderId: string) => {
-    let senderToMove: SenderType | undefined;
-
-    setFolders(prevFolders => {
-      return prevFolders.map(folder => {
-        if (folder.id === folderId) {
-          const senderIndex = folder.senders?.findIndex(s => s.id === senderId) || -1;
-          if (senderIndex !== -1 && folder.senders) {
-            senderToMove = folder.senders[senderIndex];
-            const updatedSenders = [...folder.senders];
-            updatedSenders.splice(senderIndex, 1);
-            return { ...folder, senders: updatedSenders };
-          }
+  const moveSenderToRoot = useCallback(
+    async (senderId: string) => {
+      try {
+        const response = await api.delete(`/folders/sender/${senderId}`);
+        const updatedSender = response.data.sender;
+        if (updatedSender) {
+          addSenderToRoot(updatedSender);
         }
-        return folder;
-      });
-    });
-
-    if (senderToMove) {
-      addSenderToRoot({ ...senderToMove, folder_id: undefined });
-    }
-  };
+      } catch (error) {
+        console.error(error);
+        // Implement rollback logic if necessary
+      }
+    },
+    [api, addSenderToRoot]
+  );
 
   const getSenders = useCallback(
     async (folderId: string): Promise<SenderType[]> => {
@@ -191,9 +193,6 @@ export const FoldersProvider = ({
   const renameFolder = useCallback(
     async (folderId: string, name: string) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
         await api.patch(`/folders/${folderId}`, { name });
         setFolders((prevFolders) =>
           prevFolders.map((folder) =>
@@ -204,15 +203,12 @@ export const FoldersProvider = ({
         console.error(error);
       }
     },
-    [api, supabase]
+    [api]
   );
 
   const toggleReadFolder = useCallback(
     async (folderId: string, isRead: boolean) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
         await api.patch(`/folders/read`, {
           folder_id: folderId,
           isRead: isRead,
@@ -226,12 +222,8 @@ export const FoldersProvider = ({
         console.error(error);
       }
     },
-    [api, supabase]
+    [api]
   );
-
-  useEffect(() => {
-    fetchFolders();
-  }, [fetchFolders]);
 
   return (
     <FoldersContext.Provider
@@ -250,6 +242,9 @@ export const FoldersProvider = ({
         getSenders,
         isLoadingSenders,
         toggleReadFolder,
+        sidebarOrder,
+        isSidebarOrderLoading,
+        saveSidebarOrder,
       }}
     >
       {children}

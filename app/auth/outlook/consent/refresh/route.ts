@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { google } from "googleapis";
-import { initOauthCLient } from "@/lib/oauth";
 import { createClient } from "@/utils/supabase/server";
-// Initialize Supabase client
 
 export async function GET(request: Request) {
   const supabase = await createClient();
+
   try {
     // Get the authenticated user first
     const {
@@ -18,7 +16,7 @@ export async function GET(request: Request) {
     }
 
     const cookieStore = cookies();
-    const tokensCookie = cookieStore.get("consent_tokens");
+    const tokensCookie = cookieStore.get("outlook_consent_tokens");
 
     if (!tokensCookie) {
       return NextResponse.json(
@@ -36,28 +34,49 @@ export async function GET(request: Request) {
       );
     }
 
-    const oauth2Client = initOauthCLient(
-      process.env.CLIENT_ID,
-      process.env.CLIENT_SECRET,
-      process.env.REDIRECT_URI
+    // Refresh the token using Microsoft's token endpoint
+    const tokenResponse = await fetch(
+      "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: process.env.OUTLOOK_CLIENT_ID!,
+          client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+          refresh_token: tokens.refresh_token,
+          grant_type: "refresh_token",
+        }),
+      }
     );
 
-    oauth2Client.setCredentials({
-      refresh_token: tokens.refresh_token,
+    if (!tokenResponse.ok) {
+      throw new Error("Failed to refresh token");
+    }
+
+    const newTokens = await tokenResponse.json();
+
+    // Get user info to verify email
+    const userResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: {
+        Authorization: `Bearer ${newTokens.access_token}`,
+      },
     });
 
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    oauth2Client.setCredentials(credentials);
+    if (!userResponse.ok) {
+      throw new Error("Failed to get user info");
+    }
 
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
-    const { data: userInfo } = await oauth2.userinfo.get();
+    const userInfo = await userResponse.json();
+    const email = userInfo.mail || userInfo.userPrincipalName;
 
     // Update tokens for the authenticated user
-    const { error: upsertError } = await supabase.from("gmail_tokens").upsert(
+    const { error: upsertError } = await supabase.from("outlook_tokens").upsert(
       {
-        email: userInfo.email,
+        email,
         user_email: user.email,
-        tokens: credentials,
+        tokens: newTokens,
         updated_at: new Date().toISOString(),
       },
       {
@@ -72,17 +91,17 @@ export async function GET(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      tokens: credentials,
-      email: userInfo.email,
+      tokens: newTokens,
+      email,
     });
 
     response.cookies.set({
-      name: "consent_tokens",
-      value: JSON.stringify(credentials),
+      name: "outlook_consent_tokens",
+      value: JSON.stringify(newTokens),
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
     return response;

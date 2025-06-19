@@ -1,49 +1,70 @@
-// app/api/auth/callback/gmail/route.ts (or your actual path)
-import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { initOauthCLient } from "@/lib/oauth"; // Make sure this path is correct
-import { createClient } from "@/utils/supabase/server"; // Make sure this path is correct
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  // Ensure your environment variables are prefixed with NEXT_PUBLIC_ if they need to be available client-side
-  // For server-side, regular process.env is fine.
-  const oauth2Client: any = initOauthCLient(
-    process.env.CLIENT_ID!, // Or GOOGLE_CLIENT_ID if you named it that
-    process.env.CLIENT_SECRET!, // Or GOOGLE_CLIENT_SECRET
-    process.env.REDIRECT_URI! // This should be the full URL to THIS API route
-  );
+  const clientId = process.env.OUTLOOK_CLIENT_ID!;
+  const clientSecret = process.env.OUTLOOK_CLIENT_SECRET!;
+  const redirectUri = process.env.OUTLOOK_REDIRECT_URI!;
 
   try {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
 
     if (!code) {
-      // Redirect to an error page or login page with an error message
       const errorRedirectUrl = new URL(
         "/login",
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
       );
-      errorRedirectUrl.searchParams.set("error", "oauth_no_code");
+      errorRedirectUrl.searchParams.set("error", "outlook_no_code");
       return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
 
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
+    // Exchange code for tokens
+    const tokenResponse = await fetch(
+      "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+      }
+    );
 
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
-    const { data: userInfo } = await oauth2.userinfo.get();
+    const tokens = await tokenResponse.json();
 
-    if (!userInfo || !userInfo.email) {
-      // Handle case where email is not retrieved
+    if (!tokenResponse.ok) {
+      throw new Error(`Token exchange failed: ${tokens.error_description}`);
+    }
+
+    // Get user info from Microsoft Graph
+    const userResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+      },
+    });
+
+    const userInfo = await userResponse.json();
+
+    if (!userInfo.mail && !userInfo.userPrincipalName) {
       const errorRedirectUrl = new URL(
         "/login",
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
       );
-      errorRedirectUrl.searchParams.set("error", "oauth_no_email");
+      errorRedirectUrl.searchParams.set("error", "outlook_no_email");
       return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
+
+    const email = userInfo.mail || userInfo.userPrincipalName;
+    console.log("Attempting to store tokens for email:", email);
 
     // Get the authenticated user from Supabase
     const {
@@ -60,73 +81,74 @@ export async function GET(request: Request) {
       return NextResponse.redirect(errorRedirectUrl.toString(), 302);
     }
 
-    console.log("Attempting to store tokens for email:", userInfo.email);
+    // Check for existing tokens
+    const { data: existingTokens, error: existingTokensError } = await supabase
+      .from("outlook_tokens")
+      .select("id")
+      .eq("user_email", user.email)
+      .single();
 
     // Store or update tokens in Supabase
-    await supabase.from("gmail_tokens").upsert(
+    await supabase.from("outlook_tokens").upsert(
       {
-        email: userInfo.email as string,
+        email,
         user_email: user.email,
         tokens: {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
           scope: tokens.scope,
           token_type: tokens.token_type,
-          expiry_date: tokens.expiry_date,
+          expires_in: tokens.expires_in,
+          ext_expires_in: tokens.ext_expires_in,
         },
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "user_email", // Update based on user's email instead of Gmail email
+        onConflict: "user_email", // Update based on user's email
       }
     );
 
-    // Verify token storage with user_email
+    // Verify token storage
     const { data: verifyData, error: verifyError } = await supabase
-      .from("gmail_tokens")
+      .from("outlook_tokens")
       .select("tokens")
       .eq("user_email", user.email) // Check using user's email
       .single();
 
     if (verifyError || !verifyData) {
       console.error("Token verification error:", verifyError);
-      // You might want to redirect to an error page here too,
-      // but for now, let's assume success if upsert didn't throw.
     }
 
-    // Set cookies (this part is fine)
+    // Set cookies
     const cookieStore = cookies();
     cookieStore.set({
-      name: "consent_tokens", // You might want a more specific name like "gmail_consent_tokens"
+      name: "outlook_consent_tokens",
       value: JSON.stringify(tokens),
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/", // Good to specify path
+      path: "/",
     });
 
-    // --- KEY CHANGE: REDIRECT ---
-    // Construct the redirect URL to your dashboard
-    // Make sure NEXT_PUBLIC_APP_URL is set in your .env.local (e.g., NEXT_PUBLIC_APP_URL=http://localhost:3000)
+    // Redirect to dashboard
     const dashboardUrl = new URL(
       "/dashboard",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     );
-    dashboardUrl.searchParams.set("gmail_connected", "true");
-    dashboardUrl.searchParams.set("email", userInfo.email as string);
+    dashboardUrl.searchParams.set("outlook_connected", "true");
+    dashboardUrl.searchParams.set("email", email);
 
-    return NextResponse.redirect(dashboardUrl.toString(), 302); // 302 for temporary redirect
+    return NextResponse.redirect(dashboardUrl.toString(), 302);
   } catch (error: any) {
-    console.error("OAuth Callback Error:", error.message);
+    console.error("Outlook OAuth Callback Error:", error.message);
     console.error("Full error object:", error);
 
-    // Redirect to an error page or login page with an error message
     const errorRedirectUrl = new URL(
       "/login",
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     );
-    errorRedirectUrl.searchParams.set("error", "oauth_failed");
+    errorRedirectUrl.searchParams.set("error", "outlook_oauth_failed");
     if (error.message) {
       errorRedirectUrl.searchParams.set("error_message", error.message);
     }

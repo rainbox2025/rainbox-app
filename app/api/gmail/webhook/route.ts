@@ -17,20 +17,24 @@ export async function POST(request: Request) {
 
     const { emailAddress, historyId } = decodedData;
 
-    // Fetch tokens and last history ID
-    const { data: watchData } = await supabase
+    // Get all watch records for this email
+    const { data: watchRecords, error: watchError } = await supabase
       .from("gmail_watch")
-      .select("history_id")
-      .eq("email", emailAddress)
-      .single();
+      .select("history_id, user_id")
+      .eq("email", emailAddress);
 
-    const { data: tokenData } = await supabase
+    if (watchError || !watchRecords || watchRecords.length === 0) {
+      throw new Error("No watch records found for this email");
+    }
+
+    // Then get the tokens for this email
+    const { data: tokenData, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("tokens")
       .eq("email", emailAddress)
       .single();
 
-    if (!tokenData) {
+    if (tokenError || !tokenData) {
       throw new Error("No tokens found for this email");
     }
 
@@ -43,127 +47,134 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    const history = await gmail.users.history.list({
-      userId: "me",
-      startHistoryId: watchData?.history_id || historyId,
-    });
-
-    const { data: tokenUser, error: tokenError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", emailAddress)
-      .single();
-
-    if (tokenError) {
-      console.error("Error fetching token user:", tokenError);
-      throw new Error("Failed to fetch user");
-    }
-
-    const { data: userSenders, error: sendersError } = await supabase
-      .from("senders")
-      .select(
-        `
-        id,
-        email,
-        user_id
-      `
-      )
-      .eq("mail_service", "gmail")
-      .eq("user_id", tokenUser.id);
-
-    if (sendersError) {
-      console.error("Error fetching senders:", sendersError);
-      throw new Error("Failed to fetch senders");
-    }
-
-    // Process new messages
-    const newMessages = [];
-    for (const record of history.data.history || []) {
-      for (const message of record.messagesAdded || []) {
-        if (!message.message?.id) continue;
-
-        const msg = await gmail.users.messages.get({
-          userId: "me",
-          id: message.message.id,
-          format: "full",
-        });
-
-        const headers = msg.data.payload?.headers || [];
-        const from = headers.find((h) => h.name === "From")?.value || "";
-        const subject = headers.find((h) => h.name === "Subject")?.value;
-        const date = headers.find((h) => h.name === "Date")?.value;
-
-        const senderEmail = extractEmail(from);
-        console.log("Sender email:", senderEmail);
-
-        // Check if sender is tracked and return early if not
-        const sender = userSenders?.find((s) => s.email === senderEmail);
-        if (!sender) {
-          console.log(`Skipping email: Sender ${senderEmail} not tracked`);
-          return NextResponse.json({
-            success: true,
-            message: `Skipping email: Sender ${senderEmail} not tracked`,
-            processed: 0,
+    // Process for each watch record
+    const results = await Promise.all(
+      watchRecords.map(async (watchRecord) => {
+        try {
+          const history = await gmail.users.history.list({
+            userId: "me",
+            startHistoryId: watchRecord.history_id || historyId,
           });
-        }
 
-        // Extract body
-        let body = "";
-        if (msg.data.payload?.parts) {
-          const textPart = msg.data.payload.parts.find(
-            (part) => part.mimeType === "text/plain"
-          );
-          if (textPart?.body?.data) {
-            body = Buffer.from(textPart.body.data, "base64").toString();
+          const { data: userSenders, error: sendersError } = await supabase
+            .from("senders")
+            .select("id, email, user_id")
+            .eq("mail_service", "gmail")
+            .eq("user_id", watchRecord.user_id);
+
+          if (sendersError) {
+            console.error(
+              "Error fetching senders for user:",
+              watchRecord.user_id
+            );
+            return {
+              user_id: watchRecord.user_id,
+              error: "Failed to fetch senders",
+            };
           }
-        } else if (msg.data.payload?.body?.data) {
-          body = Buffer.from(msg.data.payload.body.data, "base64").toString();
+
+          const newMessages = [];
+          for (const record of history.data.history || []) {
+            for (const message of record.messagesAdded || []) {
+              if (!message.message?.id) continue;
+
+              const msg = await gmail.users.messages.get({
+                userId: "me",
+                id: message.message.id,
+                format: "full",
+              });
+
+              const headers = msg.data.payload?.headers || [];
+              const from = headers.find((h) => h.name === "From")?.value || "";
+              const subject = headers.find((h) => h.name === "Subject")?.value;
+              const date = headers.find((h) => h.name === "Date")?.value;
+
+              const senderEmail = extractEmail(from);
+              const sender = userSenders?.find((s) => s.email === senderEmail);
+
+              if (!sender) {
+                console.log(
+                  `Skipping email for user ${watchRecord.user_id}: Sender ${senderEmail} not tracked`
+                );
+                continue;
+              }
+
+              // Extract body
+              let body = "";
+              if (msg.data.payload?.parts) {
+                const textPart = msg.data.payload.parts.find(
+                  (part) => part.mimeType === "text/plain"
+                );
+                if (textPart?.body?.data) {
+                  body = Buffer.from(textPart.body.data, "base64").toString();
+                }
+              } else if (msg.data.payload?.body?.data) {
+                body = Buffer.from(
+                  msg.data.payload.body.data,
+                  "base64"
+                ).toString();
+              }
+
+              // Save the email for this specific user
+              const { error: mailError } = await supabase.from("mails").insert({
+                user_id: watchRecord.user_id,
+                sender_id: sender.id,
+                subject: subject || null,
+                body: body || null,
+                read: false,
+                created_at: date
+                  ? new Date(date).toISOString()
+                  : new Date().toISOString(),
+              });
+
+              if (mailError) {
+                console.error(
+                  `Error saving mail for user ${watchRecord.user_id}:`,
+                  mailError
+                );
+                continue;
+              }
+
+              newMessages.push({
+                id: msg.data.id,
+                threadId: msg.data.threadId,
+                from,
+                subject,
+                date,
+                sender_id: sender.id,
+              });
+            }
+          }
+
+          // Update history ID for this watch record
+          if (history.data.historyId) {
+            await supabase
+              .from("gmail_watch")
+              .update({
+                history_id: history.data.historyId,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("email", emailAddress)
+              .eq("user_id", watchRecord.user_id);
+          }
+
+          return {
+            user_id: watchRecord.user_id,
+            processed: newMessages.length,
+            messages: newMessages,
+          };
+        } catch (error: any) {
+          return {
+            user_id: watchRecord.user_id,
+            error: error.message,
+          };
         }
-
-        // Save the email using user_id from senders
-        const { error: mailError } = await supabase.from("mails").insert({
-          user_id: sender.user_id, // Using user_id from sender
-          sender_id: sender.id,
-          subject: subject || null,
-          body: body || null,
-          read: false,
-          created_at: date
-            ? new Date(date).toISOString()
-            : new Date().toISOString(),
-        });
-
-        if (mailError) {
-          console.error("Error saving mail:", mailError);
-          continue;
-        }
-
-        newMessages.push({
-          id: msg.data.id,
-          threadId: msg.data.threadId,
-          from,
-          subject,
-          date,
-          body,
-          sender_id: sender.id,
-        });
-      }
-    }
-
-    // Update the history ID
-    if (history.data.historyId) {
-      await supabase
-        .from("gmail_watch")
-        .update({
-          history_id: history.data.historyId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("email", emailAddress);
-    }
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      messages: newMessages,
-      processedCount: newMessages.length,
+      results,
     });
   } catch (error: any) {
     console.error("Webhook error:", error);
