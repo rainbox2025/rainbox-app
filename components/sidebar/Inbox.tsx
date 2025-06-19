@@ -25,19 +25,33 @@ import {
 import { FolderType, SenderType } from "@/types/data";
 import { isEqual } from 'lodash';
 
-const SIDEBAR_ORDER_KEY = "sidebarOrder";
-
 type SidebarItem =
   | { type: 'folder', id: string; data: FolderType }
   | { type: 'sender', id: string; data: SenderType };
 
+
+type SidebarOrderType = {
+  root: string[];
+  [key: string]: string[];
+};
+
 export default function Inbox() {
-  const { folders, setFolders, isFoldersLoading, createFolder } = useFolders();
+  const {
+    folders,
+    setFolders,
+    isFoldersLoading,
+    createFolder,
+    sidebarOrder,
+    isSidebarOrderLoading,
+    saveSidebarOrder,
+    setSidebarOrder,
+    addSenderToFolder,
+    moveSenderToRoot
+  } = useFolders();
   const { senders, setSenders, isSendersLoading } = useSenders();
 
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([]);
   const [activeItem, setActiveItem] = useState<SidebarItem | null>(null);
-
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
@@ -58,15 +72,13 @@ export default function Inbox() {
     folders.forEach(folder => {
       (folder.senders || []).forEach(sender => {
         map.set(`sender-${sender.id}`, { type: 'sender', id: `sender-${sender.id}`, data: sender });
-      })
+      });
     });
     return map;
   }, [sidebarItems, folders]);
 
-  // This effect synchronizes the UI state from the context and localStorage.
-  // It's the primary way the component is built and ordered on load.
   useEffect(() => {
-    if (isFoldersLoading || isSendersLoading) return;
+    if (isFoldersLoading || isSendersLoading || isSidebarOrderLoading) return;
 
     const rootSenders = senders.filter(sender => !sender.folder_id);
 
@@ -75,28 +87,23 @@ export default function Inbox() {
       ...rootSenders.map(s => ({ type: 'sender' as const, id: `sender-${s.id}`, data: s }))
     ];
 
-    const savedOrderJSON = localStorage.getItem(SIDEBAR_ORDER_KEY);
-    if (savedOrderJSON) {
+    if (sidebarOrder) {
       try {
-        const savedOrder = JSON.parse(savedOrderJSON);
         const itemMap = new Map(initialSidebarItems.map(item => [item.id, item]));
         const orderedSidebarItems: SidebarItem[] = [];
 
-        // Apply root order
-        if (savedOrder.root) {
-          savedOrder.root.forEach((id: string) => {
+        if (sidebarOrder.root) {
+          sidebarOrder.root.forEach((id: string) => {
             if (itemMap.has(id)) {
               orderedSidebarItems.push(itemMap.get(id)!);
               itemMap.delete(id);
             }
           });
         }
-        // Add any new items that weren't in the saved order
         orderedSidebarItems.push(...Array.from(itemMap.values()));
 
-        // Apply folder order
         const orderedFolders = folders.map(folder => {
-          const folderOrder = savedOrder[folder.id];
+          const folderOrder = sidebarOrder[folder.id];
           if (folderOrder && folder.senders) {
             const senderMap = new Map(folder.senders.map(s => [s.id, s]));
             const orderedSenders: SenderType[] = [];
@@ -112,7 +119,6 @@ export default function Inbox() {
           return folder;
         });
 
-        // Only update state if something has actually changed
         if (!isEqual(sidebarItems, orderedSidebarItems)) {
           setSidebarItems(orderedSidebarItems);
         }
@@ -120,35 +126,51 @@ export default function Inbox() {
           setFolders(orderedFolders);
         }
       } catch (e) {
-        console.error("Failed to parse sidebar order from localStorage", e);
-        setSidebarItems(initialSidebarItems); // Fallback to default order
+        console.error("Failed to apply sidebar order", e);
+        setSidebarItems(initialSidebarItems);
       }
     } else {
       setSidebarItems(initialSidebarItems);
     }
+  }, [folders, senders, sidebarOrder, isFoldersLoading, isSendersLoading, isSidebarOrderLoading, setFolders]);
 
-  }, [folders, senders, isFoldersLoading, isSendersLoading]);
-
-
-  const saveOrderToLocalStorage = (currentFolders: FolderType[], currentSidebarItems: SidebarItem[]) => {
+  const saveOrderToBackend = (currentFolders: FolderType[], currentSidebarItems: SidebarItem[]) => {
     const orderToSave: { [key: string]: any } = {
       root: currentSidebarItems.map(item => item.id)
     };
     currentFolders.forEach(folder => {
-      // Only include the folder in storage if it's not empty
       if (folder.senders && folder.senders.length > 0) {
         orderToSave[folder.id] = folder.senders.map(s => s.id);
       }
     });
-    localStorage.setItem(SIDEBAR_ORDER_KEY, JSON.stringify(orderToSave));
+    saveSidebarOrder(orderToSave);
   };
 
   useEffect(() => {
     if (!isFoldersLoading) {
-      const initialExpandedState = folders.reduce(
-        (acc, folder) => ({ ...acc, [folder.id]: folder.isExpanded || false }), {}
-      );
-      setExpandedFolders(initialExpandedState);
+      // Use the functional update form of setState to safely access the previous state.
+      setExpandedFolders(prevExpanded => {
+        const newExpandedState = { ...prevExpanded };
+        const currentFolderIds = new Set(folders.map(f => f.id));
+
+        // 1. Add any new folders that aren't in our state yet, preserving their default
+        folders.forEach(folder => {
+          if (newExpandedState[folder.id] === undefined) {
+            newExpandedState[folder.id] = folder.isExpanded || false;
+          }
+        });
+
+        // 2. (Optional but good practice) Remove any folders from our state that no longer exist
+        Object.keys(newExpandedState).forEach(folderId => {
+          if (!currentFolderIds.has(folderId)) {
+            delete newExpandedState[folderId];
+          }
+        });
+
+        // 3. Only return a new object if the state has actually changed.
+        // The `isEqual` function is already imported in your file.
+        return isEqual(prevExpanded, newExpandedState) ? prevExpanded : newExpandedState;
+      });
     }
   }, [folders, isFoldersLoading]);
 
@@ -160,9 +182,7 @@ export default function Inbox() {
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const item = itemsById.get(active.id as string);
-    if (item) {
-      setActiveItem(item);
-    }
+    if (item) setActiveItem(item);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -176,19 +196,29 @@ export default function Inbox() {
     const activeItem = itemsById.get(activeId);
     if (!activeItem) return;
 
-    // SCENARIO 1: A FOLDER IS BEING DRAGGED
     if (activeItem.type === 'folder') {
       const oldIndex = sidebarItems.findIndex(item => item.id === activeId);
       const newIndex = sidebarItems.findIndex(item => item.id === overId);
       if (oldIndex !== -1 && newIndex !== -1) {
         const newSidebarOrder = arrayMove(sidebarItems, oldIndex, newIndex);
         setSidebarItems(newSidebarOrder);
-        saveOrderToLocalStorage(folders, newSidebarOrder);
+        // Note: We need to update the `sidebarOrder` state here too for consistency.
+        const orderToSave: SidebarOrderType = { // <--- Apply the type here
+          root: newSidebarOrder.map(item => item.id)
+        };
+        folders.forEach(folder => {
+          if (folder.senders && folder.senders.length > 0) {
+            // Use sidebarOrder to get the existing folder order if available
+            const existingOrder = sidebarOrder?.[folder.id] || folder.senders.map(s => s.id);
+            orderToSave[folder.id] = existingOrder;
+          }
+        });
+        setSidebarOrder(orderToSave);
+        saveSidebarOrder(orderToSave);
       }
       return;
     }
 
-    // SCENARIO 2: A SENDER IS BEING DRAGGED
     if (activeItem.type === 'sender') {
       const sender = activeItem.data;
       const sourceFolderId = sender.folder_id;
@@ -197,93 +227,113 @@ export default function Inbox() {
       const activeContainer = active.data.current?.sortable.containerId;
       const overContainer = overData?.sortable?.containerId ?? (overData?.type === 'folder' ? `folder-${overData.folder.id}` : 'root');
 
-      // SUB-SCENARIO 2A: Reordering within the same container
       if (activeContainer === overContainer) {
+        let newSidebarItems = sidebarItems;
+        let newFolders = folders;
+
         if (activeContainer === 'root') {
-          const oldIndex = sidebarItems.findIndex(item => item.id === activeId);
-          const newIndex = sidebarItems.findIndex(item => item.id === overId);
-          const newSidebarOrder = arrayMove(sidebarItems, oldIndex, newIndex);
-          setSidebarItems(newSidebarOrder);
-          saveOrderToLocalStorage(folders, newSidebarOrder);
-        } else { // Reordering inside a folder
+          const oldIndex = sidebarItems.findIndex(item => item.id === active.id);
+          const newIndex = sidebarItems.findIndex(item => item.id === over.id);
+          if (oldIndex !== -1 && newIndex !== -1) {
+            newSidebarItems = arrayMove(sidebarItems, oldIndex, newIndex);
+            setSidebarItems(newSidebarItems);
+          }
+        } else {
           const folderId = activeContainer.replace('folder-', '');
-          const newFolders = folders.map(f => {
+          newFolders = folders.map(f => {
             if (f.id === folderId && f.senders) {
-              const oldIndex = f.senders.findIndex(s => `sender-${s.id}` === activeId);
-              const newIndex = f.senders.findIndex(s => `sender-${s.id}` === overId);
+              const oldIndex = f.senders.findIndex(s => `sender-${s.id}` === active.id);
+              const newIndex = f.senders.findIndex(s => `sender-${s.id}` === over.id);
               if (oldIndex !== -1 && newIndex !== -1) {
-                return { ...f, senders: arrayMove(f.senders, oldIndex, newIndex) };
+                const reorderedSenders = arrayMove(f.senders, oldIndex, newIndex);
+                return { ...f, senders: reorderedSenders };
               }
             }
             return f;
           });
           setFolders(newFolders);
-          saveOrderToLocalStorage(newFolders, sidebarItems);
         }
+
+        const orderToSave: SidebarOrderType = { // <--- Apply the type here
+          root: newSidebarItems.map(item => item.id)
+        };
+        newFolders.forEach(folder => {
+          if (folder.senders && folder.senders.length > 0) {
+            orderToSave[folder.id] = folder.senders.map(s => s.id);
+          }
+        });
+
+        setSidebarOrder(orderToSave);
+        saveSidebarOrder(orderToSave);
+
       } else {
-        // SUB-SCENARIO 2B: Moving between different containers (folder/root)
         let newFolders = [...folders];
         let newSidebar = [...sidebarItems];
         let movedSender = { ...sender };
 
-        // Step 1: Remove sender from its source
         if (sourceFolderId) {
-          // Remove from source folder
-          newFolders = newFolders.map(f => {
-            if (f.id === sourceFolderId) {
-              return { ...f, senders: f.senders?.filter(s => s.id !== sender.id) ?? [] };
-            }
-            return f;
-          });
+          newFolders = newFolders.map(f =>
+            f.id === sourceFolderId
+              ? { ...f, senders: f.senders?.filter(s => s.id !== sender.id) ?? [] }
+              : f
+          );
         } else {
-          // Remove from root
-          newSidebar = newSidebar.filter(item => item.id !== activeId);
+          newSidebar = newSidebar.filter(item => item.id !== active.id);
         }
 
-        // Step 2: Add sender to its destination
-        const isDroppingOnFolder = overData?.type === 'folder';
+        const isDroppingOnFolder = overData?.type === 'folder' || overContainer.startsWith('folder-');
         if (isDroppingOnFolder) {
-          const targetFolderId = overData.folder.id;
+          const targetFolderId = overContainer.replace('folder-', '');
           movedSender.folder_id = targetFolderId;
+          const overSenderId = over.id.toString();
+
           newFolders = newFolders.map(f => {
             if (f.id === targetFolderId) {
-              const existingSenders = f.senders || [];
-              if (!existingSenders.some(s => s.id === movedSender.id)) {
-                return { ...f, senders: [...existingSenders, movedSender] };
-              }
+              const existingSenders = f.senders ? [...f.senders] : [];
+              const overIndex = existingSenders.findIndex(s => `sender-${s.id}` === overSenderId);
+              existingSenders.splice(overIndex >= 0 ? overIndex : existingSenders.length, 0, movedSender);
+              return { ...f, senders: existingSenders };
             }
             return f;
           });
-        } else { // Dropping on root
-          // --- THIS IS THE FIX ---
-          // Changed `null` to `undefined` to match the SenderType definition.
+          addSenderToFolder(sender.id, targetFolderId);
+        } else {
           movedSender.folder_id = undefined;
-          const overIndex = newSidebar.findIndex(item => item.id === overId);
-          if (overIndex !== -1) {
-            newSidebar.splice(overIndex, 0, { type: 'sender', id: activeId, data: movedSender });
-          } else {
-            newSidebar.push({ type: 'sender', id: activeId, data: movedSender });
-          }
+          const overIndex = newSidebar.findIndex(item => item.id === over.id);
+          newSidebar.splice(overIndex >= 0 ? overIndex : newSidebar.length, 0, { type: 'sender', id: active.id as string, data: movedSender });
+          moveSenderToRoot(sender.id);
         }
 
-        // Step 3: Update the master 'senders' list to reflect the new folder_id
         const newSenders = senders.map(s => s.id === movedSender.id ? movedSender : s);
 
-        // Step 4: Atomically update all states
         setSenders(newSenders);
         setFolders(newFolders);
         setSidebarItems(newSidebar);
-        saveOrderToLocalStorage(newFolders, newSidebar);
+
+        const newOrder: SidebarOrderType = { // <--- Apply the type here
+          root: newSidebar.map(item => item.id)
+        };
+        newFolders.forEach(folder => {
+          if (folder.senders && folder.senders.length > 0) {
+            newOrder[folder.id] = folder.senders.map(s => s.id);
+          }
+        });
+
+        setSidebarOrder(newOrder);
+        saveSidebarOrder(newOrder);
       }
     }
   };
+
 
   const totalCount = senders.reduce((total, sender) => total + (sender.count || 0), 0)
     + folders.reduce((total, folder) => total + (folder.count || 0), 0);
 
   const rootItemIds = useMemo(() => sidebarItems.map(item => item.id), [sidebarItems]);
 
-  if (isFoldersLoading || isSendersLoading) {
+  const isLoading = isFoldersLoading || isSendersLoading || isSidebarOrderLoading;
+
+  if (isLoading) {
     return (
       <div className="flex-1 text-foreground rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">

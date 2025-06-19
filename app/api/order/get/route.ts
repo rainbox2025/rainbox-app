@@ -1,3 +1,4 @@
+// api/order/get/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
@@ -5,7 +6,6 @@ export async function GET(request: Request) {
   const supabase = await createClient();
 
   try {
-    // Get the authenticated user
     const {
       data: { user },
       error: authError,
@@ -14,7 +14,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Fetch order data for the user
     const { data: orderData, error: orderError } = await supabase
       .from("sidebar_order")
       .select("order")
@@ -22,7 +21,6 @@ export async function GET(request: Request) {
       .single();
 
     if (orderError) {
-      // Return empty order if none exists yet
       if (orderError.code === "PGRST116") {
         return NextResponse.json({ order: null });
       }

@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { Bookmark as BookmarkType, useBookmarks } from '@/context/bookmarkContext';
 import { useMails } from '@/context/mailsContext';
 import { useSenders } from '@/context/sendersContext';
-import { SenderType } from '@/types/data'; // Assuming SenderType is exported from here
-import { MessageSquareText, Tags, Bookmark as BookmarkIconLucide } from 'lucide-react';
+import { SenderType } from '@/types/data';
+import { Bookmark as BookmarkIconLucide } from 'lucide-react';
 import { ChatBubbleBottomCenterIcon, TagIcon } from '@heroicons/react/24/outline';
 
 interface Props {
@@ -25,20 +25,16 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
 
   let resolvedSender: SenderType | null | undefined = null;
   if (mailObject) {
-    // Prioritize sender object directly attached to the mail item if available
     if (mailObject.sender) {
       resolvedSender = mailObject.sender;
     } else if (mailObject.sender_id) {
-      // Fallback to looking up sender_id in the global senders list
       resolvedSender = senders.find(s => s.id === mailObject.sender_id);
     }
   }
 
   const title = mailObject?.subject || bookmark.text.substring(0, 70) + (bookmark.text.length > 70 ? '...' : '');
-
-  // Determine sender name and domain, with fallbacks
   const mailSenderName = resolvedSender?.name || (mailObject ? "Unknown Sender" : "Web Highlight");
-  const mailSenderDomain = resolvedSender?.domain; // Will be undefined if not a mail or sender has no domain
+  const mailSenderDomain = resolvedSender?.domain;
 
   const handleCommentClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -52,75 +48,81 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
     showTagModal(bookmark.id, buttonRect);
   };
 
-  const handleToggleBookmarkClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleRemoveBookmarkClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    removeBookmark(bookmark.id); // "Toggle" for an existing bookmark means removing it
+    removeBookmark(bookmark.id);
   };
+
+  console.log("bookmark: ", bookmark)
 
   return (
     <div
       key={bookmark.id}
       onClick={onSelect}
       className={cn(
-        // This line is responsible for the default bottom border
         "flex flex-col border-b right-[-3px] w-[99%] border-border p-sm px-md cursor-pointer relative group",
-        isSelected && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300 ",
+        isSelected && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300",
       )}
     >
-      {/* Always visible Bookmark button */}
-      <div className="absolute bottom-2 right-4 flex z-10 space-x-1">
-
-
-        {/* Hover-only buttons */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-          {/* <p>notes count</p>
-          <p>tags count</p> */}
-        </div>
+      <div className="absolute bottom-2 right-4 flex items-center z-10 space-x-1 opacity-100 transition-opacity">
+        {/* {bookmark.comment && (
+          <button
+            className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
+            onClick={handleCommentClick}
+            title="View/Edit Comment"
+          >
+            <ChatBubbleBottomCenterIcon className="w-4 h-4" />
+          </button>
+        )}
+        {(bookmark.tags && bookmark.tags.length > 0) && (
+          <button
+            className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
+            onClick={handleTagsClick}
+            title="View/Edit Tags"
+          >
+            <TagIcon className="w-4 h-4" />
+          </button>
+        )} */}
         <button
-          className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors"
-          onClick={handleToggleBookmarkClick}
+          className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
+          onClick={handleRemoveBookmarkClick}
           title="Remove Bookmark"
         >
-          <BookmarkIconLucide
-            fill="currentColor"
-            className="w-4 h-4 text-muted-foreground"
-          />
+          <BookmarkIconLucide className="w-4 h-4 fill-muted-foreground" />
         </button>
       </div>
 
-
-      {/* Content Area: Mimics MailItem structure */}
-      <div className="pr-12"> {/* Padding to avoid overlap with absolute positioned hover buttons */}
+      <div className="pr-16">
         <h2
           className={cn(
-            "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold", // Base style from MailItem
-            !isSelected && "text-muted-foreground" // If not selected, mute title (similar to a "read" mail)
+            "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold",
+            !isSelected && "text-muted-foreground"
           )}
         >
           {title}
         </h2>
         <div
           className={cn(
-            "flex flex-row items-center text-sm", // Base style from MailItem
-            !isSelected && "text-muted-foreground" // If not selected, mute meta text (similar to a "read" mail)
+            "flex flex-row items-center text-sm",
+            !isSelected && "text-muted-foreground"
           )}
         >
-          {mailSenderDomain ? ( // If it's an email with a known domain, show favicon
+          {mailSenderDomain ? (
             <img
               src={
                 mailSenderDomain === "gmail.com"
-                  ? "/gmail.webp" // Ensure this path is correct
+                  ? "/gmail.webp"
                   : `https://www.google.com/s2/favicons?domain=${mailSenderDomain}&sz=128`
               }
               alt={mailSenderName}
               className="w-4 h-4 object-cover mr-2"
             />
-          ) : !mailObject && bookmark.text ? ( // If not an email (e.g., web highlight), show generic bookmark icon
+          ) : !mailObject && bookmark.text ? (
             <BookmarkIconLucide className="w-4 h-4 object-cover mr-2 text-muted-foreground" />
-          ) : null /* No icon if it's an email but domain is unknown, or other cases */
+          ) : null
           }
           <span className="mr-2">{mailSenderName}</span>
-          <span className="text-xs text-muted-foreground"> {/* Date is always muted */}
+          <span className="text-xs text-muted-foreground">
             {moment(bookmark.createdAt).fromNow()}
           </span>
         </div>

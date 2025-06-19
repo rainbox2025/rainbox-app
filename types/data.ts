@@ -46,6 +46,7 @@ export interface Mail {
   body: string;
   read: boolean;
   bookmarked: boolean;
+  is_confirmed?: boolean;
 }
 export interface Feed {
   id: string;

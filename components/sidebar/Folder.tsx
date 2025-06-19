@@ -58,18 +58,26 @@ export default function FolderComponent({
     data: { type: 'folder', folder }
   });
 
+
+  const isDropTarget = isOver && activeItem?.type === 'sender';
+
+  // --- FIX START ---
+  // The logic is now more specific.
+  // We only disable the `transform` if this folder is the *specific* drop target
+  // for a sender. Otherwise, the transform is applied, allowing the folder to
+  // move correctly when other items are being sorted around it.
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDropTarget ? undefined : CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
 
   const combinedRef = (node: HTMLDivElement) => {
     setNodeRef(node);
     setDroppableNodeRef(node);
   };
 
-  const isDropTarget = isOver && activeItem?.type === 'sender';
 
   const isFolderActive = activeFolder === folder.id;
 
