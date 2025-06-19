@@ -8,6 +8,8 @@ interface BasicModalProps {
   onSave: (value: string) => Promise<void> | void;
   initialValue?: string;
   title: string;
+  isLoading: boolean;
+
 }
 
 export const BasicModal: React.FC<BasicModalProps> = ({
@@ -15,10 +17,10 @@ export const BasicModal: React.FC<BasicModalProps> = ({
   onClose,
   onSave,
   initialValue = '',
-  title
+  title,
+  isLoading,
 }) => {
   const [value, setValue] = React.useState(initialValue);
-  const [isLoading, setIsLoading] = React.useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,15 +31,13 @@ export const BasicModal: React.FC<BasicModalProps> = ({
   }, [isOpen, initialValue]);
 
   const handleSave = async () => {
-    if (value.trim()) {
-      setIsLoading(true);
+    if (value.trim() && !isLoading) {
       try {
         await onSave(value.trim());
-        onClose();
+        onClose(); // Only close on success
       } catch (error) {
         console.error("Error saving:", error);
-      } finally {
-        setIsLoading(false);
+        // Modal stays open on error
       }
     }
   };
@@ -45,7 +45,7 @@ export const BasicModal: React.FC<BasicModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]  !mt-0">
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

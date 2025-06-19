@@ -92,7 +92,7 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
   const hasChanges = title !== sender.name || !!iconFile || folderId !== (sender.folder_id || '');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]  !mt-0">
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

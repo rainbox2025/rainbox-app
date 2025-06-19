@@ -44,6 +44,7 @@ export default function Inbox() {
     sidebarOrder,
     isSidebarOrderLoading,
     saveSidebarOrder,
+    isCreatingFolder,
     setSidebarOrder,
     addSenderToFolder,
     moveSenderToRoot
@@ -415,11 +416,9 @@ export default function Inbox() {
         <BasicModal
           isOpen={isFolderModalOpen}
           onClose={() => setIsFolderModalOpen(false)}
-          onSave={(folderName) => {
-            createFolder(folderName);
-            setIsFolderModalOpen(false);
-          }}
+          onSave={createFolder}
           title="Create New Folder"
+          isLoading={isCreatingFolder}
         />
       </div>
       <DragOverlay>

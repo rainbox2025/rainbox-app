@@ -35,6 +35,7 @@ export interface FolderType {
   senders?: SenderType[];
   order?: number;
   isRead?: boolean;
+  notification?: boolean;
 }
 export interface Mail {
   id: string;

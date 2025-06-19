@@ -7,8 +7,10 @@ interface DeleteConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => Promise<void> | void;
   itemName: string;
-  itemType: 'folder' | 'sender' | 'markasread' | 'markasunread' | 'tag'; // Added 'tag'
+  itemType: 'folder' | 'sender' | 'markasread' | 'markasunread' | 'tag' | 'mutenotification' | 'unmutenotification'; // Added 'tag'
   showUnfollowOption?: boolean;
+  isLoading: boolean;
+  onUnfollowChange?: (isChecked: boolean) => void;
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -17,12 +19,10 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   onConfirm,
   itemName,
   itemType,
-  showUnfollowOption // Note: showUnfollowOption is not used for 'tag' type
+  showUnfollowOption,
+  isLoading,
+  onUnfollowChange,
 }) => {
-  const [isLoading, setIsLoading] = React.useState(false);
-  // Removed isUnfollowChecked state as it's not relevant for all types directly in this generic modal
-  // If needed specifically for 'folder' that has feeds, it should be managed by the calling component or passed in.
-  // For simplicity here, I'm assuming 'showUnfollowOption' is mostly for 'folder' or 'sender' types where it makes sense.
 
   if (!isOpen) return null;
 
@@ -56,6 +56,21 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           confirmText: "Mark as Unread",
           confirmClass: "bg-primary text-primary-foreground hover:bg-primary/80"
         };
+      case 'mutenotification':
+        return {
+          title: "Mute Notifications",
+          description: `Are you sure you want to mute notifications for "${itemName}"?`,
+          confirmText: "Mute",
+          confirmClass: "bg-destructive text-destructive-foreground hover:bg-destructive/80"
+        };
+      case 'unmutenotification':
+        return {
+          title: "Unmute Notifications",
+          description: `Are you sure you want to unmute notifications for "${itemName}"?`,
+          confirmText: "Unmute",
+          confirmClass: "bg-primary text-primary-foreground hover:bg-primary/80"
+        };
+
       case 'tag': // New case for tags
         return {
           title: "Delete Tag",
@@ -76,20 +91,20 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   const { title, description, confirmText, confirmClass } = getModalContent();
 
   const handleConfirm = async () => {
-    setIsLoading(true);
+    // The parent now controls the loading state. This function just calls onConfirm.
     try {
       await onConfirm();
-      onClose(); // Close modal on successful confirmation
+      // Only close if the confirm was successful.
+      // If onConfirm throws an error, this line won't be reached.
+      onClose();
     } catch (error) {
       console.error("Error confirming action:", error);
-      // Potentially show an error message to the user
-    } finally {
-      setIsLoading(false);
+      // The modal stays open on error. The context can show an error message.
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-screen h-screen !mt-0">
       <AnimatePresence>
         {isOpen && ( // Ensure motion div is only rendered when isOpen is true for exit animation
           <motion.div
@@ -125,20 +140,17 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
               <p className="text-sm mb-4">{description}</p>
 
-              {/* Conditional rendering for 'unfollow all feeds' checkbox - only for relevant itemTypes */}
-              {/* This example assumes showUnfollowOption is true AND itemType is 'folder' */}
-              {/* You might need more complex logic or pass a different prop if this checkbox is for multiple types */}
+
               {itemType === 'folder' && showUnfollowOption && (
                 <div className="mb-4">
                   <label className="inline-flex items-center">
                     <input
                       type="checkbox"
-                      // checked={isUnfollowChecked} // This state would need to be passed in or handled differently
-                      // onChange={() => setIsUnfollowChecked(!isUnfollowChecked)}
+                      onChange={(e) => onUnfollowChange?.(e.target.checked)} // <-- Use the new prop
                       className="form-checkbox h-3 w-3 text-blue-600 
-                                 bg-gray-100 border-gray-300 rounded 
-                                 dark:bg-gray-700 dark:border-gray-600 
-                                 dark:checked:bg-blue-500"
+          bg-gray-100 border-gray-300 rounded 
+          dark:bg-gray-700 dark:border-gray-600 
+          dark:checked:bg-blue-500"
                     />
                     <span className="ml-2 text-muted-foreground text-sm cursor-pointer">
                       Unfollow all feeds in this folder
@@ -174,6 +186,6 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
