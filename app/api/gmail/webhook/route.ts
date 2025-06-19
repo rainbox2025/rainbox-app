@@ -10,10 +10,13 @@ export async function POST(request: Request) {
     const data = await request.json();
     const { message } = data;
 
+    console.log("Received webhook message:", message);
+
     // Decode the message data from Pub/Sub
     const decodedData = JSON.parse(
       Buffer.from(message.data, "base64").toString()
     );
+    console.log("Decoded Pub/Sub data:", decodedData);
 
     const { emailAddress, historyId } = decodedData;
 
@@ -24,19 +27,49 @@ export async function POST(request: Request) {
       .eq("email", emailAddress);
 
     if (watchError || !watchRecords || watchRecords.length === 0) {
+      console.error(
+        "No watch records found for this email:",
+        emailAddress,
+        watchError
+      );
       throw new Error("No watch records found for this email");
     }
+    console.log(
+      `Found ${watchRecords.length} watch records for email: ${emailAddress}`
+    );
 
     // Then get the tokens for this email
-    const { data: tokenData, error: tokenError } = await supabase
+    const { data: tokenRows, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("tokens")
-      .eq("email", emailAddress)
-      .single();
+      .eq("email", emailAddress);
 
-    if (tokenError || !tokenData) {
+    if (tokenError || !tokenRows || tokenRows.length === 0) {
+      console.error(
+        "No tokens found for this email:",
+        emailAddress,
+        tokenError
+      );
       throw new Error("No tokens found for this email");
     }
+
+    // Pick the token with the longest expiry_date
+    const tokenData = tokenRows.reduce((latest, row) => {
+      if (
+        row.tokens.expiry_date &&
+        (!latest.tokens.expiry_date ||
+          row.tokens.expiry_date > latest.tokens.expiry_date)
+      ) {
+        return row;
+      }
+      return latest;
+    }, tokenRows[0]);
+
+    if (!tokenData) {
+      console.error("No valid tokens found for this email:", emailAddress);
+      throw new Error("No valid tokens found for this email");
+    }
+    console.log("Using token with expiry:", tokenData.tokens.expiry_date);
 
     const oauth2Client = initOauthCLient(
       process.env.CLIENT_ID,
@@ -51,10 +84,23 @@ export async function POST(request: Request) {
     const results = await Promise.all(
       watchRecords.map(async (watchRecord) => {
         try {
+          console.log(
+            `Processing user_id: ${watchRecord.user_id}, history_id: ${watchRecord.history_id}`
+          );
+
           const history = await gmail.users.history.list({
             userId: "me",
             startHistoryId: watchRecord.history_id || historyId,
           });
+
+          if (!history.data.history) {
+            console.log(`No history found for user_id: ${watchRecord.user_id}`);
+            return {
+              user_id: watchRecord.user_id,
+              processed: 0,
+              messages: [],
+            };
+          }
 
           const { data: userSenders, error: sendersError } = await supabase
             .from("senders")
@@ -65,7 +111,8 @@ export async function POST(request: Request) {
           if (sendersError) {
             console.error(
               "Error fetching senders for user:",
-              watchRecord.user_id
+              watchRecord.user_id,
+              sendersError
             );
             return {
               user_id: watchRecord.user_id,
@@ -135,6 +182,15 @@ export async function POST(request: Request) {
                 continue;
               }
 
+              console.log(`Saved mail for user ${watchRecord.user_id}:`, {
+                id: msg.data.id,
+                threadId: msg.data.threadId,
+                from,
+                subject,
+                date,
+                sender_id: sender.id,
+              });
+
               newMessages.push({
                 id: msg.data.id,
                 threadId: msg.data.threadId,
@@ -156,6 +212,10 @@ export async function POST(request: Request) {
               })
               .eq("email", emailAddress)
               .eq("user_id", watchRecord.user_id);
+
+            console.log(
+              `Updated history_id for user ${watchRecord.user_id} to ${history.data.historyId}`
+            );
           }
 
           return {
@@ -164,6 +224,7 @@ export async function POST(request: Request) {
             messages: newMessages,
           };
         } catch (error: any) {
+          console.error(`Error processing user ${watchRecord.user_id}:`, error);
           return {
             user_id: watchRecord.user_id,
             error: error.message,
@@ -171,6 +232,8 @@ export async function POST(request: Request) {
         }
       })
     );
+
+    console.log("Webhook processing complete. Results:", results);
 
     return NextResponse.json({
       success: true,
