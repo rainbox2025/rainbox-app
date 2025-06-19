@@ -17,6 +17,8 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
     senders.find(sender => sender.id === mail.sender_id) ||
     { name: "Unknown Sender", domain: "unknown.com" };
 
+
+  console.log("mail: ", mail)
   return (
     <div
       key={mail.id}
@@ -48,7 +50,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         </button>
 
         {/* Bookmark icon: always if true, else only on hover */}
-        {mail.bookmarked ? (
+        {(mail.bookmarked || mail.is_confirmed) ? (
           <button
             className="p-xs rounded-full hover:bg-content/80 transition-colors"
             onClick={(e) => {

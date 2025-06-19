@@ -17,18 +17,19 @@ const BookmarkPage = () => {
   const api = useAxios();
 
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
+  const [isFetchingMail, setIsFetchingMail] = useState(false);
   const [readerWidth, setReaderWidth] = useState(50);
   const [listVisible, setListVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log("mailFromContext: ", mailFromContext)
+    const showReader = mailFromContext || isFetchingMail;
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) {
-        setListVisible(!mailFromContext);
+        setListVisible(!showReader);
       } else {
         setListVisible(true);
       }
@@ -36,36 +37,51 @@ const BookmarkPage = () => {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [mailFromContext]);
+  }, [mailFromContext, isFetchingMail]);
 
   useEffect(() => {
-    if (!mailFromContext) {
+    const showReader = mailFromContext || isFetchingMail;
+    if (!showReader) {
       setListVisible(true);
     } else if (isMobile) {
       setListVisible(false);
     }
-  }, [mailFromContext, isMobile]);
+  }, [mailFromContext, isMobile, isFetchingMail]);
+
 
   const bookmarksToDisplay = allBookmarksFromContext;
 
   const handleSelectBookmark = async (bookmarkToOpen: BookmarkType) => {
     setSelectedBookmarkInList(bookmarkToOpen);
+    setSelectedMail(null); // Clear previous mail to trigger loading state
 
     if (!bookmarkToOpen.mailId) {
       console.warn(`Bookmark ${bookmarkToOpen.id} has no mailId.`);
-      setSelectedMail(null);
       return;
     }
 
     let mailToDisplay = mails.find(mail => mail.id === bookmarkToOpen.mailId);
 
-
     if (mailToDisplay) {
       setSelectedMail(mailToDisplay);
     } else {
-      console.warn(`Could not retrieve mail for bookmark ${bookmarkToOpen.id}`);
-      setSelectedMail(null);
+      // If mail is not in context, fetch it individually
+      setIsFetchingMail(true);
+      try {
+        const response = await api.get<Mail>(`/mails/${bookmarkToOpen.mailId}`);
+        setSelectedMail(response.data);
+      } catch (error) {
+        console.error(`Failed to fetch mail details for ${bookmarkToOpen.mailId}:`, error);
+        setSelectedMail(null); // Ensure mail is null on error
+      } finally {
+        setIsFetchingMail(false);
+      }
     }
+  };
+
+  const handleBack = () => {
+    setSelectedBookmarkInList(null);
+    setSelectedMail(null);
   };
 
   if (isLoadingBookmarks || isMailsLoading) {
@@ -76,13 +92,15 @@ const BookmarkPage = () => {
     );
   }
 
+  const showReader = selectedBookmarkInList && (mailFromContext || isFetchingMail);
+
   return (
     <div className="flex min-w-fit h-screen overflow-x-auto" ref={containerRef}>
       <div
         className={`flex flex-col h-full transition-all duration-300 ease-in-out
           ${listVisible ? 'block' : 'hidden md:block'}
-          ${mailFromContext ? 'md:w-[50%]' : 'w-full md:w-[calc(100%-1px)]'}`}
-        style={{ width: mailFromContext && !isMobile ? `${100 - readerWidth}%` : '100%' }}
+          ${showReader ? 'md:w-[50%]' : 'w-full md:w-[calc(100%-1px)]'}`}
+        style={{ width: showReader && !isMobile ? `${100 - readerWidth}%` : '100%' }}
       >
         <div className="flex items-center flex-1 min-w-0 h-header p-2 border-b border-border">
           <button
@@ -118,19 +136,20 @@ const BookmarkPage = () => {
         </div>
       </div>
 
-      {/* --- THIS IS THE FIX --- */}
-      {/* Use the logical AND (&&) for proper conditional rendering */}
-      {mailFromContext && (
-        <MailReader
-          containerRef={containerRef}
-          mailReaderWidth={readerWidth}
-          setMailReaderWidth={setReaderWidth}
-          onBack={() => {
-            setSelectedBookmarkInList(null);
-            setSelectedMail(null);
-          }}
-          mail={mailFromContext}
-        />
+      {showReader && (
+        isFetchingMail ? (
+          <div className="flex-grow flex justify-center items-center" style={{ width: !isMobile ? `${readerWidth}%` : '100%' }}>
+            <Loader2 className="animate-spin w-8 h-8 text-primary" />
+          </div>
+        ) : mailFromContext && (
+          <MailReader
+            containerRef={containerRef}
+            mailReaderWidth={readerWidth}
+            setMailReaderWidth={setReaderWidth}
+            onBack={handleBack}
+            mail={mailFromContext}
+          />
+        )
       )}
     </div>
   );

@@ -53,6 +53,8 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
     removeBookmark(bookmark.id);
   };
 
+  console.log("bookmark: ", bookmark)
+
   return (
     <div
       key={bookmark.id}
@@ -62,8 +64,8 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
         isSelected && "bg-blue-300/20 border-[1.5px] rounded-md border-blue-300",
       )}
     >
-      <div className="absolute bottom-2 right-4 flex items-center z-10 space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {bookmark.comment && (
+      <div className="absolute bottom-2 right-4 flex items-center z-10 space-x-1 opacity-100 transition-opacity">
+        {/* {bookmark.comment && (
           <button
             className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
             onClick={handleCommentClick}
@@ -80,13 +82,13 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
           >
             <TagIcon className="w-4 h-4" />
           </button>
-        )}
+        )} */}
         <button
           className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
           onClick={handleRemoveBookmarkClick}
           title="Remove Bookmark"
         >
-          <BookmarkIconLucide className="w-4 h-4" />
+          <BookmarkIconLucide className="w-4 h-4 fill-muted-foreground" />
         </button>
       </div>
 
