@@ -30,6 +30,7 @@ interface FoldersContextType {
   isLoadingSenders: boolean;
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
   sidebarOrder: any;
+  setSidebarOrder: Dispatch<SetStateAction<any>>;
   isSidebarOrderLoading: boolean;
   saveSidebarOrder: (order: any) => Promise<void>;
 }
@@ -243,6 +244,7 @@ export const FoldersProvider = ({
         isLoadingSenders,
         toggleReadFolder,
         sidebarOrder,
+        setSidebarOrder,
         isSidebarOrderLoading,
         saveSidebarOrder,
       }}
