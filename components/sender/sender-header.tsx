@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+"use client";
+import React, { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -7,12 +8,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMails } from "@/context/mailsContext";
-import { XIcon, RefreshCcw, CheckIcon, MoreHorizontal, Menu, X } from "lucide-react"; // Import Menu and X
+import { RefreshCcw, CheckIcon, MoreHorizontal, Menu, X } from "lucide-react";
 import { useSenders } from "@/context/sendersContext";
+import { useFolders } from "@/context/foldersContext";
+import { useSidebar } from "@/context/sidebarContext";
 import { SenderDropdownMenu } from "../sidebar/sender-dropdown-menu";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { EditSenderModal } from "../modals/edit-sender-modal";
-import { useSidebar } from "@/context/sidebarContext";
 
 export const SenderHeader = ({
   filter,
@@ -23,52 +25,31 @@ export const SenderHeader = ({
   setFilter: (filter: string) => void;
   unreadCount: number;
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
-  const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
-
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const { refreshMails, markAsReadAllBySenderId } = useMails();
-
-
-
   const {
     selectedSender,
-    renameSender,
     unsubcribeSender,
-    toggleReadSender
+    toggleReadSender,
+    toggleNotificationSender,
+    unsubscribingId,
+    togglingReadId,
+    togglingNotificationId,
   } = useSenders();
+  const { updateSenderInUI } = useFolders();
 
-  // Handler functions for dropdown menu actions
-  const handleMarkAsRead = (e: React.MouseEvent) => {
+  // State management for dropdown and all associated modals
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
+  const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+  const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
+
+  // Reusable handler to close menu and open a modal/start an action
+  const handleAction = (action: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    setIsMarkAsReadModalOpen(true);
-  };
-
-  const handleRename = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    setIsRenaming(true);
-  };
-
-  const handleMoveToFolder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    setIsRenaming(true);
-  };
-
-  const handleMuteNotifications = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    console.log(`Muted notifications for ${selectedSender?.name}`);
-  };
-
-  const handleUnfollow = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    setIsUnfollowModalOpen(true);
+    action();
   };
 
   return (
@@ -76,7 +57,6 @@ export const SenderHeader = ({
       <div className="flex flex-row items-center justify-between p-sm h-header border-b border-border sticky top-0 bg-content/95 backdrop-blur-sm z-10">
         <div className="flex items-center flex-1 min-w-0">
           <button
-            // 4. THE ONCLICK AND STATE NOW COME DIRECTLY FROM THE CONTEXT
             onClick={toggleSidebar}
             className="p-1 rounded-full mr-2 md:hidden"
             aria-label="Toggle sidebar"
@@ -88,7 +68,7 @@ export const SenderHeader = ({
             )}
           </button>
           <h1
-            className={`font-semibold ml-1 text-md truncate ${selectedSender?.isRead ? "text-primary" : "text-muted-foreground"}`}
+            className={`font-semibold ml-1 text-md truncate ${!selectedSender?.isRead ? "text-primary" : "text-muted-foreground"}`}
           >
             {selectedSender ? selectedSender.name : "All Mails"}
           </h1>
@@ -107,12 +87,10 @@ export const SenderHeader = ({
           </Select>
           <button
             className="p-xs rounded-full hover:bg-muted transition-colors"
-            onClick={() => {
-              refreshMails();
-            }}
+            onClick={() => refreshMails()}
             title="Refresh"
           >
-            <RefreshCcw className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+            <RefreshCcw className="w-4 h-4 text-muted-foreground" />
           </button>
 
           {selectedSender && (
@@ -122,7 +100,7 @@ export const SenderHeader = ({
                 className="p-xs rounded-full hover:bg-muted transition-colors"
                 title="Mark all as read"
               >
-                <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+                <CheckIcon className="w-4 h-4 text-muted-foreground" />
               </button>
 
               <div className="relative">
@@ -134,18 +112,18 @@ export const SenderHeader = ({
                   className="p-xs rounded-full hover:bg-muted transition-colors"
                   title="More actions"
                 >
-                  <MoreHorizontal className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                 </button>
 
                 <SenderDropdownMenu
                   sender={selectedSender}
                   isOpen={menuOpen}
                   onClose={() => setMenuOpen(false)}
-                  onMarkAsRead={handleMarkAsRead}
-                  onRename={handleRename}
-                  onMoveToFolder={handleMoveToFolder}
-                  onMuteNotifications={handleMuteNotifications}
-                  onUnfollow={handleUnfollow}
+                  onMarkAsRead={handleAction(() => setIsMarkAsReadModalOpen(true))}
+                  onRename={handleAction(() => setIsEditing(true))}
+                  onMoveToFolder={handleAction(() => setIsEditing(true))}
+                  onMuteNotifications={handleAction(() => setIsMuteModalOpen(true))}
+                  onUnfollow={handleAction(() => setIsUnfollowModalOpen(true))}
                 />
               </div>
             </>
@@ -153,52 +131,49 @@ export const SenderHeader = ({
         </div>
       </div>
 
+      {/* All Modals are now here, managed by this component's state */}
       {selectedSender && (
         <>
-          {/* Unfollow Confirmation Modal */}
           <DeleteConfirmationModal
             isOpen={isUnfollowModalOpen}
             onClose={() => setIsUnfollowModalOpen(false)}
-            onConfirm={async () => {
-              if (selectedSender) {
-                await unsubcribeSender(selectedSender.id);
-                setIsUnfollowModalOpen(false);
-              }
-            }}
+            onConfirm={() => unsubcribeSender(selectedSender.id)}
             itemName={selectedSender.name}
             itemType="sender"
+            isLoading={unsubscribingId === selectedSender.id}
           />
 
-          {/* Mark as Read Confirmation Modal */}
           <DeleteConfirmationModal
             isOpen={isMarkAsReadModalOpen}
             onClose={() => setIsMarkAsReadModalOpen(false)}
             onConfirm={async () => {
-              if (selectedSender) {
-                await toggleReadSender(selectedSender.id, !selectedSender.isRead);
-                setIsMarkAsReadModalOpen(false);
-              }
+              const updatedSender = await toggleReadSender(selectedSender.id);
+              updateSenderInUI(selectedSender, updatedSender);
             }}
             itemName={selectedSender.name}
             itemType={selectedSender.isRead ? "markasunread" : "markasread"}
+            isLoading={togglingReadId === selectedSender.id}
           />
 
-          {/* Edit Sender Modal */}
-          <EditSenderModal
-            isOpen={isRenaming}
-            onClose={() => setIsRenaming(false)}
-            onSave={async (newName: string) => {
-              if (selectedSender) {
-                await renameSender(selectedSender.id, newName);
-                setIsRenaming(false);
-              }
+          <DeleteConfirmationModal
+            isOpen={isMuteModalOpen}
+            onClose={() => setIsMuteModalOpen(false)}
+            onConfirm={async () => {
+              const updatedSender = await toggleNotificationSender(selectedSender.id, selectedSender.notification as boolean);
+              updateSenderInUI(selectedSender, updatedSender);
             }}
-            initialValues={{
-              source: selectedSender.domain || "",
-              title: selectedSender.name,
-              folder: "No Folder"
-            }}
+            itemName={selectedSender.name}
+            itemType={selectedSender.notification ? "mutenotification" : "unmutenotification"}
+            isLoading={togglingNotificationId === selectedSender.id}
           />
+
+          {isEditing && (
+            <EditSenderModal
+              isOpen={isEditing}
+              onClose={() => setIsEditing(false)}
+              sender={selectedSender}
+            />
+          )}
         </>
       )}
     </>
