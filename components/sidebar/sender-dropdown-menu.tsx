@@ -84,7 +84,10 @@ export const SenderDropdownMenu = ({
             onClick={onMuteNotifications}
           >
             <BellSlashIcon className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm">Mute notifications</span>
+            {/* <-- UPDATED: Dynamic text for mute/unmute --> */}
+            <span className="text-sm">
+              {sender.notification ? "Mute notifications" : "Unmute notifications"}
+            </span>
           </button>
           <button
             className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary transition-all duration-300 ease-in-out hover:cursor-pointer"

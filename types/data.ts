@@ -21,6 +21,7 @@ export interface SenderType {
   order?: number;
   isRead?: boolean;
   image_url?: string;
+  notification?: boolean ;
 }
 
 

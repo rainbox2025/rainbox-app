@@ -16,7 +16,7 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
   onClose,
   sender,
 }) => {
-  const { folders } = useFolders();
+  const { folders, updateSenderInUI } = useFolders(); // Get the new UI update function
   const { updateSender } = useSenders();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -46,25 +46,18 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
     try {
       const formData = new FormData();
 
-      // Append name only if it has changed
-      if (title !== sender.name) {
-        formData.append('name', title);
-      }
-
-      // Append image if a new one was selected
-      if (iconFile) {
-        formData.append('image', iconFile);
-      }
-
-      // Append folder_id only if it has changed
+      if (title !== sender.name) formData.append('name', title);
+      if (iconFile) formData.append('image', iconFile);
       const originalFolderId = sender.folder_id || '';
-      if (folderId !== originalFolderId) {
-        formData.append('folder_id', folderId); // Will be folder ID or "" for null
-      }
+      if (folderId !== originalFolderId) formData.append('folder_id', folderId);
 
       // Only make the API call if there's something to update
-      if (formData.has('name') || formData.has('image') || formData.has('folder_id')) {
-        await updateSender(sender.id, formData);
+      if (Array.from(formData.keys()).length > 0) {
+        // 1. Call API function, which returns the updated sender
+        const updatedSender = await updateSender(sender.id, formData);
+
+        // 2. Call the master UI update function with the original and new sender data
+        updateSenderInUI(sender, updatedSender);
       }
 
       onClose();

@@ -29,6 +29,7 @@ interface FoldersContextType {
   moveSenderToRoot: (senderId: string) => Promise<void>;
   getSenders: (folderId: string) => Promise<SenderType[]>;
   isLoadingSenders: boolean;
+  updateSenderInUI: (sender: SenderType, updatedSender: SenderType) => void;
   sidebarOrder: any;
   setSidebarOrder: Dispatch<SetStateAction<any>>;
   isSidebarOrderLoading: boolean;
@@ -49,7 +50,7 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot } =
+  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot, updateSenderInRoot, setSelectedSender, selectedSender } =
     useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(true);
@@ -298,6 +299,60 @@ export const FoldersProvider = ({
     [api]
   );
 
+  const updateSenderInUI = useCallback(
+    (originalSender: SenderType, updatedSender: SenderType) => {
+      const originalFolderId = originalSender.folder_id;
+      const newFolderId = updatedSender.folder_id;
+
+      // Case 1: Sender's details changed, but it stayed in the same place.
+      if (originalFolderId === newFolderId) {
+        if (newFolderId) {
+          // It's in a folder.
+          setFolders(prev => prev.map(f =>
+            f.id === newFolderId
+              ? { ...f, senders: f.senders?.map(s => s.id === updatedSender.id ? updatedSender : s) }
+              : f
+          ));
+        } else {
+          // It's in the root.
+          updateSenderInRoot(updatedSender);
+        }
+      } else { // Case 2: The sender moved between root and a folder.
+        // Step 1: Remove from original location
+        if (originalFolderId) {
+          // Was in a folder, remove it from that folder's list
+          setFolders(prev => prev.map(f =>
+            f.id === originalFolderId
+              ? { ...f, senders: f.senders?.filter(s => s.id !== updatedSender.id) }
+              : f
+          ));
+        } else {
+          // Was in root, remove it from the root list
+          removeSenderFromRoot(updatedSender.id);
+        }
+
+        // Step 2: Add to new location
+        if (newFolderId) {
+          // Moved to a folder, add it to the new folder's list
+          setFolders(prev => prev.map(f =>
+            f.id === newFolderId
+              ? { ...f, senders: [...(f.senders || []), updatedSender] }
+              : f
+          ));
+        } else {
+          // Moved to root, add it to the root list
+          addSenderToRoot(updatedSender);
+        }
+      }
+
+      // Finally, if the edited sender was the selected one, update that state too
+      if (selectedSender?.id === updatedSender.id) {
+        setSelectedSender(updatedSender);
+      }
+    },
+    [folders, setFolders, addSenderToRoot, removeSenderFromRoot, updateSenderInRoot, selectedSender, setSelectedSender]
+  );
+
 
   return (
     <FoldersContext.Provider
@@ -308,6 +363,7 @@ export const FoldersProvider = ({
         foldersListError,
         createFolderError,
         createFolder,
+        updateSenderInUI,
         isCreatingFolder,
         deleteFolderError,
         deleteFolder,
