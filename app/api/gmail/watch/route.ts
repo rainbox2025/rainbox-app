@@ -78,20 +78,24 @@ export async function POST(request: Request) {
       topicName: topicName,
     });
 
-    // Update or create watch record
-    await supabase.from("gmail_watch").upsert({
-      email: tokenData.email,
-      user_id: user.id,
-      history_id: response.data.historyId,
-      expiration: new Date(Number(response.data.expiration)),
-      updated_at: new Date().toISOString(),
-    });
+    // Update or create watch record using user_id as unique key
+    await supabase.from("gmail_watch").upsert(
+      {
+        email: tokenData.email,
+        user_id: user.id,
+        history_id: response.data.historyId,
+        expiration: new Date(Number(response.data.expiration)),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id", // user_id is unique
+      }
+    );
 
-    // Verify storage
+    // Verify storage using user_id
     const { data: verifyData, error: verifyError } = await supabase
       .from("gmail_watch")
       .select("history_id, expiration")
-      .eq("email", tokenData.email)
       .eq("user_id", user.id)
       .single();
 

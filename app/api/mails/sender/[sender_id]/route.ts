@@ -8,6 +8,16 @@ export const GET = async (
   const { sender_id } = params;
   const supabase = await createClient();
 
+  // Auth check
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   // Get query parameters
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") || "1");
@@ -17,15 +27,19 @@ export const GET = async (
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
-  // First check if sender exists
+  // First check if sender exists and belongs to the user
   const { data: sender, error: senderError } = await supabase
     .from("senders")
     .select("*")
     .eq("id", sender_id)
+    .eq("user_id", user.id)
     .single();
 
   if (senderError || !sender) {
-    return NextResponse.json({ error: "Sender not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Sender not found or not authorized" },
+      { status: 404 }
+    );
   }
 
   // Get total count first
