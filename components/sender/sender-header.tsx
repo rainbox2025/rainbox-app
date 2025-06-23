@@ -96,9 +96,9 @@ export const SenderHeader = ({
           {selectedSender && (
             <>
               <button
-                onClick={() => markAsReadAllBySenderId(selectedSender.id)}
+                onClick={handleAction(() => setIsMarkAsReadModalOpen(true))}
                 className="p-xs rounded-full hover:bg-muted transition-colors"
-                title="Mark all as read"
+                title={selectedSender.isRead ? "Mark as Unread" : "Mark as Read"}
               >
                 <CheckIcon className="w-4 h-4 text-muted-foreground" />
               </button>

@@ -346,7 +346,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               <input
                 type="text"
                 id="name"
-                defaultValue={user?.user_name || "username"}
+                defaultValue={user?.full_name}
+                disabled
                 className="w-full p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
               />
             </div>
@@ -607,7 +608,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
       <div className="space-y-4">
         {/* All feeds toggle */}
         <div className="flex items-center justify-between py-3 pr-2">
-          <span className="text-md font-medium">Enable notifications for all feeds</span>
+          <span className="text-sm md:text-md font-medium">Enable notifications for all feeds</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -657,7 +658,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <h3 className="font-medium mb-2">Current Plan</h3>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-medium">Free</p>
+                <p className="text-md font-medium">Free</p>
                 <p className="text-sm text-muted-foreground">Basic features included</p>
               </div>
               <button className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors">
@@ -689,11 +690,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
+          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-[90vw] md:w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
-            <div className="w-56 border-r border-border overflow-y-auto custom-scrollbar bg-sidebar">
+            <div className="w-14 md:w-56 border-r border-border overflow-y-auto custom-scrollbar bg-sidebar">
               <div className="p-sm">
                 {/* Main sections */}
                 <div className="mb-2">
@@ -704,7 +705,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'account' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
-                        <span className='text-sm'>Account</span>
+                        <span className='text-sm hidden md:inline'>Account</span>
                       </button>
                     </li>
                     <li>
@@ -713,7 +714,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'mailbox' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <EnvelopeIcon className="h-5 w-5" />
-                        <span className='text-sm'>Mailbox</span>
+                        <span className='text-sm hidden md:inline'>Mailbox</span>
                       </button>
                     </li>
                     <li>
@@ -722,7 +723,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'preferences' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <Cog6ToothIcon className="h-5 w-5" />
-                        <span className='text-sm'>Preferences</span>
+                        <span className='text-sm hidden md:inline'>Preferences</span>
                       </button>
                     </li>
                     <li>
@@ -731,7 +732,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'notification' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <BellIcon className="h-5 w-5" />
-                        <span className='text-sm'>Notification</span>
+                        <span className='text-sm hidden md:inline'>Notification</span>
                       </button>
                     </li>
                     <li>
@@ -740,7 +741,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === 'billing' ? 'bg-hovered text-accent-foreground' : 'hover:bg-hovered'}`}
                       >
                         <BillingIcon className="h-5 w-5" />
-                        <span className='text-sm'>Billing</span>
+                        <span className='text-sm hidden md:inline'>Billing</span>
                       </button>
                     </li>
                   </ul>
@@ -758,7 +759,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ExclamationTriangleIcon className="h-5 w-5" />
-                        <span className='text-sm'>Report Issues  🡥</span>
+                        <span className='text-sm hidden md:inline'>Report Issues  🡥</span>
 
                       </button>
                     </li>
@@ -768,7 +769,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <LightBulbIcon className="h-5 w-5" />
-                        <span className='text-sm'>Suggest Feature 🡥</span>
+                        <span className='text-sm hidden md:inline'>Suggest Feature 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -777,7 +778,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <DocumentTextIcon className="h-5 w-5" />
-                        <span className='text-sm'>Help Docs 🡥</span>
+                        <span className='text-sm hidden md:inline'>Help Docs 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -786,7 +787,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
-                        <span className='text-sm'>Contact Support 🡥</span>
+                        <span className='text-sm hidden md:inline'>Contact Support 🡥</span>
                       </button>
                     </li>
                   </ul>
@@ -804,7 +805,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <MapIcon className="h-5 w-5" />
-                        <span className='text-sm'>Roadmap 🡥</span>
+                        <span className='text-sm hidden md:inline'>Roadmap 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -813,7 +814,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ClockIcon className="h-5 w-5" />
-                        <span className='text-sm'>Changelog 🡥</span>
+                        <span className='text-sm hidden md:inline'>Changelog 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -822,7 +823,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <CreditCardIcon className="h-5 w-5" />
-                        <span className='text-sm'>Plans 🡥</span>
+                        <span className='text-sm hidden md:inline'>Plans 🡥</span>
                       </button>
                     </li>
                   </ul>
@@ -840,7 +841,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
                       >
                         <GlobeAltIcon className="h-5 w-5" />
-                        <span className='text-sm'>Visit Website 🡥</span>
+                        <span className='text-sm hidden md:inline'>Visit Website 🡥</span>
                       </button>
                     </li>
                     <li>
@@ -851,7 +852,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497-3.753C20.18 7.773 21.692 5.25 22 4.009z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className='text-sm'>Follow us on X 🡥</span>
+                        <span className='text-sm hidden md:inline'>Follow us on X 🡥</span>
                       </button>
                     </li>
                   </ul>

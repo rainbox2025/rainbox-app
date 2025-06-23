@@ -2,14 +2,7 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-
-// Updated User interface to match Supabase user metadata and additional properties
-export interface User {
-  id: string;
-  email: string;
-  avatar_url?: string;
-  user_name?: string;
-}
+import { User } from '@/types/data'
 
 interface AuthContextType {
   user: User | null;
@@ -31,12 +24,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchUser = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
+        console.log("userData: ", userData);
+        console.log("userData.user.user_metadata?.full_name: ", userData?.user?.user_metadata?.full_name);
         if (userData.user) {
           setUser({
             id: userData.user.id,
             email: userData.user.email || "",
             avatar_url: userData.user.user_metadata?.avatar_url || "",
-            user_name: userData.user.user_metadata?.user_name || "",
+            user_name: userData.user.user_metadata?.full_name?.split(" ")[0] || "",
+            full_name: userData.user.user_metadata?.full_name || "",
           });
 
           const { data: sessionData } = await supabase.auth.getSession();

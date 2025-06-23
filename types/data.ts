@@ -3,9 +3,10 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
-  plan: "free" | "pro" | "enterprise";
-  usedFeeds: number;
-  totalFeeds: number;
+  full_name?: string;
+  plan?: "free" | "pro" | "enterprise";
+  usedFeeds?: number;
+  totalFeeds?: number;
 }
 export interface SenderType {
   id: string;
@@ -63,13 +64,6 @@ export interface Category {
   name: string;
   count: number;
   isExpanded: boolean;
-}
-
-export interface User {
-  email: string;
-  plan: "free" | "pro" | "enterprise";
-  usedFeeds: number;
-  totalFeeds: number;
 }
 
 export interface Connection {
