@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       // Get tokens for the user
       const { data: tokenData, error: tokenError } = await supabase
         .from("outlook_tokens")
-        .select("tokens")
+        .select("tokens, updated_at")
         .eq("user_email", watchData.user_email)
         .single();
 
@@ -96,13 +96,61 @@ export async function POST(request: Request) {
         continue;
       }
 
-      // Fetch message details
-      const messageId = notification.resourceData.id;
+      // --- Token expiry check and refresh ---
+      let { tokens } = tokenData;
+      const tokenCreatedAt = new Date(tokenData.updated_at).getTime();
+      const tokenExpiresIn = tokens.expires_in
+        ? Number(tokens.expires_in) * 1000
+        : 0;
+      const tokenExpiry = tokenCreatedAt + tokenExpiresIn;
+      let accessToken = tokens.access_token;
+
+      if (Date.now() > tokenExpiry) {
+        console.log(Date.now(), tokenExpiry);
+
+        // Refresh token
+        console.log(
+          `Refreshing expired token for user: ${watchData.user_email}`
+        );
+        const refreshResponse = await fetch(
+          "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              client_id: process.env.OUTLOOK_CLIENT_ID!,
+              client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+              refresh_token: tokens.refresh_token,
+              grant_type: "refresh_token",
+            }),
+          }
+        );
+        if (!refreshResponse.ok) {
+          console.error(
+            "Failed to refresh token for user:",
+            watchData.user_email
+          );
+          continue;
+        }
+        const newTokens = await refreshResponse.json();
+        await supabase
+          .from("outlook_tokens")
+          .update({
+            tokens: newTokens,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_email", watchData.user_email);
+        accessToken = newTokens.access_token;
+      } else {
+        accessToken = tokens.access_token;
+      }
+
+      // --- Use accessToken for all Graph API calls below ---
       const messageResponse = await fetch(
-        `https://graph.microsoft.com/v1.0/me/messages/${messageId}?$select=id,subject,bodyPreview,receivedDateTime,from`,
+        `https://graph.microsoft.com/v1.0/me/messages/${notification.resourceData.id}?$select=id,subject,bodyPreview,receivedDateTime,from`,
         {
           headers: {
-            Authorization: `Bearer ${tokenData.tokens.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
         }

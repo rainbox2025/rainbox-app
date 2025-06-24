@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-const SUBSCRIPTION_EXPIRY_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 1 day
+const SUBSCRIPTION_EXPIRY_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 export const runtime = "nodejs";
 export const preferredRegion = "auto";
@@ -48,12 +48,12 @@ export async function GET() {
 
       let { tokens } = tokenRow;
 
-      // Calculate expiry based on created_at and expires_in
-      const tokenCreatedAt = new Date(tokenRow.created_at).getTime();
+      // Calculate expiry based on updated_at and expires_in
+      const tokenUpdatedAt = new Date(tokenRow.updated_at).getTime();
       const tokenExpiresIn = tokens.expires_in
         ? Number(tokens.expires_in) * 1000
         : 0;
-      const tokenExpiry = tokenCreatedAt + tokenExpiresIn;
+      const tokenExpiry = tokenUpdatedAt + tokenExpiresIn;
 
       const isTokenExpired = Date.now() > tokenExpiry;
 
