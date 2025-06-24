@@ -219,7 +219,7 @@ export async function GET() {
             if (!sender) return null;
 
             return {
-              user_email,
+              user_id, // <-- use user_id instead of user_email
               sender_id: sender.id,
               subject: message.subject || null,
               body: message.bodyPreview || null,
@@ -268,6 +268,8 @@ export async function GET() {
           type: "mail_sync",
           error: err instanceof Error ? err.message : String(err),
         });
+        console.log(`[${user_email}] Mail sync error:`, err);
+
         // Continue to renew subscription even if mail sync fails
       }
 

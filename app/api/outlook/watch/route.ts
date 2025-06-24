@@ -125,7 +125,7 @@ export async function POST(request: Request) {
               );
               if (!sender) return null;
               return {
-                user_email: user.email,
+                user_id: user.id,
                 sender_id: sender.id,
                 subject: message.subject || null,
                 body: message.bodyPreview || null,
