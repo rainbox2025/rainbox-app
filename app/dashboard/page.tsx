@@ -121,6 +121,7 @@ const Page = () => {
           mailReaderWidth={mailReaderWidth}
           setMailReaderWidth={setMailReaderWidth}
           onBack={() => setMailListVisible(true)}
+          mail={selectedMail}
         />
       )}
     </div>

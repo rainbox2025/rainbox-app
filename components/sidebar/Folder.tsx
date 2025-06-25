@@ -18,6 +18,7 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 
+
 type SidebarItem =
   | { type: 'folder', id: string; data: FolderType }
   | { type: 'sender', id: string; data: SenderType };
@@ -37,12 +38,14 @@ export default function FolderComponent({
   activeFolder,
   activeItem,
 }: FolderProps) {
-  const { deleteFolder, renameFolder, toggleReadFolder } = useFolders();
+  const { deleteFolder, renameFolder, toggleReadFolder, toggleNotificationFolder, isDeletingFolderId, isRenamingFolderId, isTogglingReadStateId, isTogglingNotificationStateId } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [unfollowOnDelete, setUnfollowOnDelete] = useState(false);
 
   const {
     attributes,
@@ -58,18 +61,21 @@ export default function FolderComponent({
     data: { type: 'folder', folder }
   });
 
+
+  const isDropTarget = isOver && activeItem?.type === 'sender';
+
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDropTarget ? undefined : CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
 
   const combinedRef = (node: HTMLDivElement) => {
     setNodeRef(node);
     setDroppableNodeRef(node);
   };
 
-  const isDropTarget = isOver && activeItem?.type === 'sender';
 
   const isFolderActive = activeFolder === folder.id;
 
@@ -109,7 +115,7 @@ export default function FolderComponent({
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    console.log(`Muted notifications for ${folder.name}`);
+    setIsNotificationModalOpen(true);
   };
 
   const folderSenders = folder.senders || [];
@@ -157,7 +163,8 @@ export default function FolderComponent({
                       <CheckIcon className="w-4 h-4" /> <span>{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
                     </button>
                     <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleMuteNotifications}>
-                      <BellSlashIcon className="w-4 h-4" /> <span>Mute notifications</span>
+                      {/* <-- FIX: The text now correctly shows the action to be performed. --> */}
+                      <BellSlashIcon className="w-4 h-4" /> <span>{folder.notification ? "Mute notification" : "Unmute notification"}</span>
                     </button>
                     <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleRename}>
                       <PencilIcon className="w-4 h-4" /> <span>Rename</span>
@@ -204,30 +211,49 @@ export default function FolderComponent({
       <BasicModal
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
-        onSave={(newName) => renameFolder(folder.id, newName)}
+        onSave={async (newName) => {
+          await renameFolder(folder.id, newName)
+        }}
         initialValue={folder.name}
         title="Rename Folder"
+        isLoading={isRenamingFolderId === folder.id}
       />
       <DeleteConfirmationModal
         isOpen={isDeletingModalOpen}
         onClose={() => setIsDeletingModalOpen(false)}
-        onConfirm={() => {
-          deleteFolder(folder.id);
-          setIsDeletingModalOpen(false);
+        onConfirm={async () => {
+          await deleteFolder(folder.id, unfollowOnDelete);
         }}
         showUnfollowOption={true}
         itemName={folder.name}
         itemType="folder"
+        isLoading={isDeletingFolderId === folder.id}
+        onUnfollowChange={setUnfollowOnDelete}
       />
+
       <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onConfirm={() => {
-          toggleReadFolder(folder.id, !folder.isRead)
-          setIsMarkAsReadModalOpen(false)
+        onConfirm={async () => {
+          // <-- FIX: Correctly calls toggleReadFolder and removes the comma operator bug.
+          await toggleReadFolder(folder.id, !folder.isRead);
         }}
         itemName={folder.name}
         itemType={folder.isRead ? "markasunread" : "markasread"}
+        isLoading={isTogglingReadStateId === folder.id}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        onConfirm={async () => {
+          // The onConfirm logic was already correct, toggling the state.
+          await toggleNotificationFolder(folder.id, !folder.notification)
+        }}
+        itemName={folder.name}
+        // <-- FIX: The itemType is now based on `folder.notification` state, not `folder.isRead`.
+        itemType={folder.notification ? "mutenotification" : "unmutenotification"}
+        isLoading={isTogglingNotificationStateId === folder.id}
       />
     </>
   );

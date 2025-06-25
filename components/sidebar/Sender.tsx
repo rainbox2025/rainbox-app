@@ -1,3 +1,4 @@
+"use client";
 import { SenderType } from "@/types/data";
 import { useState, forwardRef } from "react";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
@@ -8,17 +9,37 @@ import { SenderDropdownMenu } from "./sender-dropdown-menu";
 import { SenderIcon } from "./sender-icon";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useFolders } from "@/context/foldersContext";
 
 interface SenderProps {
   sender: SenderType;
 }
 
 const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
-  const { unsubcribeSender, toggleReadSender, setSelectedSender, selectedSender } = useSenders();
+  const {
+    senders,
+    unsubcribeSender,
+    toggleReadSender,
+    toggleNotificationSender,
+    setSelectedSender,
+    selectedSender,
+    unsubscribingId,
+    togglingReadId,
+    togglingNotificationId,
+  } = useSenders();
+
+  const { folders, updateSenderInUI } = useFolders();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isMarkAsReadModalOpen, setIsMarkAsReadModalOpen] = useState(false);
   const [isUnfollowModalOpen, setIsUnfollowModalOpen] = useState(false);
+  const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
+
+  const liveSender =
+    folders.flatMap(f => f.senders || []).find(s => s.id === sender.id) ||
+    senders.find(s => s.id === sender.id) ||
+    sender;
 
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -37,14 +58,10 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
     setIsMarkAsReadModalOpen(true);
   };
 
-  const handleMoveToFolder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-  };
-
   const handleMuteNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
+    setIsMuteModalOpen(true);
   };
 
   const handleUnfollow = (e: React.MouseEvent) => {
@@ -61,13 +78,13 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
-          onClick={() => setSelectedSender(sender)}
+          onClick={() => setSelectedSender(liveSender)}
         >
           <div className=" flex-shrink-0">
-            <SenderIcon sender={sender} />
+            <SenderIcon sender={liveSender} />
           </div>
           <span className="text-sm font-medium truncate">
-            {sender.name}
+            {liveSender.name}
           </span>
         </div>
 
@@ -81,19 +98,19 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
             </button>
 
             <SenderDropdownMenu
-              sender={sender}
+              sender={liveSender}
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
               onMarkAsRead={handleMarkAsRead}
               onRename={handleEdit}
-              onMoveToFolder={handleMoveToFolder}
+              onMoveToFolder={handleEdit}
               onMuteNotifications={handleMuteNotifications}
               onUnfollow={handleUnfollow}
             />
           </div>
 
           <span className="text-xs text-muted-foreground font-medium">
-            {sender.count >= 1000 ? `${Math.floor(sender.count / 1000)}K+` : sender.count}
+            {liveSender.count >= 1000 ? `${Math.floor(liveSender.count / 1000)}K+` : liveSender.count}
           </span>
         </div>
       </div>
@@ -101,29 +118,44 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
       <DeleteConfirmationModal
         isOpen={isUnfollowModalOpen}
         onClose={() => setIsUnfollowModalOpen(false)}
-        onConfirm={() => {
-          unsubcribeSender(sender.id);
-          setIsUnfollowModalOpen(false);
+        onConfirm={async () => {
+          await unsubcribeSender(liveSender.id);
         }}
-        itemName={sender.name}
+        itemName={liveSender.name}
         itemType="sender"
+        isLoading={unsubscribingId === liveSender.id}
       />
+
       <DeleteConfirmationModal
         isOpen={isMarkAsReadModalOpen}
         onClose={() => setIsMarkAsReadModalOpen(false)}
-        onConfirm={() => {
-          toggleReadSender(sender.id, !sender.isRead);
-          setIsMarkAsReadModalOpen(false);
+        onConfirm={async () => {
+          const updatedSender = await toggleReadSender(liveSender.id);
+          updateSenderInUI(liveSender, updatedSender);
         }}
-        itemName={sender.name}
-        itemType={sender.isRead ? "markasunread" : "markasread"}
+        itemName={liveSender.name}
+        itemType={liveSender.isRead ? "markasunread" : "markasread"}
+        isLoading={togglingReadId === liveSender.id}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isMuteModalOpen}
+        onClose={() => setIsMuteModalOpen(false)}
+        onConfirm={async () => {
+          // This assumes toggleNotificationSender is fixed to return the updated sender
+          const updatedSender = await toggleNotificationSender(liveSender.id, liveSender.notification as boolean);
+          updateSenderInUI(liveSender, updatedSender);
+        }}
+        itemName={liveSender.name}
+        itemType={liveSender.notification ? "mutenotification" : "unmutenotification"}
+        isLoading={togglingNotificationId === liveSender.id}
       />
 
       {isEditing && (
         <EditSenderModal
           isOpen={isEditing}
           onClose={() => setIsEditing(false)}
-          sender={sender}
+          sender={liveSender}
         />
       )}
     </>

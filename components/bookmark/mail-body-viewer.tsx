@@ -103,42 +103,37 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     [bookmarks, mailId]
   );
 
+
   useEffect(() => {
     if (!contentRef.current || !htmlContent) return;
 
     // Start with a clean slate to ensure idempotency.
     contentRef.current.innerHTML = htmlContent;
-    const bookmarksToRemove: string[] = [];
 
     // Sort bookmarks to apply them from the end of the document to the start.
-    // This prevents DOM modifications from invalidating the ranges of subsequent bookmarks.
     const sortedBookmarks = [...currentMailBookmarks].sort((a, b) => {
+      // Add a null check for serializedRange right at the start
+      if (!a.serializedRange || !b.serializedRange) return 0;
       const rangeA = deserializeRange(a.serializedRange, contentRef.current!);
       const rangeB = deserializeRange(b.serializedRange, contentRef.current!);
       if (!rangeA || !rangeB) return 0;
-      // Sort in reverse document order.
       return rangeB.compareBoundaryPoints(Range.START_TO_START, rangeA);
     });
 
     sortedBookmarks.forEach(bookmark => {
-      if (!contentRef.current) return;
+      if (!contentRef.current || !bookmark.serializedRange) return;
       const range = deserializeRange(bookmark.serializedRange, contentRef.current);
 
       if (range && contentRef.current.contains(range.commonAncestorContainer)) {
         const isConfirmed = bookmark.isConfirmed !== false;
-        // Call the new, robust highlighting function.
         highlightRange(range, bookmark.id, isConfirmed);
-      } else {
-        // If the range can't be deserialized, mark the bookmark for removal.
-        bookmarksToRemove.push(bookmark.id);
       }
     });
 
     // Attach event listeners and indicators after all DOM mutations are done.
-    // This is more efficient than doing it inside the highlighting function.
     const processedBookmarkIds = new Set<string>();
     sortedBookmarks.forEach(bookmark => {
-      if (processedBookmarkIds.has(bookmark.id)) return;
+      if (!bookmark.serializedRange || processedBookmarkIds.has(bookmark.id)) return;
       processedBookmarkIds.add(bookmark.id);
 
       const highlightSpans = Array.from(
@@ -152,8 +147,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
         span.onmousedown = () => { isDragging = false; };
         span.onmousemove = () => { isDragging = true; };
         span.onmouseup = (e) => {
-          if (isDragging) return; // This was a drag-select, not a click.
-          // Prevent icon clicks from triggering the popup for the whole highlight.
+          if (isDragging) return;
           if ((e.target as HTMLElement).closest('.comment-indicator-icon, .tag-indicator-icon')) {
             e.stopPropagation(); return;
           }
@@ -181,13 +175,11 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       }
     });
 
-    if (bookmarksToRemove.length > 0) {
-      bookmarksToRemove.forEach(id => removeBookmark(id));
-    }
-    // Clear any leftover selection ranges from the process.
-    window.getSelection()?.removeAllRanges();
-  }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, removeBookmark, showCommentModal, showTagModal]);
+    // --- FIX IS HERE ---
+    // The line that cleared the user's selection has been removed.
+    // window.getSelection()?.removeAllRanges();  <- THIS LINE WAS REMOVED
 
+  }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, showCommentModal, showTagModal]);
 
   const handleMouseUp = useCallback((event: MouseEvent) => {
     if (!contentRef.current) return;
@@ -235,7 +227,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     <div
       ref={contentRef}
       style={{ wordBreak: 'break-word', hyphens: 'auto' }}
-      className="prose text-sm prose-sm dark:prose-invert max-w-none"
+      className="text-sm max-w-none"
     />
   );
 };

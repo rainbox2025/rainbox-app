@@ -249,14 +249,16 @@ export default function LeftPanel() {
                   <UserCircleIcon className="w-12 h-12 text-muted-foreground" />
                 )}
 
-                <div className="text-center">
-                  <h2 className="text-sm font-semibold">
+                <div className="text-center w-full break-words">
+                  <h2 className="text-sm font-semibold break-words">
                     {user?.user_name || "User Profile"}
                   </h2>
-                  <p className="text-xs text-muted-foreground truncate max-w-full">
+                  <p className="text-xs text-muted-foreground break-words">
                     {user?.email}
                   </p>
                 </div>
+
+
 
                 <button
                   onClick={logout}

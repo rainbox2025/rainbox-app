@@ -1,15 +1,15 @@
+// api/reorder/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 interface ReorderRequest {
-  order: any; // The order JSON structure
+  order: any;
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient();
 
   try {
-    // Get the authenticated user
     const {
       data: { user },
       error: authError,
@@ -18,7 +18,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get request body
     const body: ReorderRequest = await request.json();
     if (!body.order) {
       return NextResponse.json(
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upsert the order data
     const { error: upsertError } = await supabase.from("sidebar_order").upsert(
       {
         user_id: user.id,

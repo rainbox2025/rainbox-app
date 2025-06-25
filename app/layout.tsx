@@ -16,6 +16,7 @@ import { ModeProvider } from "@/context/modeContext";
 import Notification from "@/components/notifications/Notification";
 import { GmailProvider } from "@/context/gmailContext";
 import { BookmarkProvider } from "@/context/bookmarkContext";
+import { SettingsProvider } from "@/context/settingsContext";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -55,9 +56,11 @@ export default function RootLayout({
                       <GmailProvider>
                         <AuthProvider>
                           <FoldersProvider>
-                            <OnboardingProvider>
-                              <ModeProvider>{children}</ModeProvider>
-                            </OnboardingProvider>
+                            <SettingsProvider>
+                              <OnboardingProvider>
+                                <ModeProvider>{children}</ModeProvider>
+                              </OnboardingProvider>
+                            </SettingsProvider>
                           </FoldersProvider>
                         </AuthProvider>
                       </GmailProvider>
