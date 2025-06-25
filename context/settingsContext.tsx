@@ -18,6 +18,7 @@ interface SettingsContextType {
   updatePreferences: (newPrefs: Partial<Preferences>) => void;
   updateGlobalNotifications: (enabled: boolean) => void;
   updateSenderNotification: (senderId: string, enabled: boolean) => void;
+  submitFeedback: (feedback: string) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -103,6 +104,16 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     });
   }, []);
 
+  const submitFeedback = useCallback(async (feedback: string) => {
+    try {
+      await api.post('/account/feedback', { feedback });
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+      // Re-throw the error so the component can handle it if needed
+      throw error;
+    }
+  }, []);
+
   const contextValue = {
     preferences,
     globalNotificationsEnabled,
@@ -110,6 +121,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     updatePreferences,
     updateGlobalNotifications,
     updateSenderNotification,
+    submitFeedback
   };
 
   return (
