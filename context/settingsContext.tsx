@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { useAuth } from "./authContext";
 import { useAxios } from "@/hooks/useAxios";
-import { Preferences } from '@/types/data';
+import { Preferences, SenderType } from '@/types/data';
 
 const DEFAULT_PREFERENCES: Preferences = {
   font_size: "medium",
@@ -13,7 +13,11 @@ const DEFAULT_PREFERENCES: Preferences = {
 
 interface SettingsContextType {
   preferences: Preferences;
+  globalNotificationsEnabled: boolean;
+  senders: SenderType[];
   updatePreferences: (newPrefs: Partial<Preferences>) => void;
+  updateGlobalNotifications: (enabled: boolean) => void;
+  updateSenderNotification: (senderId: string, enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -22,58 +26,90 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   const { user } = useAuth();
   const api = useAxios();
 
-  // Initialize state with defaults, not null. This is crucial for an instant UI.
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
-
+  const [globalNotificationsEnabled, setGlobalNotificationsEnabled] = useState<boolean>(true);
+  const [senders, setSenders] = useState<SenderType[]>([]);
   const isInitialFetchDone = useRef(false);
 
-  // Effect to fetch initial settings when user is available
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchAllSettings = async () => {
       if (!user) return;
-
       try {
-        const { data } = await api.get('/account/preferences');
-        if (data.preferences && Object.keys(data.preferences).length > 0) {
-          setPreferences({ ...DEFAULT_PREFERENCES, ...data.preferences });
+        const [prefsRes, notifsRes] = await Promise.all([
+          api.get('/account/preferences'),
+          api.get('/account/notifications')
+        ]);
+
+        if (prefsRes.data.preferences) {
+          setPreferences({ ...DEFAULT_PREFERENCES, ...prefsRes.data.preferences });
+        }
+        if (notifsRes.data) {
+          setGlobalNotificationsEnabled(notifsRes.data.global_notification);
+          setSenders(notifsRes.data.senders || []);
         }
       } catch (error) {
-        console.error("Failed to fetch user preferences:", error);
+        console.error("Failed to fetch settings:", error);
       } finally {
         isInitialFetchDone.current = true;
       }
     };
-
-    fetchSettings();
+    fetchAllSettings();
   }, [user]);
 
-  // Effect to sync changes to the backend
   useEffect(() => {
-    // Don't sync on the initial render or before the first fetch is complete.
-    if (!isInitialFetchDone.current) {
-      return;
-    }
-
-    const handler = setTimeout(async () => {
-      try {
-        await api.put('/account/preferences', { preferences });
-      } catch (error) {
-        console.error("Failed to sync preferences:", error);
-      }
-    }, 750); // Debounce API calls by 750ms
-
-    return () => {
-      clearTimeout(handler);
-    };
+    if (!isInitialFetchDone.current) return;
+    const handler = setTimeout(() => {
+      api.put('/account/preferences', { preferences }).catch(e => console.error("Sync failed:", e));
+    }, 750);
+    return () => clearTimeout(handler);
   }, [preferences]);
 
   const updatePreferences = useCallback((newPrefs: Partial<Preferences>) => {
     setPreferences(prev => ({ ...prev, ...newPrefs }));
   }, []);
 
+  const updateGlobalNotifications = useCallback((enabled: boolean) => {
+    // 1. Instantly update UI by setting state
+    setGlobalNotificationsEnabled(enabled);
+
+    // 2. Call API in background, reverting on error
+    api.put('/account/notifications', { type: 'global', payload: { enabled } })
+      .catch(error => {
+        console.error("Failed to update global notifications:", error);
+        // 3. If API fails, revert the UI state
+        setGlobalNotificationsEnabled(!enabled);
+      });
+  }, []);
+
+  const updateSenderNotification = useCallback((senderId: string, enabled: boolean) => {
+    // We use the functional form of setState to get the most recent state
+    // and avoid dependency array issues.
+    setSenders(currentSenders => {
+      // Create the new state for an instant UI update
+      const newSenders = currentSenders.map(s =>
+        s.id === senderId ? { ...s, notification: enabled } : s
+      );
+
+      // Call API in the background
+      api.put('/account/notifications', { type: 'sender', payload: { senderId, enabled } })
+        .catch(error => {
+          console.error(`Failed to update sender ${senderId} notification:`, error);
+          // If the API call fails, revert the state to the original `currentSenders`
+          setSenders(currentSenders);
+        });
+
+      // Return the new state to update the UI immediately
+      return newSenders;
+    });
+  }, []);
+
   const contextValue = {
     preferences,
+    globalNotificationsEnabled,
+    senders,
     updatePreferences,
+    updateGlobalNotifications,
+    updateSenderNotification,
   };
 
   return (

@@ -76,11 +76,6 @@ export interface Connection {
   logoAlt: string;
 }
 
-export interface Sender {
-  id: string;
-  name: string;
-  email: string;
-}
 export interface EmailData {
   id: string;
   threadId: string;
