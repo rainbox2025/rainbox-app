@@ -149,7 +149,7 @@ export const MailReader = ({
         <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
       </div>
       <div ref={mailReaderRef} className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
-        style={isFullScreen ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : isMobile ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
+        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : isMobile ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
         <MailReaderHeader
           setSummaryDialogOpen={setSummaryDialogOpen}
           setTextToAudioOpen={setTextToAudioOpen}

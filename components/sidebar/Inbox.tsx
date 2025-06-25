@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FolderIcon, FolderPlusIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, FolderIcon, FolderPlusIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "@/components/ui/skeleton";
 import FolderComponent from "./Folder";
 import SortableSender from "./Sender";
@@ -44,6 +44,7 @@ export default function Inbox() {
     sidebarOrder,
     isSidebarOrderLoading,
     saveSidebarOrder,
+    isCreatingFolder,
     setSidebarOrder,
     addSenderToFolder,
     moveSenderToRoot
@@ -406,8 +407,9 @@ export default function Inbox() {
           <div className="bg-content p-3 rounded-lg shadow-sm">
             <p className="text-sm text-foreground">
               30 days left in your free trial. Keep your reading habit alive.
-              <span className="ml-1 text-blue-500 font-semibold cursor-pointer">
+              <span className="ml-1 text-blue-400 font-semibold cursor-pointer inline-flex items-center">
                 Upgrade now
+                <ArrowRightIcon className="h-4 w-4 ml-1" />
               </span>
             </p>
           </div>
@@ -415,11 +417,9 @@ export default function Inbox() {
         <BasicModal
           isOpen={isFolderModalOpen}
           onClose={() => setIsFolderModalOpen(false)}
-          onSave={(folderName) => {
-            createFolder(folderName);
-            setIsFolderModalOpen(false);
-          }}
+          onSave={createFolder}
           title="Create New Folder"
+          isLoading={isCreatingFolder}
         />
       </div>
       <DragOverlay>

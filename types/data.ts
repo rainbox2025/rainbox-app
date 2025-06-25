@@ -3,9 +3,10 @@ export interface User {
   email: string;
   avatar_url?: string;
   user_name?: string;
-  plan: "free" | "pro" | "enterprise";
-  usedFeeds: number;
-  totalFeeds: number;
+  full_name?: string;
+  plan?: "free" | "pro" | "enterprise";
+  usedFeeds?: number;
+  totalFeeds?: number;
 }
 export interface SenderType {
   id: string;
@@ -21,6 +22,7 @@ export interface SenderType {
   order?: number;
   isRead?: boolean;
   image_url?: string;
+  notification?: boolean ;
 }
 
 
@@ -35,6 +37,7 @@ export interface FolderType {
   senders?: SenderType[];
   order?: number;
   isRead?: boolean;
+  notification?: boolean;
 }
 export interface Mail {
   id: string;
@@ -63,13 +66,6 @@ export interface Category {
   isExpanded: boolean;
 }
 
-export interface User {
-  email: string;
-  plan: "free" | "pro" | "enterprise";
-  usedFeeds: number;
-  totalFeeds: number;
-}
-
 export interface Connection {
   id: string;
   type: "gmail" | "outlook";
@@ -80,11 +76,6 @@ export interface Connection {
   logoAlt: string;
 }
 
-export interface Sender {
-  id: string;
-  name: string;
-  email: string;
-}
 export interface EmailData {
   id: string;
   threadId: string;

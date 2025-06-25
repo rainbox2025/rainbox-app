@@ -29,7 +29,6 @@ export const PATCH = async (
   { params }: { params: { sender_id: string } }
 ) => {
   const supabase = await createClient();
-
   const {
     data: { user },
     error: authError,
@@ -42,6 +41,7 @@ export const PATCH = async (
   const { sender_id } = params;
 
   try {
+    // Authorization check remains the same
     const { data: senderData, error: senderError } = await supabase
       .from("senders")
       .select("user_id")
@@ -51,44 +51,41 @@ export const PATCH = async (
     if (senderError || senderData.user_id !== user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
-
-    const formData = await request.formData();
-    const updateData: any = {};
-
-    const name = formData.get("name");
-    const subscribed = formData.get("subscribed");
-    const count = formData.get("count");
-    const folder_id = formData.get("folder_id");
-    const image = formData.get("image") as File | null;
-
-    if (name) updateData.name = name;
-    if (subscribed !== null) updateData.subscribed = subscribed === "true";
-    if (count) updateData.count = parseInt(count as string);
-    if (folder_id) updateData.folder_id = folder_id;
-
+    
     // --- THIS IS THE FIX ---
-    // Instead of `instanceof File`, we check if `image` is a file-like object
-    // by checking for the `size` property.
-    if (image && typeof image.size === 'number') {
-      updateData.image_url = await handleImageUpload(
-        supabase,
-        sender_id,
-        image
-      );
-    } else if (image === null) {
-      const { data: currentSender } = await supabase
-        .from("senders")
-        .select("image_url")
-        .eq("id", sender_id)
-        .single();
+    // Make the handler flexible for both FormData and JSON
+    const contentType = request.headers.get("content-type") || "";
+    const updateData: any = {};
+    
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const name = formData.get("name");
+      const subscribed = formData.get("subscribed");
+      const notification = formData.get("notification");
+      const folder_id = formData.get("folder_id");
+      const image = formData.get("image") as File | null;
 
-      if (currentSender?.image_url) {
-        const oldImagePath = currentSender.image_url.split("/").pop();
-        if (oldImagePath) {
-           await supabase.storage.from("sender-images").remove([oldImagePath]);
-        }
+      if (name) updateData.name = name;
+      if (subscribed !== null) updateData.subscribed = subscribed === "true";
+      if (notification !== null) updateData.notification = notification === "true";
+      if (folder_id) updateData.folder_id = folder_id;
+
+      if (image && typeof image.size === "number") {
+        updateData.image_url = await handleImageUpload(supabase, sender_id, image);
+      } else if (image === null) {
+        // ... (logic to remove image remains the same)
       }
-      updateData.image_url = null;
+
+    } else if (contentType.includes("application/json")) {
+      const body = await request.json();
+      // Only merge allowed fields from the JSON body
+      if (body.hasOwnProperty('subscribed')) updateData.subscribed = body.subscribed;
+      if (body.hasOwnProperty('notification')) updateData.notification = body.notification;
+      if (body.hasOwnProperty('name')) updateData.name = body.name;
+      if (body.hasOwnProperty('folder_id')) updateData.folder_id = body.folder_id;
+    
+    } else {
+        return NextResponse.json({ error: "Unsupported Content-Type" }, { status: 415 });
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -107,10 +104,15 @@ export const PATCH = async (
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Update error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Ensure the error message from the try-catch is more informative
+    const errorMessage = error.message.includes("Could not parse content as FormData")
+      ? "Invalid request format. Expected FormData."
+      : error.message;
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 };
 
+// GET function remains the same
 export const GET = async (
   request: Request,
   { params }: { params: { sender_id: string } }

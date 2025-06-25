@@ -16,13 +16,19 @@ interface SendersContextType {
   senders: SenderType[];
   isSendersLoading: boolean;
   sendersListError: string | null;
-  unsubcribeSenderError: string | null;
-  updateSenderError: string | null;
   selectedSender: SenderType | null;
+  // Loading states for specific actions
+  updatingSenderId: string | null;
+  togglingReadId: string | null;
+  togglingNotificationId: string | null;
+  unsubscribingId: string | null;
+  // Action functions
+  updateSenderInRoot: (sender: SenderType) => void;
   fetchSenders: () => Promise<void>;
   unsubcribeSender: (id: string) => Promise<void>;
-  updateSender: (id: string, formData: FormData) => Promise<void>;
-  toggleReadSender: (senderId: string, isRead: boolean) => Promise<void>;
+  updateSender: (id: string, formData: FormData) => Promise<SenderType>;
+  toggleReadSender: (senderId: string) => Promise<SenderType>;
+  toggleNotificationSender: (senderId: string, currentStatus: boolean) => Promise<SenderType>;
   removeSender: (senderId: string) => void;
   addSender: (sender: SenderType) => void;
   setSelectedSender: (sender: SenderType | null) => void;
@@ -41,8 +47,13 @@ export const SendersProvider = ({
   const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
   const [sendersListError, setSendersListError] = useState<string | null>(null);
-  const [unsubcribeSenderError, setUnsubcribeSenderError] = useState<string | null>(null);
-  const [updateSenderError, setUpdateSenderError] = useState<string | null>(null);
+
+  // --- NEW: Granular loading states ---
+  const [updatingSenderId, setUpdatingSenderId] = useState<string | null>(null);
+  const [togglingReadId, setTogglingReadId] = useState<string | null>(null);
+  const [togglingNotificationId, setTogglingNotificationId] = useState<string | null>(null);
+  const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
+
   const api = useAxios();
 
   const fetchSenders = useCallback(async () => {
@@ -59,51 +70,94 @@ export const SendersProvider = ({
     }
   }, []);
 
-  const unsubcribeSender = useCallback(
-    async (id: string) => {
-      try {
-        await api.patch(`/senders/${id}`, { subscribed: false });
-        setSenders((prev) => prev.filter((sender) => sender.id !== id));
-      } catch (error) {
-        setUnsubcribeSenderError(error instanceof Error ? error.message : "Unknown error");
-      }
-    },
-    [api]
-  );
-
   const updateSender = useCallback(
     async (id: string, formData: FormData) => {
+      setUpdatingSenderId(id);
       try {
-        console.log("formObj: ", Object.fromEntries(formData.entries()));
-        setUpdateSenderError(null);
+        // 1. Make the API call
         const { data: updatedSender } = await api.patch(`/senders/${id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        setSenders((prev) => prev.map((s) => (s.id === id ? { ...s, ...updatedSender } : s)));
-        if (selectedSender?.id === id) {
-          setSelectedSender((prev) => (prev ? { ...prev, ...updatedSender } : null));
-        }
+
+        // 2. IMPORTANT: Return the updated sender object from the server
+        return updatedSender;
+
       } catch (error) {
-        setUpdateSenderError(error instanceof Error ? error.message : "Failed to update sender");
-        throw error;
+        console.error("Failed to update sender", error);
+        throw error; // Re-throw to be caught by the component
+      } finally {
+        setUpdatingSenderId(null);
       }
     },
-    [selectedSender]
+    [api] // Dependencies are now simpler
+  );
+
+  const updateSenderInRoot = (updatedSender: SenderType) => {
+    setSenders((prev) =>
+      prev.map((s) => (s.id === updatedSender.id ? updatedSender : s))
+    );
+  };
+
+  const unsubcribeSender = useCallback(
+    async (id: string) => {
+      setUnsubscribingId(id);
+      try {
+        // Send a simple JSON payload. The backend will handle it correctly now.
+        await api.patch(`/senders/${id}`, { subscribed: false });
+
+        // On success, remove the sender from the local state (delete-like operation)
+        setSenders((prev) => prev.filter((sender) => sender.id !== id));
+        if (selectedSender?.id === id) {
+          setSelectedSender(null);
+        }
+      } catch (error) {
+        console.error("Failed to unfollow sender", error);
+        throw error; // Let the component know about the error
+      } finally {
+        setUnsubscribingId(null);
+      }
+    },
+    [api, selectedSender]
   );
 
   const toggleReadSender = useCallback(
-    async (senderId: string, isRead: boolean) => {
+    async (senderId: string) => {
+      setTogglingReadId(senderId);
       try {
-        await api.patch(`/senders/read`, { sender_id: senderId, isRead });
-        setSenders((prev) =>
-          prev.map((sender) => (sender.id === senderId ? { ...sender, isRead } : sender))
-        );
+        // The API now returns the updated sender
+        const { data: updatedSender } = await api.patch(`/senders/read`, { sender_id: senderId });
+        return updatedSender; // Return it
       } catch (error) {
-        console.error(error);
+        console.error("Failed to toggle read state", error);
+        throw error;
+      } finally {
+        setTogglingReadId(null);
       }
     },
     [api]
   );
+
+  const toggleNotificationSender = useCallback(
+    async (senderId: string, currentStatus: boolean) => {
+      setTogglingNotificationId(senderId);
+      try {
+        // The API call returns the updated sender from the server
+        const { data: updatedSender } = await api.patch(`/senders/${senderId}`, {
+          notification: !currentStatus
+        });
+
+        // IMPORTANT: Return the updated sender object
+        return updatedSender;
+
+      } catch (error) {
+        console.error("Failed to toggle notification", error);
+        throw error;
+      } finally {
+        setTogglingNotificationId(null);
+      }
+    },
+    [api]
+  )
 
   const removeSender = (senderId: string) => {
     setSenders((prev) => prev.filter((sender) => sender.id !== senderId));
@@ -123,13 +177,19 @@ export const SendersProvider = ({
         senders,
         isSendersLoading,
         sendersListError,
-        unsubcribeSenderError,
-        updateSenderError,
         selectedSender,
+        // Pass down loading states
+        updatingSenderId,
+        togglingReadId,
+        togglingNotificationId,
+        unsubscribingId,
+        // Pass down actions
+        updateSenderInRoot,
         fetchSenders,
         unsubcribeSender,
         updateSender,
         toggleReadSender,
+        toggleNotificationSender,
         removeSender,
         addSender,
         setSelectedSender,

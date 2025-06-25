@@ -19,6 +19,7 @@ const nextConfig = {
       'lh3.googleusercontent.com',
       'avatars.githubusercontent.com', // Add this if you use GitHub auth
       'ui-avatars.com', // Add if you use placeholder avatars
+      'uxdtdwjtfvjcqpaprabu.supabase.co'
     ],
   },
   // other configurations...
