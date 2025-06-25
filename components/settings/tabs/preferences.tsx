@@ -1,21 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  CreditCardIcon as BillingIcon,
-  SpeakerWaveIcon,
-  SparklesIcon,
-} from '@heroicons/react/24/outline';
+import { SpeakerWaveIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { useSettings } from '@/context/settingsContext';
 
 export default function PreferencesTab() {
-  const [fontSize, setFontSize] = useState('small');
-  const [aiPrompt, setAiPrompt] = useState('Summarize this in a concise manner');
-  const [selectedVoice, setSelectedVoice] = useState('Default');
-  const [voiceSpeed, setVoiceSpeed] = useState('1.0');
+  const { preferences, updatePreferences } = useSettings();
   const [voiceList, setVoiceList] = useState<SpeechSynthesisVoice[]>([]);
   const [isVoicesLoaded, setIsVoicesLoaded] = useState(false);
 
-
-
-  // Function to load available voices
   const loadVoices = useCallback(() => {
     const availableVoices = window.speechSynthesis.getVoices();
     if (availableVoices.length > 0) {
@@ -24,25 +15,17 @@ export default function PreferencesTab() {
     }
   }, []);
 
-  // Initialize voices when component mounts
   useEffect(() => {
-    // Some browsers need a small delay to properly initialize speech synthesis
-    const timer = setTimeout(() => {
-      loadVoices();
-    }, 100);
-
+    const timer = setTimeout(loadVoices, 100);
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
-
     return () => {
       clearTimeout(timer);
-      // Cancel any ongoing speech when component unmounts
       window.speechSynthesis.cancel();
     };
   }, [loadVoices]);
 
-  // Sample voice speeds as options
   const speedOptions = [
     { value: "0.5", label: "0.5x (Slow)" },
     { value: "0.75", label: "0.75x" },
@@ -54,59 +37,22 @@ export default function PreferencesTab() {
   ];
 
   const playVoiceDemo = useCallback(() => {
-    // Cancel any ongoing speech first
+    if (!preferences) return;
     window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(
-      "This is a preview of your selected voice and speed settings."
-    );
-
-    // Set speech rate
-    utterance.rate = parseFloat(voiceSpeed);
-
-    // Find appropriate voice based on selection
+    const utterance = new SpeechSynthesisUtterance("This is a preview of your selected voice and speed settings.");
+    utterance.rate = parseFloat(preferences.voice_speed as string);
     if (voiceList.length > 0) {
-      let selectedVoiceObj;
-
-      switch (selectedVoice) {
-        case "Female":
-          selectedVoiceObj = voiceList.find(
-            voice => voice.name.toLowerCase().includes("female") ||
-              (!voice.name.toLowerCase().includes("male") && voice.name.includes("Google") && !voice.name.includes("UK"))
-          );
-          break;
-        case "Male":
-          selectedVoiceObj = voiceList.find(
-            voice => voice.name.toLowerCase().includes("male") && !voice.name.toLowerCase().includes("female")
-          );
-          break;
-        case "British":
-          selectedVoiceObj = voiceList.find(
-            voice => voice.name.includes("UK") || voice.name.includes("British")
-          );
-          break;
-        case "Australian":
-          selectedVoiceObj = voiceList.find(
-            voice => voice.name.includes("Australian") || voice.name.includes("AU")
-          );
-          break;
-        default:
-          // Default voice - typically first in the list or a neutral voice
-          selectedVoiceObj = voiceList.find(
-            voice => voice.lang.startsWith("en-")
-          ) || voiceList[0];
-      }
-
-      if (selectedVoiceObj) {
-        utterance.voice = selectedVoiceObj;
-      }
+      const voiceName = preferences?.selected_voice?.toLowerCase();
+      const selectedVoiceObj = voiceList.find(v => v.name.toLowerCase().includes(voiceName || ''));
+      if (selectedVoiceObj) utterance.voice = selectedVoiceObj;
     }
-
-    // Play the speech
     window.speechSynthesis.speak(utterance);
-  }, [selectedVoice, voiceSpeed, voiceList]);
+  }, [preferences, voiceList]);
 
-
+  // The loading check is no longer needed because the context provides default values immediately.
+  // if (!preferences) {
+  //   return null; // Or a skeleton loader if you still prefer one
+  // }
 
   return (
     <div className="space-y-6">
@@ -116,16 +62,14 @@ export default function PreferencesTab() {
       </div>
 
       <div className="space-y-8">
-        {/* Display Settings */}
         <div className="space-y-4">
           <h3 className="font-medium">Display Settings</h3>
-
           <div className="flex items-center justify-between">
             <label htmlFor="font-size" className="text-sm font-medium">Font Size</label>
             <select
               id="font-size"
-              value={fontSize}
-              onChange={(e) => setFontSize(e.target.value)}
+              value={preferences.font_size}
+              onChange={(e) => updatePreferences({ font_size: e.target.value })}
               className="w-40 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
             >
               <option value="small">Small</option>
@@ -135,10 +79,9 @@ export default function PreferencesTab() {
           </div>
         </div>
 
-        <hr className="border-border" style={{ margin: "1rem 0" }} />
+        <hr className="border-border" />
 
-        {/* AI Summary */}
-        <div className="space-y-4 !m-0" >
+        <div className="space-y-4">
           <div className='flex items-center gap-1'>
             <h3 className="font-medium">AI Summary </h3>
             <SparklesIcon className="h-4 w-4" />
@@ -146,16 +89,12 @@ export default function PreferencesTab() {
           <div>
             <label htmlFor="ai-prompt" className="block text-sm font-medium mb-1">Default prompt for summaries</label>
             <p className="text-xs text-muted-foreground mb-2">
-              {250 - (aiPrompt?.length || 0)} characters remaining
+              {250 - (preferences.ai_prompt?.length || 0)} characters remaining
             </p>
             <textarea
               id="ai-prompt"
-              value={aiPrompt}
-              onChange={(e) => {
-                if (e.target.value.length <= 250) {
-                  setAiPrompt(e.target.value);
-                }
-              }}
+              value={preferences.ai_prompt}
+              onChange={(e) => updatePreferences({ ai_prompt: e.target.value })}
               maxLength={250}
               rows={3}
               className="w-full p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
@@ -163,26 +102,22 @@ export default function PreferencesTab() {
             <p className="text-xs text-muted-foreground">
               This prompt will be used when generating AI summaries of your content.
             </p>
-
           </div>
         </div>
 
-        <hr className="border-border" style={{ margin: "1rem 0" }} />
+        <hr className="border-border" />
 
-        {/* Text to Speech */}
-        <div className="space-y-4 !m-0">
+        <div className="space-y-4">
           <h3 className="font-medium flex items-center gap-2">
             Text to Speech
             <SpeakerWaveIcon className="h-5 w-5" />
           </h3>
-
-          {/* Voice Selection */}
           <div className="flex items-center justify-between">
             <label htmlFor="voice" className="text-sm font-medium">Voice</label>
             <select
               id="voice"
-              value={selectedVoice}
-              onChange={(e) => setSelectedVoice(e.target.value)}
+              value={preferences.selected_voice}
+              onChange={(e) => updatePreferences({ selected_voice: e.target.value })}
               className="w-40 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
             >
               <option value="Default">Default</option>
@@ -192,14 +127,12 @@ export default function PreferencesTab() {
               <option value="Australian">Australian</option>
             </select>
           </div>
-
-          {/* Voice Speed - Now as Dropdown */}
           <div className="flex items-center justify-between">
             <label htmlFor="speed" className="text-sm font-medium">Speed</label>
             <select
               id="speed"
-              value={voiceSpeed}
-              onChange={(e) => setVoiceSpeed(e.target.value)}
+              value={preferences.voice_speed}
+              onChange={(e) => updatePreferences({ voice_speed: e.target.value })}
               className="w-40 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
             >
               {speedOptions.map((option) => (
@@ -209,8 +142,6 @@ export default function PreferencesTab() {
               ))}
             </select>
           </div>
-
-          {/* Preview Section */}
           <div className="mt-4 p-4 border border-border rounded-md bg-sidebar">
             <div className="flex flex-col items-center gap-2">
               <p className="text-sm text-center">Preview your selected voice and speed</p>
@@ -228,7 +159,7 @@ export default function PreferencesTab() {
             </div>
           </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   )
 }
