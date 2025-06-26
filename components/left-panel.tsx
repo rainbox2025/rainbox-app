@@ -28,7 +28,8 @@ import { InboxIcon, PlusIcon } from "lucide-react"; // Lucide InboxIcon
 import { FeedbackModal } from "./feedback-modal";
 import { AddNewsletterFlow } from "./newsletter/flow";
 import { cn } from "@/lib/utils"; // Ensure you have cn utility
-import { GmailConnectionTest } from "./GmailConnectionTest";
+import { GmailConnection } from "./GmailConnection";
+import { GmailOnboarding } from "./GmailOnboarding";
 
 // Define an active class name or use Tailwind's group/peer for active state
 const activeClass = "bg-hovered  "; // Example active style
@@ -276,7 +277,8 @@ export default function LeftPanel() {
       {isFeedbackOpen && <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AddNewsletterFlow isOpen={isAddNewsletterFlowOpen} onClose={() => setIsAddNewsletterFlowOpen(false)} />
-      <GmailConnectionTest />
+      <GmailConnection />
+
     </>
   );
 }
