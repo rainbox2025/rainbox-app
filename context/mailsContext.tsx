@@ -33,6 +33,7 @@ interface MailsContextType {
   markAsReadAllBySenderId: (senderId: string) => Promise<void>;
   loadMoreMails: () => void; // Simplified function for the component
   paginationInfo: PaginationInfo;
+  summarizeError?: string | null;
 }
 
 const MailsContext = createContext<MailsContextType | null>(null);
@@ -78,7 +79,9 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
             `/mails/sender/${selectedSender.id}?page=${page}&pageSize=20`
           );
         } else {
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (!user) throw new Error("User not authenticated");
           response = await api.get(
             `/mails/user/${user.id}?page=${page}&pageSize=20`
@@ -95,7 +98,6 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
           totalPages: pagination.totalPages,
           totalCount: pagination.totalCount,
         });
-
       } catch (error) {
         setMailsListError(
           error instanceof Error ? error.message : "Unknown error"
@@ -127,53 +129,85 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
     fetchMails(1);
   }, [fetchMails]);
 
-  const markAsRead = useCallback(async (id: string, read = true) => {
-    try {
-      await api.patch(`/mails/read/${id}`, { read });
-      setMails((prev) => prev.map((mail) => (mail.id === id ? { ...mail, read } : mail)));
-      if (selectedSender) {
+  const markAsRead = useCallback(
+    async (id: string, read = true) => {
+      try {
+        await api.patch(`/mails/read/${id}`, { read });
+        setMails((prev) =>
+          prev.map((mail) => (mail.id === id ? { ...mail, read } : mail))
+        );
+        if (selectedSender) {
+          const newSenders = senders.map((sender) =>
+            sender.id === selectedSender?.id
+              ? { ...sender, count: read ? sender.count - 1 : sender.count + 1 }
+              : sender
+          );
+          setSenders(newSenders);
+        }
+      } catch (error) {
+        setMarkAsReadError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+      }
+    },
+    [api, senders, selectedSender, setSenders]
+  );
+
+  const markAsReadAllBySenderId = useCallback(
+    async (senderId: string) => {
+      try {
+        await api.patch(`/mails/read/sender/${senderId}`);
+        setMails((prev) =>
+          prev.map((mail) =>
+            mail.sender_id === senderId ? { ...mail, read: true } : mail
+          )
+        );
         const newSenders = senders.map((sender) =>
-          sender.id === selectedSender?.id ? { ...sender, count: read ? sender.count - 1 : sender.count + 1 } : sender
+          sender.id === selectedSender?.id ? { ...sender, count: 0 } : sender
         );
         setSenders(newSenders);
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      setMarkAsReadError(error instanceof Error ? error.message : "Unknown error");
-    }
-  }, [api, senders, selectedSender, setSenders]);
+    },
+    [api, senders, selectedSender, setSenders]
+  );
 
-  const markAsReadAllBySenderId = useCallback(async (senderId: string) => {
-    try {
-      await api.patch(`/mails/read/sender/${senderId}`);
-      setMails((prev) => prev.map((mail) => mail.sender_id === senderId ? { ...mail, read: true } : mail));
-      const newSenders = senders.map((sender) => sender.id === selectedSender?.id ? { ...sender, count: 0 } : sender);
-      setSenders(newSenders);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [api, senders, selectedSender, setSenders]);
+  const bookmark = useCallback(
+    async (id: string, bookmark = true) => {
+      try {
+        await api.patch(`/mails/bookmark/${id}`, { bookmark });
+        setMails((prev) =>
+          prev.map((mail) =>
+            mail.id === id ? { ...mail, bookmarked: bookmark } : mail
+          )
+        );
+      } catch (error) {
+        setBookmarkError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+      }
+    },
+    [api]
+  );
 
-  const bookmark = useCallback(async (id: string, bookmark = true) => {
-    try {
-      await api.patch(`/mails/bookmark/${id}`, { bookmark });
-      setMails((prev) => prev.map((mail) => mail.id === id ? { ...mail, bookmarked: bookmark } : mail));
-    } catch (error) {
-      setBookmarkError(error instanceof Error ? error.message : "Unknown error");
-    }
-  }, [api]);
-
-  const summarize = useCallback(async (id: string) => {
-    try {
-      setSummarizeLoading(true);
-      const response = await api.get(`/mails/summarize/${id}`);
-      return response.data;
-    } catch (error) {
-      setSummarizeError(error instanceof Error ? error.message : "Unknown error");
-      return "";
-    } finally {
-      setSummarizeLoading(false);
-    }
-  }, [api]);
+  const summarize = useCallback(
+    async (id: string) => {
+      try {
+        setSummarizeLoading(true);
+        const response = await api.get(`/mails/summarize/${id}`);
+        return response.data;
+      } catch (error) {
+        setSummarizeError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        return "";
+      } finally {
+        setSummarizeLoading(false);
+      }
+    },
+    [api]
+  );
 
   return (
     <MailsContext.Provider
