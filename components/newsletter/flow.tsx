@@ -1,33 +1,25 @@
+// src/components/newsletter/flow.tsx
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { AddNewsletterModal } from './add-newsletter-modal';
 import { SelectNewslettersModal } from './select-newsletters-modal';
 import { SuccessModal } from '../modals/succeed-modal';
 import { ErrorModal } from '../modals/error-modal';
-import { MOCK_CONNECTIONS, MOCK_SUGGESTED_SENDERS } from './mock-newsletter-data';
-import { Connection, Sender } from '@/types/data';
+import { Sender } from '@/context/gmailContext'; // Import the correct Sender type
 
 export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   type ModalType = 'addNewsletter' | 'selectNewsletters' | 'success' | 'error' | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [suggestedSenders, setSuggestedSenders] = useState<Sender[]>([]);
   const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{ email: string, name: string } | null>(null);
-
-
-  useEffect(() => {
-    setConnections(MOCK_CONNECTIONS);
-    setSuggestedSenders(MOCK_SUGGESTED_SENDERS);
-  }, []);
 
   useEffect(() => {
     if (isOpen) {
       openFlow();
-    }
-    else {
+    } else {
       closeModal();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const openFlow = () => setActiveModal('addNewsletter');
   const closeModal = () => {
@@ -41,22 +33,18 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
   };
 
   const handleBackToConnections = () => {
+    setCurrentConnectedAccount(null);
     setActiveModal('addNewsletter');
   };
 
+  // This is now called AFTER the SelectNewslettersModal has successfully
+  // saved and onboarded the senders via the context.
   const handleAddNewsletters = (selected: Sender[]) => {
-    console.log('Selected newsletters to add:', selected);
-
-    const isSuccess = true;
-    if (isSuccess) {
-      setActiveModal('success');
-    } else {
-      setActiveModal('error');
-    }
+    console.log(`${selected.length} newsletters successfully onboarded.`);
+    setActiveModal('success');
   };
 
   const handleTryAgainError = () => {
-
     if (currentConnectedAccount) {
       setActiveModal('selectNewsletters');
     } else {
@@ -66,28 +54,33 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
 
   return (
     <div>
+      {/* 
+        This modal now uses context internally to get connection status.
+        The `connections` prop is no longer needed.
+      */}
       <AddNewsletterModal
         isOpen={activeModal === 'addNewsletter'}
         onClose={closeModal}
-        connections={connections}
         onSelectSender={handleSelectSender}
       />
 
+      {/* 
+        This modal is now self-sufficient using the GmailContext.
+        The `suggestedSenders` prop has been removed.
+      */}
       <SelectNewslettersModal
         isOpen={activeModal === 'selectNewsletters'}
         onClose={closeModal}
         onBack={handleBackToConnections}
         onAddNewsletters={handleAddNewsletters}
-        suggestedSenders={suggestedSenders}
         connectedAccountName={currentConnectedAccount?.name}
       />
 
       <SuccessModal
         isOpen={activeModal === 'success'}
         onClose={closeModal}
-        onSelectNewsletters={() => setActiveModal('selectNewsletters')}
-        mainText='Woohoo! Selected Newsletters are getting added. It may take upto 2 minutes to show up in your feed'
-        buttonText='Close'
+        mainText='Woohoo! Selected Newsletters are getting added. It may take up to 2 minutes to show up in your feed'
+        buttonText='Done'
       />
 
       <ErrorModal

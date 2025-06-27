@@ -1,3 +1,5 @@
+// src/components/connect-gmail/flow.tsx
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { ConnectGmailModal } from './connect-gmail';
@@ -6,15 +8,11 @@ import { ErrorModal } from '../modals/error-modal';
 import { SuccessModal } from '../modals/succeed-modal';
 import { useGmail } from '@/context/gmailContext';
 
-
-type ActiveGmailSubModalType = 'connect' | 'permissions' | 'success' | 'error' | null;
-
-
+type ActiveGmailSubModalType = 'connect' | 'permissions' | 'success' | 'error';
 
 interface GmailConnectionFlowProps {
   isOpen: boolean;
   onClose: () => void;
-
   onConnectionComplete?: () => void;
 }
 
@@ -23,33 +21,27 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
   onClose,
   onConnectionComplete,
 }) => {
-  const [activeSubModal, setActiveSubModal] = useState<ActiveGmailSubModalType>(null);
-  const { email, isConnected, connectGmail } = useGmail();
-
-
+  const [activeSubModal, setActiveSubModal] = useState<ActiveGmailSubModalType>('connect');
+  const { connectGmail, connectionAttemptStatus, resetConnectionAttempt } = useGmail();
 
   useEffect(() => {
     if (isOpen) {
-      setActiveSubModal('connect');
-    } else {
-      setActiveSubModal(null);
+      if (connectionAttemptStatus === 'success') {
+        setActiveSubModal('success');
+      } else if (connectionAttemptStatus === 'error') {
+        setActiveSubModal('error');
+      } else {
+        setActiveSubModal('connect');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, connectionAttemptStatus]);
 
-  useEffect(() => {
-    if (isOpen && isConnected && email) {
-      setActiveSubModal('success');
-    }
-  }, [isOpen, isConnected, email]);
-
-  if (!isOpen || !activeSubModal) {
-
+  if (!isOpen) {
     return null;
   }
 
-
-  const handleCloseSubModalAndFlow = () => {
-    setActiveSubModal(null);
+  const handleFlowClose = () => {
+    resetConnectionAttempt();
     onClose();
   };
 
@@ -58,48 +50,27 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
   };
 
   const handleGmailApiConnection = async () => {
-    connectGmail();
-  };
-
-  const handlePermissionSuccess = () => {
-    setActiveSubModal('success');
-  };
-
-  const handlePermissionError = () => {
-    setActiveSubModal('error');
+    await connectGmail();
   };
 
   const handleSelectNewsletters = () => {
-    console.log("Navigate to select newsletters action...");
     if (onConnectionComplete) {
       onConnectionComplete();
     }
-    handleCloseSubModalAndFlow();
+    handleFlowClose();
   };
 
-  const handleTryAgainError = () => {
-    setActiveSubModal('permissions');
+  const handleTryAgain = () => {
+    resetConnectionAttempt();
+    setActiveSubModal('connect');
   };
-
-
-
-
-  const handleSubModalClose = () => {
-
-
-
-
-
-    handleCloseSubModalAndFlow();
-  }
-
 
   return (
     <>
       {activeSubModal === 'connect' && (
         <ConnectGmailModal
           isOpen={true}
-          onClose={handleSubModalClose}
+          onClose={handleFlowClose}
           onProceedToPermissions={proceedToPermissions}
         />
       )}
@@ -107,18 +78,15 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
       {activeSubModal === 'permissions' && (
         <GmailPermissionsModal
           isOpen={true}
-          onClose={handleSubModalClose}
+          onClose={handleFlowClose}
           handleConnection={handleGmailApiConnection}
-          onSuccess={handlePermissionSuccess}
-          onError={handlePermissionError}
         />
       )}
 
       {activeSubModal === 'success' && (
         <SuccessModal
           isOpen={true}
-          onClose={handleSubModalClose}
-          onSelectNewsletters={handleSelectNewsletters}
+          onClose={handleSelectNewsletters}
           mainText='Woohoo! Your Gmail is now connected to Rainbox'
           buttonText='Select Newsletters'
         />
@@ -127,9 +95,9 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
       {activeSubModal === 'error' && (
         <ErrorModal
           isOpen={true}
-          onClose={handleSubModalClose}
-          onTryAgain={handleTryAgainError}
-          mainText=' Oops! There was an error. Try again or contact support.'
+          onClose={handleFlowClose}
+          onTryAgain={handleTryAgain}
+          mainText='Oops! There was an error. Try again or contact support.'
         />
       )}
     </>

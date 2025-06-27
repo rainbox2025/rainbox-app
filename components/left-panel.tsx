@@ -128,7 +128,7 @@ export default function LeftPanel() {
         {/* Discover Button - Assuming it navigates somewhere or sets a mode */}
         {/* <Link href="/discover" passHref> */}
         <button
-          onClick={() => { handleSectionChange(); /* setMode('discover'); */ }}
+          onClick={() => setIsAddNewsletterFlowOpen(true)}
           className={cn(
             "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
             // pathname.startsWith("/discover") && activeClass // Example if /discover is a page
@@ -277,7 +277,7 @@ export default function LeftPanel() {
       {isFeedbackOpen && <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <AddNewsletterFlow isOpen={isAddNewsletterFlowOpen} onClose={() => setIsAddNewsletterFlowOpen(false)} />
-      <GmailConnection />
+      {/* <GmailConnection /> */}
 
     </>
   );

@@ -1,5 +1,7 @@
+// src/components/connect-gmail/proceed-modal.tsx
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LockClosedIcon } from '@heroicons/react/24/solid';
 import { GmailMecoLogosDisplay } from './gmail-rainbox-logo';
@@ -7,53 +9,26 @@ import { ModalCloseButton } from '../modals/modal-close-button';
 import { Button } from '../ui/button';
 import { Loader } from 'lucide-react';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import { useGmail } from '@/context/gmailContext';
 
 interface GmailPermissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  handleConnection: () => void;
-  onSuccess: () => void;
-  onError: () => void;
+  handleConnection: () => Promise<void>;
 }
 
 export const GmailPermissionsModal: React.FC<GmailPermissionsModalProps> = ({
   isOpen,
   onClose,
   handleConnection,
-  onSuccess,
-  onError,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { email, isConnected, connectGmail } = useGmail();
-  const [result, setResult] = useState<'success' | 'error' | null>(null);
-
-
 
   if (!isOpen) return null;
 
-  useEffect(() => {
-    if (isOpen && isConnected && email) {
-      setResult('success');
-    }
-  }, [isOpen, isConnected, email]);
-
   const onProceedClick = async () => {
     setIsLoading(true);
-    try {
-      handleConnection();
-      if (result === 'success') {
-        onSuccess();
-      }
-      if (result === 'error') {
-        onError();
-      }
-    } catch (err) {
-      console.error("Connection error:", err);
-      onError();
-    } finally {
-      setIsLoading(false);
-    }
+    await handleConnection();
+    // No need to set loading to false, as the page will redirect
   };
 
   return (
@@ -66,7 +41,7 @@ export const GmailPermissionsModal: React.FC<GmailPermissionsModalProps> = ({
           className="bg-content rounded-xl shadow-xl w-full max-w-[400px] border border-secondary"
         >
           <div className="p-6">
-            <div className="flex justify-end items-center mb-1"> {/* Adjusted margin for layout */}
+            <div className="flex justify-end items-center mb-1">
               <ModalCloseButton onClick={onClose} disabled={isLoading} />
             </div>
 
@@ -82,9 +57,9 @@ export const GmailPermissionsModal: React.FC<GmailPermissionsModalProps> = ({
               </p>
             </div>
 
-            <Button className='w-full text-sm' onClick={onProceedClick}>
+            <Button className='w-full text-sm' onClick={onProceedClick} disabled={isLoading}>
               Proceed
-              {isLoading ? <Loader className="animate-spin ml-2" /> : <ArrowRightIcon className="w-4 h-4 ml-1" />}
+              {isLoading ? <Loader className="animate-spin ml-2 h-4 w-4" /> : <ArrowRightIcon className="w-4 h-4 ml-1" />}
             </Button>
           </div>
         </motion.div>
