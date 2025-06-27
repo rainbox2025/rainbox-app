@@ -4,6 +4,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAxios } from "@/hooks/useAxios";
+import { Suspense } from 'react';
 
 // --- Type Definitions ---
 export type Sender = {
@@ -34,6 +35,7 @@ export type OnboardingResult = {
 
 type ConnectionStatus = 'idle' | 'success' | 'error';
 
+// CHANGE THIS
 type GmailContextType = {
   // Auth
   isConnected: boolean;
@@ -59,17 +61,53 @@ type GmailContextType = {
   setupWatch: () => Promise<boolean>;
   isAddingSender: boolean;
   isOnboarding: boolean;
+
+  // --- ADD THESE ---
+  // Allow the handler to modify the state
+  checkConnectionStatus: () => Promise<void>;
+  setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
+  setEmail: React.Dispatch<React.SetStateAction<string | null>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setConnectionAttemptStatus: React.Dispatch<React.SetStateAction<ConnectionStatus>>;
 };
 
 // --- Context ---
 const GmailContext = createContext<GmailContextType | undefined>(undefined);
 
-// --- Provider ---
-export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
-  const api = useAxios();
+// ADD THIS NEW COMPONENT
+function GmailConnectionHandler() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // This logic is now isolated here
+  const { checkConnectionStatus, setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useGmail();
+
+  useEffect(() => {
+    const gmailConnected = searchParams.get("gmail_connected");
+    const oauthError = searchParams.get("error");
+    const connectedEmail = searchParams.get("email");
+
+    if (gmailConnected === "true" && connectedEmail) {
+      setIsConnected(true);
+      setEmail(connectedEmail);
+      setConnectionAttemptStatus('success');
+      router.replace(pathname, { scroll: false });
+    } else if (oauthError) {
+      setError(`OAuth failed: ${oauthError}`);
+      setConnectionAttemptStatus('error');
+      router.replace(pathname, { scroll: false });
+    } else {
+      // checkConnectionStatus is now called from the main provider
+    }
+  }, [searchParams, router, pathname, setIsConnected, setEmail, setError, setConnectionAttemptStatus]);
+
+  return null; // This component does not render anything
+}
+
+// --- Provider ---
+export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
+  const api = useAxios();
 
   // State definitions
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -102,23 +140,8 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const gmailConnected = searchParams.get("gmail_connected");
-    const oauthError = searchParams.get("error");
-    const connectedEmail = searchParams.get("email");
-
-    if (gmailConnected === "true" && connectedEmail) {
-      setIsConnected(true);
-      setEmail(connectedEmail);
-      setConnectionAttemptStatus('success');
-      router.replace(pathname, { scroll: false });
-    } else if (oauthError) {
-      setError(`OAuth failed: ${oauthError}`);
-      setConnectionAttemptStatus('error');
-      router.replace(pathname, { scroll: false });
-    } else {
-      checkConnectionStatus();
-    }
-  }, []); // This effect should only run once on page load
+    checkConnectionStatus();
+  }, [checkConnectionStatus]);
 
   const resetConnectionAttempt = () => {
     setConnectionAttemptStatus('idle');
@@ -230,9 +253,22 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
     connectGmail, disconnectGmail, senders, nextPageToken, isLoadingSenders,
     sendersError, fetchSenders, searchSenders, addSender, onboardSavedSenders,
     setupWatch, isAddingSender, isOnboarding,
+
+    // --- ADD THESE ---
+    // Pass the setters and check function into the context
+    checkConnectionStatus,
+    setIsConnected,
+    setEmail,
+    setError,
+    setConnectionAttemptStatus,
   };
 
-  return <GmailContext.Provider value={value}>{children}</GmailContext.Provider>;
+  return <GmailContext.Provider value={value}>
+    <Suspense fallback={null}>
+      <GmailConnectionHandler />
+    </Suspense>
+    {children}
+  </GmailContext.Provider>;
 };
 
 export const useGmail = (): GmailContextType => {

@@ -13,7 +13,7 @@ const SummaryDialog = ({
   onOpenChange: (open: boolean) => void;
   containerRef: any;
 }) => {
-  const { summarize, summarizeLoading, selectedMail, summarizeError } = useMails();
+  const { summarize, summarizeLoading, selectedMail } = useMails();
   const [summary, setSummary] = useState<string | null>(null);
   const [dialogStyle, setDialogStyle] = useState({});
 
@@ -99,8 +99,6 @@ const SummaryDialog = ({
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
             </div>
-          ) : summarizeError ? (
-            <div className="text-red-500">{summarizeError}</div>
           ) : (
             <div className="text-sm">{summary}</div>
           )}

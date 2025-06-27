@@ -13,7 +13,7 @@ const firebaseConfig = {
   measurementId: "G-69CV9C2REJ"
 };
 
-let messaging: ReturnType<typeof getMessaging> | null = null;
+let messaging: ReturnType<typeof getMessaging> ;
 
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   const app = initializeApp(firebaseConfig);

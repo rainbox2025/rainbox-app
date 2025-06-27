@@ -19,7 +19,7 @@ import { DropdownMenu, DropdownItem } from '@/components/modals/dropdown-menu'; 
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 
 const BookmarkSidebarContent = () => {
-  const { bookmarks, allTags, renameTagGlobally, deleteTagGlobally } = useBookmarks();
+  const { bookmarks, allTags, renameTagGlobally, deleteTagGlobally, isTagRenameLoading, isTagDeleteLoading } = useBookmarks();
 
   const [activeTagMenu, setActiveTagMenu] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
@@ -195,6 +195,7 @@ const BookmarkSidebarContent = () => {
             setIsRenameModalOpen(false);
             setTagToRename(null);
           }}
+          isLoading={isTagRenameLoading}
           onSave={handleRenameTag} // BasicModal will provide the new value to this function
           initialValue={tagToRename}
           title="Rename Tag"
@@ -209,6 +210,7 @@ const BookmarkSidebarContent = () => {
             setIsDeleteModalOpen(false);
             setTagToDelete(null);
           }}
+          isLoading={isTagDeleteLoading}
           onConfirm={handleDeleteTag}
           itemName={tagToDelete}
           itemType="tag"

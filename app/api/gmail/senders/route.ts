@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { initOauthCLient } from "@/lib/oauth";
 import { google } from "googleapis";
 import { cookies } from "next/headers";
