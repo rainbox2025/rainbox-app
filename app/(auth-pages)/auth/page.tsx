@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { sendOtpAction, verifyOtpAndSignInAction, signInWithGoogleAction } from "@/app/actions";
+import {
+  sendOtpAction,
+  verifyOtpAndSignInAction,
+  signInWithGoogleAction,
+} from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/icons"; // Make sure this path is correct
 import Image from "next/image";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
-import { ArrowRightIcon } from '@heroicons/react/24/solid';
+import { ArrowRightIcon } from "@heroicons/react/24/solid";
 import { useSearchParams } from "next/navigation";
-import toast, { Toaster } from 'react-hot-toast'; // Import react-hot-toast
+import toast, { Toaster } from "react-hot-toast"; // Import react-hot-toast
 
 export default function AuthPage() {
   const [step, setStep] = useState<"email" | "otp">("email");
@@ -33,7 +37,8 @@ export default function AuthPage() {
     if (errorParam) {
       toast.error(decodeURIComponent(errorParam));
     }
-    if (messageParam) { // Can be used for general info/success from redirects
+    if (messageParam) {
+      // Can be used for general info/success from redirects
       toast.success(decodeURIComponent(messageParam));
     }
     if (successParam) {
@@ -76,7 +81,12 @@ export default function AuthPage() {
     toast.dismiss();
 
     try {
-      const result = await verifyOtpAndSignInAction(email, otp, name, showNameField);
+      const result = await verifyOtpAndSignInAction(
+        email,
+        otp,
+        name,
+        showNameField
+      );
       if (result && result.status === "error") {
         toast.error(result.message);
         setIsLoading(false);
@@ -98,28 +108,31 @@ export default function AuthPage() {
   const [captchaTheme, setCaptchaTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       setCaptchaTheme(mediaQuery.matches ? "light" : "light");
-      const handler = (e: MediaQueryListEvent) => setCaptchaTheme(e.matches ? "light" : "light");
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+      const handler = (e: MediaQueryListEvent) =>
+        setCaptchaTheme(e.matches ? "light" : "light");
+      mediaQuery.addEventListener("change", handler);
+      return () => mediaQuery.removeEventListener("change", handler);
     }
   }, []);
 
   // --- Style Definitions Based on Your Provided Code ---
-  const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"; // Added focus-visible for better accessibility from shadcn/ui Input
+  const inputBaseClasses =
+    "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"; // Added focus-visible for better accessibility from shadcn/ui Input
   const placeholderClasses = "placeholder:text-muted-foreground"; // Your email input doesn't have a specific placeholder class, this is a common way
 
-  const primaryButtonBaseClasses = "w-full h-12 bg-secondary hover:bg-hovered text-primary rounded-xl font-medium text-base";
-  const googleButtonClasses = "w-full h-12 flex items-center justify-center px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground";
-
+  const primaryButtonBaseClasses =
+    "w-full h-12 bg-secondary hover:bg-hovered text-primary rounded-xl font-medium text-base";
+  const googleButtonClasses =
+    "w-full h-12 flex items-center justify-center px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground";
 
   return (
-    <div className="flex flex-col items-center justify-between py-10 min-h-screen font-sans "> {/* Assuming bg-background is defined for page bg */}
+    <div className="flex flex-col items-center justify-between py-10 min-h-screen font-sans ">
+      {" "}
+      {/* Assuming bg-background is defined for page bg */}
       <Toaster position="top-center" reverseOrder={false} />
       <div>
-
-
         <div className="w-full flex items-center justify-center mb-0">
           <Image
             src="/logo-lg.png"
@@ -223,7 +236,10 @@ export default function AuthPage() {
                 name="otp"
                 placeholder="Enter the 6 digit code sent to your email"
                 value={otp}
-                onChange={(e) => { const val = e.target.value; if (/^\d*$/.test(val) && val.length <= 6) setOtp(val); }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d*$/.test(val) && val.length <= 6) setOtp(val);
+                }}
                 required
                 minLength={6}
                 maxLength={6}
@@ -238,7 +254,9 @@ export default function AuthPage() {
               className={primaryButtonBaseClasses}
               disabled={isLoading}
             >
-              {isLoading ? "Verifying..." : (
+              {isLoading ? (
+                "Verifying..."
+              ) : (
                 <>
                   Continue
                   <ArrowRightIcon className="w-5 h-5 inline ml-1" />
@@ -265,14 +283,19 @@ export default function AuthPage() {
           </form>
         )}
       </div>
-
-      <div className="text-xs text-muted-foreground mt-8 text-center"> {/* Used text-muted-foreground */}
-        By continuing you agree to the{" "} <br />
-        <Link href="/terms" className="underline hover:text-primary"> {/* Using text-primary for link hover */}
+      <div className="text-xs text-muted-foreground mt-8 text-center">
+        {" "}
+        {/* Used text-muted-foreground */}
+        By continuing you agree to the <br />
+        <Link href="/terms" className="underline hover:text-primary">
+          {" "}
+          {/* Using text-primary for link hover */}
           Terms of Use
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="underline hover:text-primary"> {/* Using text-primary for link hover */}
+        <Link href="/privacy" className="underline hover:text-primary">
+          {" "}
+          {/* Using text-primary for link hover */}
           Privacy Policy
         </Link>
         .
