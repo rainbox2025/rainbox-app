@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { initOauthCLient } from "@/lib/oauth";
 import { extractEmail } from "@/lib/gmail";
 
+export const dynamic = "force-dynamic";
+
 function chunkArray<T>(array: T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
     array.slice(i * size, i * size + size)

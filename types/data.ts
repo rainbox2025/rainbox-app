@@ -22,11 +22,15 @@ export interface SenderType {
   order?: number;
   isRead?: boolean;
   image_url?: string;
-  notification?: boolean ;
+  notification?: boolean;
 }
 
+export interface Sender {
+  id: string;
+  name: string;
+  email: string;
+}
 
-  
 export interface FolderType {
   id: string;
   name: string;

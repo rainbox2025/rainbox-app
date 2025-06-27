@@ -5,6 +5,9 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+// TODO
+export const resetPasswordAction = async () => {};
+
 // The verifyRecaptcha function remains the same.
 async function verifyRecaptcha(token: string | null): Promise<boolean> {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
