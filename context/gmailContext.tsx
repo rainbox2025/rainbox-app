@@ -1,153 +1,278 @@
+// src/context/gmailContext.tsx
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useAxios } from "@/hooks/useAxios";
+import { Suspense } from 'react';
 
-// Helper function to get a cookie by name
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') { // Guard for SSR or pre-hydration
-    return null;
-  }
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
-
-// Helper function to delete a cookie
-function deleteCookie(name: string, path: string = '/', domain?: string) {
-  if (typeof document === 'undefined') return;
-  let cookieString = name + "=; Max-Age=-99999999;";
-  if (path) cookieString += " path=" + path + ";";
-  if (domain) cookieString += " domain=" + domain + ";";
-  // For good measure, also set expires to a past date
-  cookieString += " expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  document.cookie = cookieString;
-}
-
-
-type ConsentTokenData = {
+// --- Type Definitions ---
+export type Sender = {
+  id?: string;
+  name: string;
   email: string;
-  // Potentially other token details, but email is what we need for context
-  // access_token?: string;
-  // refresh_token?: string;
-  // expires_at?: number;
+  fullName: string;
 };
 
+type PageInfo = {
+  hasNextPage: boolean;
+  totalProcessed?: number;
+  resultsPerPage?: number;
+};
+
+type SendersResponse = {
+  senders: Sender[];
+  nextPageToken: string | null;
+  pageInfo: PageInfo;
+};
+
+export type OnboardingResult = {
+  success: boolean;
+  processed: number;
+  sendersOnboarded: number;
+  message: string;
+};
+
+type ConnectionStatus = 'idle' | 'success' | 'error';
+
+// CHANGE THIS
 type GmailContextType = {
-  email: string | null;
+  // Auth
   isConnected: boolean;
-  connectGmail: () => void;
-  disconnectGmail: () => void;
+  email: string | null;
+  isLoading: boolean;
+  error: string | null;
+  connectionAttemptStatus: ConnectionStatus;
+  resetConnectionAttempt: () => void;
+  connectGmail: () => Promise<void>;
+  disconnectGmail: () => Promise<void>;
+
+  // Senders
+  senders: Sender[];
+  nextPageToken: string | null;
+  isLoadingSenders: boolean;
+  sendersError: string | null;
+  fetchSenders: (token?: string) => Promise<void>;
+  searchSenders: (query: string) => Promise<void>;
+
+  // Onboarding & Watching
+  addSender: (sender: Pick<Sender, 'name' | 'email'>) => Promise<Sender | null>;
+  onboardSavedSenders: () => Promise<OnboardingResult | null>;
+  setupWatch: () => Promise<boolean>;
+  isAddingSender: boolean;
+  isOnboarding: boolean;
+
+  // --- ADD THESE ---
+  // Allow the handler to modify the state
+  checkConnectionStatus: () => Promise<void>;
+  setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
+  setEmail: React.Dispatch<React.SetStateAction<string | null>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setConnectionAttemptStatus: React.Dispatch<React.SetStateAction<ConnectionStatus>>;
 };
 
-const GmailContext = createContext<GmailContextType>({
-  email: null,
-  isConnected: false,
-  connectGmail: () => { },
-  disconnectGmail: () => { },
-});
+// --- Context ---
+const GmailContext = createContext<GmailContextType | undefined>(undefined);
 
-export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
-  const [email, setEmail] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+// ADD THIS NEW COMPONENT
+function GmailConnectionHandler() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Effect 1: Check for persisted connection via cookie on mount
-  useEffect(() => {
-    const tokenCookie = getCookie("consent_tokens");
-    if (tokenCookie) {
-      try {
-        // Assuming the cookie stores a JSON string with { email: "..." }
-        const parsedData: ConsentTokenData = JSON.parse(tokenCookie);
-        if (parsedData && parsedData.email) {
-          setEmail(parsedData.email);
-          setIsConnected(true);
-        } else {
-          deleteCookie("consent_tokens", "/"); // Clear potentially bad cookie
-          setIsConnected(false);
-          setEmail(null);
-        }
-      } catch (error) {
-        console.error("Failed to parse consent token cookie:", error);
-        deleteCookie("consent_tokens", "/");
-        setIsConnected(false);
-        setEmail(null);
-      }
-    } else {
-      console.log("No consent token cookie found.");
-      if (isConnected || email) {
-        setIsConnected(false);
-        setEmail(null);
-      }
-    }
-  }, []); // Empty dependency array: runs only once on mount
+  // This logic is now isolated here
+  const { checkConnectionStatus, setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useGmail();
 
-  // Effect 2: Handle OAuth redirect (after initial cookie check)
   useEffect(() => {
-    // This effect runs when searchParams change (e.g., after Google redirect)
-    // It should only override the cookie state if a new successful connection occurs.
     const gmailConnected = searchParams.get("gmail_connected");
-    const connectedEmailParam = searchParams.get("email");
+    const oauthError = searchParams.get("error");
+    const connectedEmail = searchParams.get("email");
 
-    if (gmailConnected === "true" && connectedEmailParam) {
-      // A new connection has just happened via redirect
-      if (email !== connectedEmailParam || !isConnected) {
-        console.log("Gmail connected via redirect, updating state:", connectedEmailParam);
-        setEmail(connectedEmailParam);
-        setIsConnected(true);
-      }
-
-      // Clean up URL: remove the query parameters
-      const currentPath = window.location.pathname;
-      router.replace(currentPath, { scroll: false });
+    if (gmailConnected === "true" && connectedEmail) {
+      setIsConnected(true);
+      setEmail(connectedEmail);
+      setConnectionAttemptStatus('success');
+      router.replace(pathname, { scroll: false });
+    } else if (oauthError) {
+      setError(`OAuth failed: ${oauthError}`);
+      setConnectionAttemptStatus('error');
+      router.replace(pathname, { scroll: false });
+    } else {
+      // checkConnectionStatus is now called from the main provider
     }
-    // No 'else' here that resets state, because the cookie check effect handles initial state.
-    // If there's no redirect, we rely on the cookie state.
-  }, [searchParams, router, email, isConnected]); // Add email and isConnected to deps if they influence decisions inside
+  }, [searchParams, router, pathname, setIsConnected, setEmail, setError, setConnectionAttemptStatus]);
 
-  const connectGmail = () => {
-    console.log("Connect gmail clicked");
-    const clientId = process.env.NEXT_PUBLIC_CLIENT_ID!;
-    const redirectUri = process.env.NEXT_PUBLIC_REDIRECT_URI!; // This is your backend API
-    const scope = encodeURIComponent(
-      "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email"
-    );
-    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+  return null; // This component does not render anything
+}
 
-    window.location.href = oauthUrl;
+// --- Provider ---
+export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
+  const api = useAxios();
+
+  // State definitions
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionAttemptStatus, setConnectionAttemptStatus] = useState<ConnectionStatus>('idle');
+
+  const [senders, setSenders] = useState<Sender[]>([]);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
+  const [sendersError, setSendersError] = useState<string | null>(null);
+
+  const [isAddingSender, setIsAddingSender] = useState<boolean>(false);
+  const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
+
+  const checkConnectionStatus = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data } = await api.get<{ isConnected: boolean; email: string | null }>("/gmail/status");
+      setIsConnected(data.isConnected);
+      setEmail(data.email);
+    } catch (err) {
+      setIsConnected(false);
+      setEmail(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkConnectionStatus();
+  }, [checkConnectionStatus]);
+
+  const resetConnectionAttempt = () => {
+    setConnectionAttemptStatus('idle');
+    setError(null);
+  };
+
+  const connectGmail = async () => {
+    setIsLoading(true);
+    resetConnectionAttempt();
+    try {
+      const { data } = await api.get<{ url: string }>("/gmail/consent");
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setError("Failed to start connection.");
+      setIsLoading(false);
+    }
   };
 
   const disconnectGmail = async () => {
-    console.log("Attempting to disconnect Gmail...");
-    // 1. Call a backend API to revoke tokens and clear them from DB/server-side cookies.
-    // This is crucial for a full logout.
+    setIsLoading(true);
     try {
-      // Example: await fetch('/api/auth/google/logout', { method: 'POST' });
-      // If your backend handles cookie clearing upon logout, that's ideal.
-      console.log("Backend logout call would be here.");
-    } catch (error) {
-      console.error("Error calling backend logout:", error);
+      await api.post("/gmail/disconnect");
+      setIsConnected(false);
+      setEmail(null);
+      setSenders([]);
+      setNextPageToken(null);
+    } catch (err) {
+      setError("Failed to disconnect.");
+    } finally {
+      setIsLoading(false);
     }
-
-    // 2. Clear client-side state and cookie.
-    setEmail(null);
-    setIsConnected(false);
-    deleteCookie("consent_tokens", "/"); // Ensure path matches where it was set
-    console.log("Gmail disconnected (client-side state and cookie cleared).");
-    // Optionally, redirect or update UI further
   };
 
-  return (
-    <GmailContext.Provider value={{ email, isConnected, connectGmail, disconnectGmail }}>
-      {children}
-    </GmailContext.Provider>
-  );
+  const fetchSenders = useCallback(async (token?: string) => {
+    setIsLoadingSenders(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.get<SendersResponse>("/gmail/senders", {
+        params: { pageToken: token, pageSize: 50 },
+      });
+      setSenders(prev => token ? [...prev, ...data.senders] : data.senders);
+      setNextPageToken(data.nextPageToken);
+    } catch (err) {
+      setSendersError("Failed to fetch senders.");
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  }, []);
+
+  const searchSenders = useCallback(async (query: string) => {
+    if (!query) {
+      await fetchSenders();
+      return;
+    }
+    setIsLoadingSenders(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.get<SendersResponse>("/gmail/senders/search", {
+        params: { sender: query, pageSize: 50 },
+      });
+      setSenders(data.senders);
+      setNextPageToken(data.nextPageToken);
+    } catch (err) {
+      setSendersError("Failed to search senders.");
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  }, [fetchSenders]);
+
+  const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
+    setIsAddingSender(true);
+    try {
+      const response = await api.post<{ success: boolean; data: Sender }>("/gmail/sender", senderData);
+      return response.data.data;
+    } catch (err: any) {
+      if (err.response?.status !== 409) setSendersError("Failed to add sender.");
+      return null;
+    } finally {
+      setIsAddingSender(false);
+    }
+  };
+
+  const onboardSavedSenders = async (): Promise<OnboardingResult | null> => {
+    setIsOnboarding(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.post<OnboardingResult>("/gmail/senders/emails");
+      return data;
+    } catch (err) {
+      setSendersError("Failed to onboard emails.");
+      return null;
+    } finally {
+      setIsOnboarding(false);
+    }
+  };
+
+  const setupWatch = async (): Promise<boolean> => {
+    try {
+      await api.post("/gmail/watch");
+      return true;
+    } catch (err) {
+      setSendersError("Failed to set up live updates.");
+      return false;
+    }
+  };
+
+  const value: GmailContextType = {
+    isConnected, email, isLoading, error, connectionAttemptStatus, resetConnectionAttempt,
+    connectGmail, disconnectGmail, senders, nextPageToken, isLoadingSenders,
+    sendersError, fetchSenders, searchSenders, addSender, onboardSavedSenders,
+    setupWatch, isAddingSender, isOnboarding,
+
+    // --- ADD THESE ---
+    // Pass the setters and check function into the context
+    checkConnectionStatus,
+    setIsConnected,
+    setEmail,
+    setError,
+    setConnectionAttemptStatus,
+  };
+
+  return <GmailContext.Provider value={value}>
+    <Suspense fallback={null}>
+      <GmailConnectionHandler />
+    </Suspense>
+    {children}
+  </GmailContext.Provider>;
 };
 
-export const useGmail = () => useContext(GmailContext);
+export const useGmail = (): GmailContextType => {
+  const context = useContext(GmailContext);
+  if (context === undefined) throw new Error("useGmail must be used within a GmailProvider");
+  return context;
+};

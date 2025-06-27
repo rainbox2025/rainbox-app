@@ -1,40 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { AddNewsletterModal } from "./add-newsletter-modal";
-import { SelectNewslettersModal } from "./select-newsletters-modal";
-import { SuccessModal } from "../modals/succeed-modal";
-import { ErrorModal } from "../modals/error-modal";
-import {
-  MOCK_CONNECTIONS,
-  MOCK_SUGGESTED_SENDERS,
-} from "./mock-newsletter-data";
-import { Connection, Sender } from "@/types/data";
+// src/components/newsletter/flow.tsx
+"use client";
 
-export const AddNewsletterFlow = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  type ModalType =
-    | "addNewsletter"
-    | "selectNewsletters"
-    | "success"
-    | "error"
-    | null;
+import React, { useState, useEffect } from 'react';
+import { AddNewsletterModal } from './add-newsletter-modal';
+import { SelectNewslettersModal } from './select-newsletters-modal';
+import { SuccessModal } from '../modals/succeed-modal';
+import { ErrorModal } from '../modals/error-modal';
+import { Sender } from '@/context/gmailContext'; // Import the correct Sender type
+
+export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  type ModalType = 'addNewsletter' | 'selectNewsletters' | 'success' | 'error' | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [suggestedSenders, setSuggestedSenders] = useState<Sender[]>([]);
-  const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{
-    email: string;
-    name: string;
-  } | null>(null);
-
-  useEffect(() => {
-    setConnections(MOCK_CONNECTIONS);
-    setSuggestedSenders(MOCK_SUGGESTED_SENDERS);
-  }, []);
+  const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{ email: string, name: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +21,7 @@ export const AddNewsletterFlow = ({
     }
   }, [isOpen]);
 
-  const openFlow = () => setActiveModal("addNewsletter");
+  const openFlow = () => setActiveModal('addNewsletter');
   const closeModal = () => {
     setActiveModal(null);
     onClose();
@@ -52,63 +29,65 @@ export const AddNewsletterFlow = ({
 
   const handleSelectSender = (email: string, accountName: string) => {
     setCurrentConnectedAccount({ email, name: accountName });
-    setActiveModal("selectNewsletters");
+    setActiveModal('selectNewsletters');
   };
 
   const handleBackToConnections = () => {
-    setActiveModal("addNewsletter");
+    setCurrentConnectedAccount(null);
+    setActiveModal('addNewsletter');
   };
 
+  // This is now called AFTER the SelectNewslettersModal has successfully
+  // saved and onboarded the senders via the context.
   const handleAddNewsletters = (selected: Sender[]) => {
-    console.log("Selected newsletters to add:", selected);
-
-    const isSuccess = true;
-    if (isSuccess) {
-      setActiveModal("success");
-    } else {
-      setActiveModal("error");
-    }
+    console.log(`${selected.length} newsletters successfully onboarded.`);
+    setActiveModal('success');
   };
 
   const handleTryAgainError = () => {
     if (currentConnectedAccount) {
-      setActiveModal("selectNewsletters");
+      setActiveModal('selectNewsletters');
     } else {
-      setActiveModal("addNewsletter");
+      setActiveModal('addNewsletter');
     }
   };
 
   return (
     <div>
+      {/* 
+        This modal now uses context internally to get connection status.
+        The `connections` prop is no longer needed.
+      */}
       <AddNewsletterModal
-        isOpen={activeModal === "addNewsletter"}
+        isOpen={activeModal === 'addNewsletter'}
         onClose={closeModal}
-        connections={connections}
         onSelectSender={handleSelectSender}
       />
 
+      {/* 
+        This modal is now self-sufficient using the GmailContext.
+        The `suggestedSenders` prop has been removed.
+      */}
       <SelectNewslettersModal
-        isOpen={activeModal === "selectNewsletters"}
+        isOpen={activeModal === 'selectNewsletters'}
         onClose={closeModal}
         onBack={handleBackToConnections}
         onAddNewsletters={handleAddNewsletters}
-        suggestedSenders={suggestedSenders}
         connectedAccountName={currentConnectedAccount?.name}
       />
 
       <SuccessModal
-        isOpen={activeModal === "success"}
+        isOpen={activeModal === 'success'}
         onClose={closeModal}
-        onSelectNewsletters={() => setActiveModal("selectNewsletters")}
-        mainText="Woohoo! Selected Newsletters are getting added. It may take upto 2 minutes to show up in your feed"
-        buttonText="Close"
+        mainText='Woohoo! Selected Newsletters are getting added. It may take up to 2 minutes to show up in your feed'
+        buttonText='Done'
       />
 
       <ErrorModal
-        isOpen={activeModal === "error"}
+        isOpen={activeModal === 'error'}
         onClose={closeModal}
         onTryAgain={handleTryAgainError}
-        mainText="Oops! There was an error. Please try again, or re-sync your email account. If nothing works, contact support."
+        mainText='Oops! There was an error. Please try again, or re-sync your email account. If nothing works, contact support.'
       />
     </div>
   );

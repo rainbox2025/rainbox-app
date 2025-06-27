@@ -2,8 +2,9 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, createContext, useContext, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useGmail } from "./gmailContext";
 
 // Helper function to get a cookie by name
 function getCookie(name: string): string | null {
@@ -30,6 +31,35 @@ function deleteCookie(name: string, path: string = '/', domain?: string) {
   document.cookie = cookieString;
 }
 
+function OutlookConnectionHandler() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // This logic is now isolated here
+  const { checkConnectionStatus, setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useGmail();
+
+  useEffect(() => {
+    const gmailConnected = searchParams.get("gmail_connected");
+    const oauthError = searchParams.get("error");
+    const connectedEmail = searchParams.get("email");
+
+    if (gmailConnected === "true" && connectedEmail) {
+      setIsConnected(true);
+      setEmail(connectedEmail);
+      setConnectionAttemptStatus('success');
+      router.replace(pathname, { scroll: false });
+    } else if (oauthError) {
+      setError(`OAuth failed: ${oauthError}`);
+      setConnectionAttemptStatus('error');
+      router.replace(pathname, { scroll: false });
+    } else {
+      // checkConnectionStatus is now called from the main provider
+    }
+  }, [searchParams, router, pathname, setIsConnected, setEmail, setError, setConnectionAttemptStatus]);
+
+  return null; // This component does not render anything
+}
 
 type ConsentTokenData = {
   email: string;
@@ -128,6 +158,9 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <OutlookContext.Provider value={{ email, isConnected, connectOutlook, disconnectOutlook }}>
+      <Suspense fallback={null}>
+        <OutlookConnectionHandler />
+      </Suspense>
       {children}
     </OutlookContext.Provider>
   );

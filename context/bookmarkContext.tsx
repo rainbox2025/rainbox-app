@@ -133,6 +133,8 @@ interface BookmarkContextType {
     serializedRange: SerializedRange,
     rootElement: HTMLElement
   ) => Range | null;
+  isTagRenameLoading: boolean;
+  isTagDeleteLoading: boolean;
 }
 
 const BookmarkContext = createContext<BookmarkContextType | undefined>(
@@ -170,6 +172,8 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allApiTags, setAllApiTags] = useState<TagWithCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTagRenameLoading, setIsTagRenameLoading] = useState(false);
+  const [isTagDeleteLoading, setIsTagDeleteLoading] = useState(false);
   const [activePopup, setActivePopup] = useState<ActivePopupData | null>(null);
   const [activeCommentModal, setActiveCommentModal] =
     useState<ActiveCommentModalData | null>(null);
@@ -340,6 +344,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to remove bookmark:", error);
         setBookmarks(originalBookmarks);
       }
+
     },
     [api, bookmarks, fetchAllData]
   );
@@ -398,6 +403,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const renameTagGlobally = useCallback(
     async (oldTag: string, newTag: string) => {
+      setIsTagRenameLoading(true);
       const o = oldTag.toLowerCase().trim();
       const n = newTag.toLowerCase().trim();
       if (!o || !n || o === n) return;
@@ -427,12 +433,16 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to rename tag:", error);
         setBookmarks(originalBookmarks);
       }
+
+      setIsTagRenameLoading(false);
     },
     [api, allApiTags, bookmarks, fetchAllData]
   );
 
   const deleteTagGlobally = useCallback(
     async (tagToDelete: string) => {
+      setIsTagDeleteLoading(true);
+
       const t = tagToDelete.toLowerCase().trim();
       if (!t) return;
       const tagApiInfo = allApiTags.find(
@@ -456,6 +466,9 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to delete tag:", error);
         setBookmarks(originalBookmarks);
       }
+
+      setIsTagDeleteLoading(true);
+
     },
     [api, allApiTags, bookmarks, fetchAllData]
   );
@@ -517,6 +530,8 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         updateBookmarkTags,
         renameTagGlobally,
         deleteTagGlobally,
+        isTagRenameLoading,
+        isTagDeleteLoading,
       }}
     >
       {children}

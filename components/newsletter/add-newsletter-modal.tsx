@@ -2,7 +2,6 @@ import React from 'react';
 import { BaseModal } from './base-modal';
 import ConnectionCard from '@/components/settings/ConnectionCard';
 import { Connection } from '@/types/data';
-import { MOCK_RAINBOX_EMAIL } from './mock-newsletter-data';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 
@@ -15,14 +14,12 @@ import { OutlookConnectionFlow } from '../connect-outlook/flow'; // Assuming ind
 interface AddNewsletterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  connections: Connection[];
   onSelectSender: (email: string, accountName: string) => void;
 }
 
 export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   isOpen,
   onClose,
-  connections,
   onSelectSender,
 }) => {
   // State and hooks for Gmail
@@ -34,7 +31,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
 
   const handleCopyRainboxEmail = () => {
-    navigator.clipboard.writeText(MOCK_RAINBOX_EMAIL);
+    navigator.clipboard.writeText("nothing");
   };
 
   // Close child flows when the main modal closes
