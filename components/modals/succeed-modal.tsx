@@ -37,7 +37,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, onS
               </h2>
             </div>
 
-            <Button className='w-full bg-primary text-sm' onClick={onClose}>
+            <Button className='w-full bg-primary text-sm mt-2' onClick={onClose}>
               {buttonText}
               <ArrowRightIcon className="w-4 h-4 ml-1" />
             </Button>
