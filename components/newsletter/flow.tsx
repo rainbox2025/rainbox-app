@@ -7,11 +7,13 @@ import { SelectNewslettersModal } from './select-newsletters-modal';
 import { SuccessModal } from '../modals/succeed-modal';
 import { ErrorModal } from '../modals/error-modal';
 import { Sender } from '@/context/gmailContext'; // Import the correct Sender type
+import { useSenders } from '@/context/sendersContext';
 
 export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   type ModalType = 'addNewsletter' | 'selectNewsletters' | 'success' | 'error' | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{ email: string, name: string } | null>(null);
+  const { fetchSenders } = useSenders();
 
   useEffect(() => {
     if (isOpen) {
@@ -39,7 +41,8 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
 
   // This is now called AFTER the SelectNewslettersModal has successfully
   // saved and onboarded the senders via the context.
-  const handleAddNewsletters = (selected: Sender[]) => {
+  const handleAddNewsletters = async (selected: Sender[]) => {
+    await fetchSenders();
     console.log(`${selected.length} newsletters successfully onboarded.`);
     setActiveModal('success');
   };
@@ -79,7 +82,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
       <SuccessModal
         isOpen={activeModal === 'success'}
         onClose={closeModal}
-        mainText='Woohoo! Selected Newsletters are getting added. It may take up to 2 minutes to show up in your feed'
+        mainText='Woohoo! Selected Newsletters are successfully added to your feed.'
         buttonText='Done'
       />
 
