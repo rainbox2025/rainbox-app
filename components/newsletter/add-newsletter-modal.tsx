@@ -11,6 +11,7 @@ import { useGmail } from "@/context/gmailContext";
 import { GmailConnectionFlow } from '../connect-gmail/flow';
 import { useOutlook } from '@/context/outlookContext';
 import { OutlookConnectionFlow } from '../connect-outlook/flow';
+import { useAuth } from '@/context/authContext';
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 }) => {
   // State and hooks for Gmail
   const { email: gmailEmail, isConnected: gmailIsConnected } = useGmail();
+  const { user } = useAuth();
   const [isGmailFlowOpen, setIsGmailFlowOpen] = React.useState(false);
 
   // State and hooks for Outlook
@@ -57,7 +59,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle="your-unique-address@rainbox.ai"
+              subtitle={`${user?.email || "Not connected"}`}
               actionType="copy"
               onAction={handleCopyRainboxEmail}
               isConnected={true}
