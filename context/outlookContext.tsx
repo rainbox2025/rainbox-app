@@ -1,163 +1,238 @@
-// context/outlookContext.tsx
-
+// src/context/outlookContext.tsx
 "use client";
 
-import { Suspense, createContext, useContext, useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useGmail } from "./gmailContext";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useAxios } from "@/hooks/useAxios";
+import { Suspense } from 'react';
+import { Sender, OnboardingResult } from "./gmailContext"; // Re-using types from Gmail context
 
-// Helper function to get a cookie by name
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
+// --- Type Definitions ---
+type SendersResponse = {
+  senders: Sender[];
+  nextPageToken: string | null;
+  pageInfo: { hasNextPage: boolean;[key: string]: any; };
+};
 
-// Helper function to delete a cookie
-function deleteCookie(name: string, path: string = '/', domain?: string) {
-  if (typeof document === 'undefined') return;
-  let cookieString = name + "=; Max-Age=-99999999;";
-  if (path) cookieString += " path=" + path + ";";
-  if (domain) cookieString += " domain=" + domain + ";";
-  cookieString += " expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  document.cookie = cookieString;
-}
+type ConnectionStatus = 'idle' | 'success' | 'error';
 
+type OutlookContextType = {
+  // Auth
+  isConnected: boolean;
+  email: string | null;
+  isLoading: boolean;
+  error: string | null;
+  connectionAttemptStatus: ConnectionStatus;
+  resetConnectionAttempt: () => void;
+  connectOutlook: () => Promise<void>;
+  disconnectOutlook: () => Promise<void>;
+
+  // Senders
+  senders: Sender[];
+  nextPageToken: string | null;
+  isLoadingSenders: boolean;
+  sendersError: string | null;
+  fetchSenders: (token?: string) => Promise<void>;
+  searchSenders: (query: string) => Promise<void>;
+
+  // Onboarding & Watching
+  addSender: (sender: Pick<Sender, 'name' | 'email'>) => Promise<Sender | null>;
+  onboardSavedSenders: () => Promise<OnboardingResult | null>;
+  setupWatch: () => Promise<boolean>;
+  isAddingSender: boolean;
+  isOnboarding: boolean;
+
+  // State setters for the handler
+  checkConnectionStatus: () => Promise<void>;
+  setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
+  setEmail: React.Dispatch<React.SetStateAction<string | null>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setConnectionAttemptStatus: React.Dispatch<React.SetStateAction<ConnectionStatus>>;
+};
+
+// --- Context ---
+const OutlookContext = createContext<OutlookContextType | undefined>(undefined);
+
+// --- Connection Handler Component ---
 function OutlookConnectionHandler() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  // This logic is now isolated here
-  const { checkConnectionStatus, setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useGmail();
+  const { setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useOutlook();
 
   useEffect(() => {
-    const gmailConnected = searchParams.get("gmail_connected");
+    const outlookConnected = searchParams.get("outlook_connected");
     const oauthError = searchParams.get("error");
     const connectedEmail = searchParams.get("email");
 
-    if (gmailConnected === "true" && connectedEmail) {
+    if (outlookConnected === "true" && connectedEmail) {
       setIsConnected(true);
       setEmail(connectedEmail);
       setConnectionAttemptStatus('success');
       router.replace(pathname, { scroll: false });
-    } else if (oauthError) {
+    } else if (oauthError?.includes('outlook')) { // Check if the error is from outlook
       setError(`OAuth failed: ${oauthError}`);
       setConnectionAttemptStatus('error');
       router.replace(pathname, { scroll: false });
-    } else {
-      // checkConnectionStatus is now called from the main provider
     }
   }, [searchParams, router, pathname, setIsConnected, setEmail, setError, setConnectionAttemptStatus]);
 
-  return null; // This component does not render anything
+  return null;
 }
 
-type ConsentTokenData = {
-  email: string;
-};
-
-type OutlookContextType = {
-  email: string | null;
-  isConnected: boolean;
-  connectOutlook: () => void;
-  disconnectOutlook: () => void;
-};
-
-const OutlookContext = createContext<OutlookContextType>({
-  email: null,
-  isConnected: false,
-  connectOutlook: () => { },
-  disconnectOutlook: () => { },
-});
-
+// --- Provider ---
 export const OutlookProvider = ({ children }: { children: React.ReactNode }) => {
+  const api = useAxios();
+
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [email, setEmail] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionAttemptStatus, setConnectionAttemptStatus] = useState<ConnectionStatus>('idle');
+  const [senders, setSenders] = useState<Sender[]>([]);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
+  const [sendersError, setSendersError] = useState<string | null>(null);
+  const [isAddingSender, setIsAddingSender] = useState<boolean>(false);
+  const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
 
-  // It's safer to use a different cookie name for Outlook to avoid conflicts
-  const OUTLOOK_COOKIE_NAME = "outlook_consent_tokens";
-
-  // Effect 1: Check for persisted connection via cookie on mount
-  useEffect(() => {
-    const tokenCookie = getCookie(OUTLOOK_COOKIE_NAME);
-    if (tokenCookie) {
-      try {
-        const parsedData: ConsentTokenData = JSON.parse(tokenCookie);
-        if (parsedData && parsedData.email) {
-          setEmail(parsedData.email);
-          setIsConnected(true);
-        } else {
-          deleteCookie(OUTLOOK_COOKIE_NAME, "/");
-          setIsConnected(false);
-          setEmail(null);
-        }
-      } catch (error) {
-        console.error("Failed to parse outlook consent token cookie:", error);
-        deleteCookie(OUTLOOK_COOKIE_NAME, "/");
-        setIsConnected(false);
-        setEmail(null);
-      }
-    } else {
-      console.log("No outlook consent token cookie found.");
-      if (isConnected || email) {
-        setIsConnected(false);
-        setEmail(null);
-      }
+  // You need to create this API endpoint: /api/outlook/status
+  const checkConnectionStatus = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data } = await api.get<{ isConnected: boolean; email: string | null }>("/outlook/status");
+      setIsConnected(data.isConnected);
+      setEmail(data.email);
+    } catch (err) {
+      setIsConnected(false);
+      setEmail(null);
+    } finally {
+      setIsLoading(false);
     }
-  }, []); // Runs once on mount
+  }, []);
 
-  // Effect 2: Handle OAuth redirect
   useEffect(() => {
-    const outlookConnected = searchParams.get("outlook_connected");
-    const connectedEmailParam = searchParams.get("email");
+    checkConnectionStatus();
+  }, [checkConnectionStatus]);
 
-    if (outlookConnected === "true" && connectedEmailParam) {
-      if (email !== connectedEmailParam || !isConnected) {
-        console.log("Outlook connected via redirect, updating state:", connectedEmailParam);
-        setEmail(connectedEmailParam);
-        setIsConnected(true);
-      }
+  const resetConnectionAttempt = () => {
+    setConnectionAttemptStatus('idle');
+    setError(null);
+  };
 
-      const currentPath = window.location.pathname;
-      router.replace(currentPath, { scroll: false });
+  const connectOutlook = async () => {
+    setIsLoading(true);
+    resetConnectionAttempt();
+    try {
+      const { data } = await api.post<{ url: string }>("/outlook/consent");
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setError("Failed to start Outlook connection.");
+      setIsLoading(false);
     }
-  }, [searchParams, router, email, isConnected]);
-
-  const connectOutlook = () => {
-    console.log("Connect Outlook clicked");
-    // Microsoft Graph API OAuth2 endpoint
-    const clientId = process.env.NEXT_PUBLIC_OUTLOOK_CLIENT_ID!; // IMPORTANT: Use a separate client ID for Outlook
-    const redirectUri = process.env.NEXT_PUBLIC_OUTLOOK_REDIRECT_URI!; // IMPORTANT: Use a separate redirect URI for Outlook
-    const scope = encodeURIComponent(
-      "openid profile email User.Read Mail.Read offline_access"
-    );
-    const oauthUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=${scope}&prompt=consent`;
-
-    window.location.href = oauthUrl;
   };
 
   const disconnectOutlook = async () => {
-    console.log("Attempting to disconnect Outlook...");
-    // Backend call to revoke tokens would go here
-    setEmail(null);
-    setIsConnected(false);
-    deleteCookie(OUTLOOK_COOKIE_NAME, "/");
-    console.log("Outlook disconnected (client-side state and cookie cleared).");
+    setIsLoading(true);
+    try {
+      await api.post("/outlook/disconnect");
+      setIsConnected(false);
+      setEmail(null);
+      setSenders([]);
+      setNextPageToken(null);
+    } catch (err) {
+      setError("Failed to disconnect Outlook.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSenders = useCallback(async (token?: string) => {
+    setIsLoadingSenders(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.get<SendersResponse>("/outlook/senders", {
+        params: { pageToken: token, pageSize: 50 },
+      });
+
+      console.log("data of outlook senders: ", data);
+      setSenders(prev => token ? [...prev, ...data.senders] : data.senders);
+      setNextPageToken(data.nextPageToken);
+    } catch (err) {
+      setSendersError("Failed to fetch Outlook senders.");
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  }, []);
+
+  const searchSenders = useCallback(async (query: string) => {
+    if (!query) {
+      await fetchSenders();
+      return;
+    }
+    setIsLoadingSenders(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.get<SendersResponse>("/outlook/senders/search", {
+        params: { sender: query, pageSize: 50 },
+      });
+      setSenders(data.senders);
+      setNextPageToken(data.nextPageToken);
+    } catch (err) {
+      setSendersError("Failed to search Outlook senders.");
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  }, [fetchSenders]);
+
+  const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
+    setIsAddingSender(true);
+    try {
+      const response = await api.post<{ success: boolean; data: Sender }>("/outlook/sender", senderData);
+      return response.data.data;
+    } catch (err: any) {
+      if (err.response?.status !== 409) setSendersError("Failed to add sender.");
+      return null;
+    } finally {
+      setIsAddingSender(false);
+    }
+  };
+
+  const onboardSavedSenders = async (): Promise<OnboardingResult | null> => {
+    setIsOnboarding(true);
+    setSendersError(null);
+    try {
+      const { data } = await api.post<OnboardingResult>("/outlook/senders/emails");
+      return data;
+    } catch (err) {
+      setSendersError("Failed to onboard emails from Outlook.");
+      return null;
+    } finally {
+      setIsOnboarding(false);
+    }
+  };
+
+  const setupWatch = async (): Promise<boolean> => {
+    try {
+      await api.post("/outlook/watch");
+      return true;
+    } catch (err) {
+      setSendersError("Failed to set up live updates for Outlook.");
+      return false;
+    }
+  };
+
+  const value: OutlookContextType = {
+    isConnected, email, isLoading, error, connectionAttemptStatus, resetConnectionAttempt,
+    connectOutlook, disconnectOutlook, senders, nextPageToken, isLoadingSenders,
+    sendersError, fetchSenders, searchSenders, addSender, onboardSavedSenders,
+    setupWatch, isAddingSender, isOnboarding,
+    checkConnectionStatus, setIsConnected, setEmail, setError, setConnectionAttemptStatus,
   };
 
   return (
-    <OutlookContext.Provider value={{ email, isConnected, connectOutlook, disconnectOutlook }}>
+    <OutlookContext.Provider value={value}>
       <Suspense fallback={null}>
         <OutlookConnectionHandler />
       </Suspense>
@@ -166,4 +241,8 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
   );
 };
 
-export const useOutlook = () => useContext(OutlookContext);
+export const useOutlook = (): OutlookContextType => {
+  const context = useContext(OutlookContext);
+  if (context === undefined) throw new Error("useOutlook must be used within an OutlookProvider");
+  return context;
+};

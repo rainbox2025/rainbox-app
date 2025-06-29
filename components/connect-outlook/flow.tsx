@@ -1,13 +1,13 @@
-// connect-outlook/index.tsx
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { ConnectOutlookModal } from './connect-outlook';
 import { OutlookPermissionsModal } from './proceed-modal';
 import { ErrorModal } from '../modals/error-modal';
 import { SuccessModal } from '../modals/succeed-modal';
-import { useOutlook } from '@/context/outlookContext'; // <-- Use Outlook context
+import { useOutlook } from '@/context/outlookContext';
 
-type ActiveOutlookSubModalType = 'connect' | 'permissions' | 'success' | 'error' | null;
+type ActiveOutlookSubModalType = 'connect' | 'permissions' | 'success' | 'error';
 
 interface OutlookConnectionFlowProps {
   isOpen: boolean;
@@ -20,29 +20,27 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
   onClose,
   onConnectionComplete,
 }) => {
-  const [activeSubModal, setActiveSubModal] = useState<ActiveOutlookSubModalType>(null);
-  const { email, isConnected, connectOutlook } = useOutlook(); // <-- Use Outlook hooks
+  const [activeSubModal, setActiveSubModal] = useState<ActiveOutlookSubModalType>('connect');
+  const { connectOutlook, connectionAttemptStatus, resetConnectionAttempt } = useOutlook();
 
   useEffect(() => {
     if (isOpen) {
-      setActiveSubModal('connect');
-    } else {
-      setActiveSubModal(null);
+      if (connectionAttemptStatus === 'success') {
+        setActiveSubModal('success');
+      } else if (connectionAttemptStatus === 'error') {
+        setActiveSubModal('error');
+      } else {
+        setActiveSubModal('connect');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, connectionAttemptStatus]);
 
-  useEffect(() => {
-    if (isOpen && isConnected && email) {
-      setActiveSubModal('success');
-    }
-  }, [isOpen, isConnected, email]);
-
-  if (!isOpen || !activeSubModal) {
+  if (!isOpen) {
     return null;
   }
 
-  const handleCloseSubModalAndFlow = () => {
-    setActiveSubModal(null);
+  const handleFlowClose = () => {
+    resetConnectionAttempt();
     onClose();
   };
 
@@ -51,39 +49,27 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
   };
 
   const handleOutlookApiConnection = async () => {
-    connectOutlook(); // <-- Call Outlook connection function
-  };
-
-  const handlePermissionSuccess = () => {
-    setActiveSubModal('success');
-  };
-
-  const handlePermissionError = () => {
-    setActiveSubModal('error');
+    await connectOutlook();
   };
 
   const handleSelectNewsletters = () => {
-    console.log("Navigate to select newsletters action...");
     if (onConnectionComplete) {
       onConnectionComplete();
     }
-    handleCloseSubModalAndFlow();
+    handleFlowClose();
   };
 
-  const handleTryAgainError = () => {
-    setActiveSubModal('permissions');
+  const handleTryAgain = () => {
+    resetConnectionAttempt();
+    setActiveSubModal('connect');
   };
-
-  const handleSubModalClose = () => {
-    handleCloseSubModalAndFlow();
-  }
 
   return (
     <>
       {activeSubModal === 'connect' && (
         <ConnectOutlookModal
           isOpen={true}
-          onClose={handleSubModalClose}
+          onClose={handleFlowClose}
           onProceedToPermissions={proceedToPermissions}
         />
       )}
@@ -91,19 +77,16 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
       {activeSubModal === 'permissions' && (
         <OutlookPermissionsModal
           isOpen={true}
-          onClose={handleSubModalClose}
+          onClose={handleFlowClose}
           handleConnection={handleOutlookApiConnection}
-          onSuccess={handlePermissionSuccess}
-          onError={handlePermissionError}
         />
       )}
 
       {activeSubModal === 'success' && (
         <SuccessModal
           isOpen={true}
-          onClose={handleSubModalClose}
-          onSelectNewsletters={handleSelectNewsletters}
-          mainText='Woohoo! Your Outlook is now connected to Rainbox' // <-- Changed text
+          onClose={handleSelectNewsletters}
+          mainText='Woohoo! Your Outlook is now connected to Rainbox'
           buttonText='Select Newsletters'
         />
       )}
@@ -111,9 +94,9 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
       {activeSubModal === 'error' && (
         <ErrorModal
           isOpen={true}
-          onClose={handleSubModalClose}
-          onTryAgain={handleTryAgainError}
-          mainText=' Oops! There was an error. Try again or contact support.'
+          onClose={handleFlowClose}
+          onTryAgain={handleTryAgain}
+          mainText='Oops! There was an error. Try again or contact support.'
         />
       )}
     </>

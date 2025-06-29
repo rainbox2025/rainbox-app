@@ -1,8 +1,8 @@
-// connect-outlook/connect-outlook.tsx
+"use client";
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OutlookRainboxLogosDisplay } from './outlook-rainbox-logo'; // <-- Import Outlook logo display
+import { OutlookRainboxLogosDisplay } from './outlook-rainbox-logo';
 import { ModalCloseButton } from '../modals/modal-close-button';
 import { Button } from '../ui/button';
 import {
@@ -13,6 +13,7 @@ import {
   QuestionMarkCircleIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
+
 
 type FeatureIconType = "ArrowDownTrayIcon" | "StarIcon" | "ArchiveBoxIcon" | "ShieldCheckIcon" | "DefaultIcon";
 
@@ -67,13 +68,13 @@ export const ConnectOutlookModal: React.FC<ConnectOutlookModalProps> = ({
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold">
-                  Connect your <span className="text-blue-600">Outlook</span> {/* <-- Changed text and color */}
+                <h2 className="text-xl font-bold 00">
+                  Connect your <span className="text-blue-600">Outlook</span>
                 </h2>
                 <ModalCloseButton onClick={onClose} />
               </div>
 
-              <OutlookRainboxLogosDisplay /> {/* <-- Use Outlook logo display */}
+              <OutlookRainboxLogosDisplay />
 
               <div className="space-y-4 my-6">
                 <FeatureItem
@@ -87,11 +88,6 @@ export const ConnectOutlookModal: React.FC<ConnectOutlookModalProps> = ({
                   description="Get every new issue from your favorite newsletters delivered straight to your Rainbox—never miss a read again."
                 />
                 <FeatureItem
-                  icon="ArchiveBoxIcon"
-                  title="Declutter your inbox"
-                  description="Rainbox hides the synced newsletters from your Outlook, so your main inbox stays focused and clutter-free."
-                />
-                <FeatureItem
                   icon="ShieldCheckIcon"
                   title="Your privacy, fully protected"
                   description="Rainbox accesses only the newsletters you choose. We never access or share your data, ever."
@@ -99,7 +95,7 @@ export const ConnectOutlookModal: React.FC<ConnectOutlookModalProps> = ({
               </div>
 
               <Button className="w-full text-sm" onClick={onProceedToPermissions}>
-                Connect with Outlook {/* <-- Changed text */}
+                Connect with Outlook
                 <ArrowRightIcon className="w-4 h-4 ml-1" />
               </Button>
             </div>
