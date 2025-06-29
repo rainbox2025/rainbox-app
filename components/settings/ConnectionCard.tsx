@@ -6,7 +6,7 @@ type ConnectionCardProps = {
   logo: string;
   logoAlt: string;
   title: string;
-  subtitle?: string;
+  subtitle?: string | null;
   actionType?: string;
   onAction?: () => void;
   // This prop seems unused in the original button text logic, but kept for API consistency.
@@ -92,12 +92,12 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           </button>
         )}
 
-        {actionType === "resync" && (
+        {actionType === "disconnect" && (
           <div className="flex items-center gap-1"> {/* Kept gap-1 as per original for this specific group */}
             <button // Changed div to button
               type="button"
               className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              onClick={onAction} // This is for the "Re-sync" action
+              // onClick={onAction} // Replaced with re-sync
               aria-label="Re-sync account"
             >
               <div className="flex justify-center items-center gap-2">

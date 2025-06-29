@@ -110,20 +110,18 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 
           <div className="w-full flex items-center justify-between px-2 text-sm">
             <button className="text-sm underline">Create new mailbox</button>
-            <div className="flex items-center gap-4">
-              {/* Gmail Connection Link */}
-              {!gmailIsConnected ? (
-                <button onClick={() => setIsGmailFlowOpen(true)} className="text-sm underline">Connect Gmail</button>
-              ) : (
-                <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Gmail Connected</button>
-              )}
-              {/* Outlook Connection Link */}
-              {!outlookIsConnected ? (
-                <button onClick={() => setIsOutlookFlowOpen(true)} className="text-sm underline">Connect Outlook</button>
-              ) : (
-                <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Outlook Connected</button>
-              )}
-            </div>
+            {/* Gmail Connection Link */}
+            {!gmailIsConnected ? (
+              <button onClick={() => setIsGmailFlowOpen(true)} className="text-sm underline">Connect Gmail</button>
+            ) : (
+              <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Gmail Connected</button>
+            )}
+            {/* Outlook Connection Link */}
+            {!outlookIsConnected ? (
+              <button onClick={() => setIsOutlookFlowOpen(true)} className="text-sm underline">Connect Outlook</button>
+            ) : (
+              <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Outlook Connected</button>
+            )}
           </div>
         </div>
       </div>
@@ -143,6 +141,6 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
           setIsOutlookFlowOpen(false);
         }}
       />
-    </BaseModal>
+    </BaseModal >
   );
 };
