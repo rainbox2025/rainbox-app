@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/auth/cron/gmail",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/auth/cron/outlook",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
