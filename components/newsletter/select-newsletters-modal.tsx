@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { BaseModal } from './base-modal';
 import { CheckCircleIcon, SearchIcon, ArrowLeftIcon, ArrowRightIcon } from './icons';
 import { Button } from '../ui/button';
@@ -27,8 +27,6 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
   const isGmail = connectedAccountName === 'Gmail';
   const gmailContext = useGmail();
   const outlookContext = useOutlook();
-
-  // Conditionally select the context based on the connected account
   const activeContext = isGmail ? gmailContext : outlookContext;
 
   const {
@@ -47,17 +45,20 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       setIsSubmitting(false);
       setSelectedSenderEmails(new Set());
       setSearchTerm('');
-      searchSenders('');
+      // The search effect below will handle the initial fetch.
     }
-  }, [isOpen, searchSenders]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
+      // This will run for both search terms and the initial empty string
       searchSenders(debouncedSearchTerm);
     }
   }, [isOpen, debouncedSearchTerm, searchSenders]);
@@ -92,7 +93,8 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
         await setupWatch();
         onAddNewsletters(sendersToAdd);
       } else {
-        console.error("Onboarding failed", result?.message);
+        console.error("Onboarding failed:", result?.message);
+        // Optionally show an error toast to the user here
       }
     } catch (error) {
       console.error("An error occurred while adding newsletters:", error);
@@ -101,7 +103,18 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
     }
   };
 
-  // The rest of the JSX remains the same as it uses the `activeContext` derived variables
+  const handleScroll = useCallback(() => {
+    const container = listContainerRef.current;
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+      if (isNearBottom && !isLoadingSenders && nextPageToken) {
+        fetchSenders(nextPageToken);
+      }
+    }
+  }, [isLoadingSenders, nextPageToken, fetchSenders]);
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Select Newsletters">
       <div className="flex flex-col h-[75vh] overflow-y-hidden">
@@ -120,11 +133,11 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="p-3 pl-10 w-full bg-content border border-hovered rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm"
             />
-            {isLoadingSenders && !unselectedSenders.length ? (
+            {isLoadingSenders && !unselectedSenders.length && (
               <div className="absolute inset-y-0 right-2 pl-3 flex items-center pointer-events-none">
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               </div>
-            ) : null}
+            )}
           </div>
           {selectedSenders.length > 0 && (
             <div className="mb-4">
@@ -139,11 +152,16 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               </div>
             </div>
           )}
-          <h3 className="text-sm font-semibold mb-1.5 sticky top-0 py-2 z-10">
+          <h3 className="text-sm font-semibold mb-1.5 sticky top-0 bg-content py-2 z-10">
             Available Senders
           </h3>
         </div>
-        <div className="flex-grow overflow-y-auto pr-1 space-y-1.5 custom-scrollbar px-1">
+
+        <div
+          ref={listContainerRef}
+          onScroll={handleScroll}
+          className="flex-grow overflow-y-auto pr-1 space-y-1.5 custom-scrollbar px-1"
+        >
           {isLoadingSenders && !unselectedSenders.length ? (
             <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : unselectedSenders.length > 0 ? (
@@ -162,6 +180,7 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
             <p className="text-xs text-muted-foreground text-center py-4">No senders found.</p>
           ) : null}
         </div>
+
         <div className="mt-auto pt-4 border-t border-hovered flex justify-between items-center px-1">
           <button onClick={onBack} className="bg-hovered text-sm font-medium py-2 px-4 rounded-md flex items-center">
             <ArrowLeftIcon className="w-4 h-4 mr-1.5" /> Back
