@@ -1,3 +1,4 @@
+// src/components/connect-outlook/flow.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -52,7 +53,7 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
     await connectOutlook();
   };
 
-  const handleSelectNewsletters = () => {
+  const handleSuccess = () => {
     if (onConnectionComplete) {
       onConnectionComplete();
     }
@@ -85,9 +86,9 @@ export const OutlookConnectionFlow: React.FC<OutlookConnectionFlowProps> = ({
       {activeSubModal === 'success' && (
         <SuccessModal
           isOpen={true}
-          onClose={handleSelectNewsletters}
-          mainText='Woohoo! Your Outlook is now connected to Rainbox'
-          buttonText='Select Newsletters'
+          onClose={handleSuccess}
+          mainText='Woohoo! Your Outlook is now connected.'
+          buttonText='Continue'
         />
       )}
 

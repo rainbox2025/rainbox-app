@@ -1,4 +1,5 @@
 // src/components/connect-gmail/flow.tsx
+// (Apply the same change to connect-outlook/flow.tsx)
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -53,7 +54,8 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
     await connectGmail();
   };
 
-  const handleSelectNewsletters = () => {
+  const handleSuccess = () => {
+    // This is the key change. Call onConnectionComplete when success modal is closed.
     if (onConnectionComplete) {
       onConnectionComplete();
     }
@@ -68,37 +70,21 @@ export const GmailConnectionFlow: React.FC<GmailConnectionFlowProps> = ({
   return (
     <>
       {activeSubModal === 'connect' && (
-        <ConnectGmailModal
-          isOpen={true}
-          onClose={handleFlowClose}
-          onProceedToPermissions={proceedToPermissions}
-        />
+        <ConnectGmailModal isOpen={true} onClose={handleFlowClose} onProceedToPermissions={proceedToPermissions} />
       )}
-
       {activeSubModal === 'permissions' && (
-        <GmailPermissionsModal
-          isOpen={true}
-          onClose={handleFlowClose}
-          handleConnection={handleGmailApiConnection}
-        />
+        <GmailPermissionsModal isOpen={true} onClose={handleFlowClose} handleConnection={handleGmailApiConnection} />
       )}
-
       {activeSubModal === 'success' && (
         <SuccessModal
           isOpen={true}
-          onClose={handleSelectNewsletters}
-          mainText='Woohoo! Your Gmail is now connected to Rainbox'
-          buttonText='Select Newsletters'
+          onClose={handleSuccess} // Use the new handler here
+          mainText='Woohoo! Your Gmail is now connected.'
+          buttonText='Continue' // Changed button text for clarity
         />
       )}
-
       {activeSubModal === 'error' && (
-        <ErrorModal
-          isOpen={true}
-          onClose={handleFlowClose}
-          onTryAgain={handleTryAgain}
-          mainText='Oops! There was an error. Try again or contact support.'
-        />
+        <ErrorModal isOpen={true} onClose={handleFlowClose} onTryAgain={handleTryAgain} mainText='Oops! There was an error. Try again or contact support.' />
       )}
     </>
   );
