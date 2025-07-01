@@ -143,7 +143,7 @@ export async function verifyOtpAndSignInAction(
   const { data, error } = await supabase.auth.verifyOtp({
     email: normalizedEmail,
     token: otp,
-    type: isNewUser ? "signup" : "email"
+    type: 'email'
   });
 
   if (error) {
