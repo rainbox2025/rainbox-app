@@ -1,10 +1,12 @@
 // src/context/gmailContext.tsx
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAxios } from "@/hooks/useAxios";
 import { Suspense } from 'react';
+import { useSenders } from "./sendersContext";
+import { filterAvailableSenders } from "@/lib/senderUtils";
 
 // --- Type Definitions ---
 export type Sender = {
@@ -105,10 +107,14 @@ function GmailConnectionHandler() {
   return null; // This component does not render anything
 }
 
+
+
+
+
 // --- Provider ---
 export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
   const api = useAxios();
-
+  const { senders: onboardedSenders } = useSenders();
   // State definitions
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -175,41 +181,59 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const onboardedSenderEmails = useMemo(() =>
+    new Set(onboardedSenders.map(s => s.email))
+    , [onboardedSenders]);
+
   const fetchSenders = useCallback(async (token?: string) => {
+    if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/gmail/senders", {
-        params: { pageToken: token, pageSize: 50 },
+        params: { pageToken: token, pageSize: 20 },
       });
-      setSenders(prev => token ? [...prev, ...data.senders] : data.senders);
+
+      setSenders(prev => {
+        const localEmails = new Set(prev.map(s => s.email));
+        const uniqueNewSenders = filterAvailableSenders(data.senders, onboardedSenderEmails, localEmails);
+        return token ? [...prev, ...uniqueNewSenders] : uniqueNewSenders;
+      });
       setNextPageToken(data.nextPageToken);
     } catch (err) {
       setSendersError("Failed to fetch senders.");
     } finally {
       setIsLoadingSenders(false);
     }
-  }, []);
+  }, [onboardedSenders]);
 
   const searchSenders = useCallback(async (query: string) => {
     if (!query) {
+      setSenders([]);
+      setNextPageToken(null);
       await fetchSenders();
       return;
     }
+
+    if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/gmail/senders/search", {
         params: { sender: query, pageSize: 50 },
       });
-      setSenders(data.senders);
+
+      // For search, we don't need to check against local state, only global.
+      const availableSearchResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+
+      setSenders(availableSearchResults);
       setNextPageToken(data.nextPageToken);
     } catch (err) {
       setSendersError("Failed to search senders.");
     } finally {
       setIsLoadingSenders(false);
     }
-  }, [fetchSenders]);
+  }, []);
 
   const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
     setIsAddingSender(true);

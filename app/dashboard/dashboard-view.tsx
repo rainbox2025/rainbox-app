@@ -1,6 +1,4 @@
 "use client";
-import { OnboardingModal } from "@/components/onboardingmodal";
-import { useOnboarding } from "@/context/onboardingContext";
 import { useMails } from "@/context/mailsContext";
 import React, { useEffect, useState, useRef } from "react";
 import { Mail } from "@/types/data";
@@ -11,25 +9,13 @@ import MailReader from "@/components/mails/mail-reader";
 import { InboxIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
-  const { isOnboardingComplete } = useOnboarding();
   const [filter, setFilter] = useState("all");
   const { mails, selectedMail, isMailsLoading, isFetchingMore, loadMoreMails } = useMails();
   const [filteredMails, setFilteredMails] = useState<Mail[]>(mails);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [mailReaderWidth, setMailReaderWidth] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mailListVisible, setMailListVisible] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      const isOnboardingCompletes = await isOnboardingComplete();
-      if (!isOnboardingCompletes) {
-        setShowOnboardingModal(true);
-      }
-    };
-    checkOnboarding();
-  }, [isOnboardingComplete]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,13 +42,11 @@ const Page = () => {
     setFilteredMails(filtered);
   }, [filter, mails]);
 
-  // Infinite scroll logic
   useEffect(() => {
     const container = scrollContainerRef.current;
     const handleScroll = () => {
       if (!container) return;
       const { scrollTop, scrollHeight, clientHeight } = container;
-      // Fetch when user is 300px away from the bottom
       if (scrollHeight - scrollTop - clientHeight < 300) {
         loadMoreMails();
       }
@@ -75,15 +59,10 @@ const Page = () => {
 
   return (
     <div className="flex min-w-fit h-screen overflow-x-auto" ref={containerRef}>
-      {showOnboardingModal && <OnboardingModal />}
       <div
-        className={`flex flex-col h-full transition-all duration-300 ease-in-out ${mailListVisible ? "block" : "hidden md:block"
-          } ${selectedMail ? "md:w-[50%]" : "w-full"}`}
+        className={`flex flex-col h-full transition-all duration-300 ease-in-out ${mailListVisible ? "block" : "hidden md:block"} ${selectedMail ? "md:w-[50%]" : "w-full"}`}
         style={{
-          width:
-            selectedMail && window.innerWidth >= 768
-              ? `${100 - mailReaderWidth}%`
-              : "100%",
+          width: selectedMail && window.innerWidth >= 768 ? `${100 - mailReaderWidth}%` : "100%",
         }}
       >
         <SenderHeader

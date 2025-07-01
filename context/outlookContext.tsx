@@ -6,6 +6,9 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAxios } from "@/hooks/useAxios";
 import { Suspense } from 'react';
 import { Sender, OnboardingResult } from "./gmailContext"; // Re-using types from Gmail context
+import { filterAvailableSenders } from "@/lib/senderUtils";
+import { useMemo } from "react";
+import { useSenders } from "./sendersContext";
 
 // --- Type Definitions ---
 type SendersResponse = {
@@ -60,6 +63,8 @@ function OutlookConnectionHandler() {
   const searchParams = useSearchParams();
   const { setIsConnected, setEmail, setError, setConnectionAttemptStatus } = useOutlook();
 
+
+
   useEffect(() => {
     const outlookConnected = searchParams.get("outlook_connected");
     const oauthError = searchParams.get("error");
@@ -83,6 +88,11 @@ function OutlookConnectionHandler() {
 // --- Provider ---
 export const OutlookProvider = ({ children }: { children: React.ReactNode }) => {
   const api = useAxios();
+  const { senders: onboardedSenders } = useSenders();
+
+  const onboardedSenderEmails = useMemo(() =>
+    new Set(onboardedSenders.map(s => s.email))
+    , [onboardedSenders]);
 
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -149,15 +159,19 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const fetchSenders = useCallback(async (token?: string) => {
+    if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/outlook/senders", {
-        params: { pageToken: token, pageSize: 50 },
+        params: { pageToken: token, pageSize: 20 },
       });
 
-      console.log("data of outlook senders: ", data);
-      setSenders(prev => token ? [...prev, ...data.senders] : data.senders);
+      setSenders(prev => {
+        const localEmails = new Set(prev.map(s => s.email));
+        const uniqueNewSenders = filterAvailableSenders(data.senders, onboardedSenderEmails, localEmails);
+        return token ? [...prev, ...uniqueNewSenders] : uniqueNewSenders;
+      });
       setNextPageToken(data.nextPageToken);
     } catch (err) {
       setSendersError("Failed to fetch Outlook senders.");
@@ -168,23 +182,30 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
 
   const searchSenders = useCallback(async (query: string) => {
     if (!query) {
+      setSenders([]);
+      setNextPageToken(null);
       await fetchSenders();
       return;
     }
+
+    if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/outlook/senders/search", {
         params: { sender: query, pageSize: 50 },
       });
-      setSenders(data.senders);
+
+      const availableSearchResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+
+      setSenders(availableSearchResults);
       setNextPageToken(data.nextPageToken);
     } catch (err) {
       setSendersError("Failed to search Outlook senders.");
     } finally {
       setIsLoadingSenders(false);
     }
-  }, [fetchSenders]);
+  }, []);
 
   const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
     setIsAddingSender(true);
