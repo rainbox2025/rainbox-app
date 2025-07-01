@@ -8,7 +8,6 @@ export const GET = async (
   context: { params: { userId: string } }
 ) => {
   const { userId } = await context.params;
-  console.log("User ID:", userId);
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -23,6 +22,5 @@ export const GET = async (
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log("Data fetched:", data);
   return NextResponse.json(data);
 };

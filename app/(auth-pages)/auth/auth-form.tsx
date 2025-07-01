@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { sendOtpAction, verifyOtpAndSignInAction, signInWithGoogleAction } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { GoogleIcon } from "@/icons"; // Make sure this path is correct
+import { GoogleIcon } from "@/icons";
 import Image from "next/image";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { useSearchParams } from "next/navigation";
-import toast, { Toaster } from 'react-hot-toast'; // Import react-hot-toast
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function AuthPage() {
   const [step, setStep] = useState<"email" | "otp">("email");
@@ -19,7 +19,7 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [showNameField, setShowNameField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // message state removed, using toast directly
+
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
@@ -27,22 +27,22 @@ export default function AuthPage() {
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
-    const messageParam = searchParams.get("message"); // For general messages from redirects
-    const successParam = searchParams.get("success_message"); // More specific success from redirects
+    const messageParam = searchParams.get("message");
+    const successParam = searchParams.get("success_message");
 
     if (errorParam) {
       toast.error(decodeURIComponent(errorParam));
     }
-    if (messageParam) { // Can be used for general info/success from redirects
+    if (messageParam) {
       toast.success(decodeURIComponent(messageParam));
     }
     if (successParam) {
       toast.success(decodeURIComponent(successParam));
     }
-    // Consider removing params from URL after displaying to prevent re-toasting on refresh
-    // if (errorParam || messageParam || successParam) {
-    //   window.history.replaceState({}, document.title, window.location.pathname);
-    // }
+
+
+
+
   }, [searchParams]);
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -52,7 +52,7 @@ export default function AuthPage() {
       return;
     }
     setIsLoading(true);
-    toast.dismiss(); // Dismiss any existing toasts
+    toast.dismiss();
 
     const result = await sendOtpAction(email, recaptchaToken);
 
@@ -81,7 +81,7 @@ export default function AuthPage() {
         toast.error(result.message);
         setIsLoading(false);
       }
-      // On success, verifyOtpAndSignInAction handles redirect. setIsLoading(false) might not be reached.
+
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred.");
       setIsLoading(false);
@@ -90,25 +90,52 @@ export default function AuthPage() {
 
   const onRecaptchaChange = (token: string | null) => {
     setRecaptchaToken(token);
-    if (token) toast.dismiss(); // Clear "Please complete reCAPTCHA" toast if user interacts
+    if (token) toast.dismiss();
   };
 
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   const [captchaTheme, setCaptchaTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      setCaptchaTheme(mediaQuery.matches ? "light" : "light");
-      const handler = (e: MediaQueryListEvent) => setCaptchaTheme(e.matches ? "light" : "light");
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+
+    if (typeof window === "undefined") {
+      return;
     }
+
+
+
+    const getTheme = () => {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    };
+
+
+    setCaptchaTheme(getTheme());
+
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+
+        if (mutation.attributeName === 'class') {
+          setCaptchaTheme(getTheme());
+        }
+      });
+    });
+
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
-  // --- Style Definitions Based on Your Provided Code ---
-  const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"; // Added focus-visible for better accessibility from shadcn/ui Input
-  const placeholderClasses = "placeholder:text-muted-foreground"; // Your email input doesn't have a specific placeholder class, this is a common way
+
+  const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  const placeholderClasses = "placeholder:text-muted-foreground";
 
   const primaryButtonBaseClasses = "w-full h-12 bg-secondary hover:bg-hovered text-primary rounded-xl font-medium text-base";
   const googleButtonClasses = "w-full h-12 flex items-center justify-center px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground";
@@ -142,8 +169,8 @@ export default function AuthPage() {
         <form action={signInWithGoogleAction} className="mb-3">
           <Button
             type="submit"
-            variant="outline" // This variant might have its own base style from your ui/button
-            className={googleButtonClasses} // Applying consistent Google button style
+            variant="outline"
+            className={googleButtonClasses}
             disabled={isLoading}
           >
             <GoogleIcon className="mr-2.5 h-5 w-5" /> Continue with Google
@@ -169,7 +196,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className={`${inputBaseClasses} ${placeholderClasses}`} // Consistent input style
+                className={`${inputBaseClasses} ${placeholderClasses}`}
                 disabled={isLoading}
               />
             </div>
@@ -184,7 +211,7 @@ export default function AuthPage() {
             )}
             <Button
               type="submit"
-              className={primaryButtonBaseClasses} // Consistent primary button style
+              className={primaryButtonBaseClasses}
               disabled={isLoading}
             >
               {isLoading ? "Sending..." : "Continue with email"}
@@ -200,7 +227,7 @@ export default function AuthPage() {
                 name="emailDisplay"
                 value={email}
                 readOnly
-                className={`${inputBaseClasses} ${placeholderClasses} bg-secondary cursor-not-allowed`} // Consistent + readonly indication
+                className={`${inputBaseClasses} ${placeholderClasses} bg-secondary cursor-not-allowed`}
               />
             </div>
             {showNameField && (
@@ -212,7 +239,7 @@ export default function AuthPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className={`${inputBaseClasses} ${placeholderClasses}`} // Consistent input style
+                  className={`${inputBaseClasses} ${placeholderClasses}`}
                   disabled={isLoading}
                 />
               </div>
@@ -227,7 +254,7 @@ export default function AuthPage() {
                 required
                 minLength={6}
                 maxLength={6}
-                className={`${inputBaseClasses} ${placeholderClasses}`} // Consistent input style
+                className={`${inputBaseClasses} ${placeholderClasses}`}
                 disabled={isLoading}
                 autoComplete="one-time-code"
                 inputMode="numeric"
@@ -247,7 +274,7 @@ export default function AuthPage() {
             </Button>
             {/* <Button
               type="button"
-              variant="link" // This variant should be styled appropriately in your ui/button component
+              variant="link" 
               onClick={() => {
                 setStep("email");
                 setShowNameField(false);
@@ -258,7 +285,7 @@ export default function AuthPage() {
                 }
               }}
               disabled={isLoading}
-              className="w-full text-sm text-primary hover:text-primary hover:underline p-0 h-auto" // Using text-primary, hover:underline for link
+              className="w-full text-sm text-primary hover:text-primary hover:underline p-0 h-auto" 
             >
               Use a different email or resend code
             </Button> */}

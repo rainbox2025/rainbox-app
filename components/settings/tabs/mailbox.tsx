@@ -1,47 +1,69 @@
+"use client";
+
 import React, { useState } from 'react';
 import Image from 'next/image';
 import ConnectionCard from '../ConnectionCard';
 import { GmailConnectionFlow } from '@/components/connect-gmail/flow';
+import { OutlookConnectionFlow } from '@/components/connect-outlook/flow';
 import AddMailBox from '../add-mail-box';
 import DisconnectBox from '../disconnect-box';
+import { useGmail } from '@/context/gmailContext';
+import { useOutlook } from '@/context/outlookContext';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/authContext';
 
 export default function MailboxTab() {
+  const { isConnected: isGmailConnected, email: gmailEmail, isLoading: isGmailLoading, disconnectGmail } = useGmail();
+  const { user } = useAuth();
+  const { isConnected: isOutlookConnected, email: outlookEmail, isLoading: isOutlookLoading, disconnectOutlook } = useOutlook();
+
   const [showAddMailbox, setShowAddMailbox] = useState(false);
-  const [showDisconnectOutlook, setShowDisconnectOutlook] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState<{ service: 'gmail' | 'outlook' | null }>({ service: null });
+  const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
+  const [isOutlookFlowOpen, setIsOutlookFlowOpen] = useState(false);
+
+  // --- ADD THIS STATE ---
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  // State for AddMailBox modal
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
-  const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
   const [error, setError] = useState('');
 
   const handleCreateMailbox = () => {
     if (!username || !fullName) {
       setError('Please fill in all required fields.');
+      return;
     }
-
-    if (error) return;
-
     setShowAddMailbox(false);
     setError('');
-
-
   };
 
-  const handleCloseModal = () => {
+  // --- UPDATE THIS FUNCTION ---
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true); // Set loading to true
+    try {
+      if (showDisconnectModal.service === 'gmail') {
+        await disconnectGmail();
+      } else if (showDisconnectModal.service === 'outlook') {
+        await disconnectOutlook();
+      }
+    } catch (e) {
+      console.error("Failed to disconnect:", e);
+      // Optionally show an error toast
+    } finally {
+      setIsDisconnecting(false); // Reset loading state
+      setShowDisconnectModal({ service: null }); // Close modal
+    }
+  };
+
+  const handleCloseModals = () => {
     setShowAddMailbox(false);
-    setShowDisconnectOutlook(false);
+    setShowDisconnectModal({ service: null });
     setError('');
   };
 
-  const handleAddMailbox = () => {
-    setShowAddMailbox(true);
-    setError('');
-  };
-
-  const handleDisconnectOutlook = () => {
-    setShowDisconnectOutlook(true);
-  };
-
-
+  const isLoading = isGmailLoading || isOutlookLoading;
 
   return (
     <>
@@ -57,95 +79,114 @@ export default function MailboxTab() {
             <p className="text-sm text-muted-foreground mb-4">
               Use this email address when subscribing to newsletters. All newsletters sent to this address will appear here in Meco.
             </p>
-
             <ConnectionCard
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle="ganesh123@rainbox.ai"
+              subtitle={`${user?.user_name || 'user'}@rainbox.ai`}
               actionType="copy"
-              onAction={() => { }}
+              onAction={() => navigator.clipboard.writeText(`${user?.user_name || 'user'}@rainbox.ai`)}
               isConnected={true}
             />
-
             <button
-              onClick={handleAddMailbox}
+              onClick={() => setShowAddMailbox(true)}
               className="mt-4 flex items-center gap-2 px-4 py-2 border border-border rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"
             >
               + Add a secondary mailbox
             </button>
           </div>
 
-          <hr className="border-border" style={{ margin: "1rem 0" }} />
+          <hr className="border-border" />
 
-          <div style={{ marginTop: "0" }}>
+          <div>
             <h3 className="font-medium mb-2">Connect your Gmail or Outlook</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Bring your existing newsletters from Gmail or Outlook to Rainbox. Just sign in and select the sender — that's it! All existing and future emails from the senders will automatically appear in Rainbox.
+              Bring your existing newsletters from Gmail or Outlook to Rainbox. Just sign in and select the sender — that's it!
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center">
-                <ConnectionCard
-                  logo="svg"
-                  logoAlt="Google Logo"
-                  title="Connect your Gmail"
-                  subtitle=""
-                  actionType="connect"
-                  onAction={() => { setIsGmailFlowOpen(true) }}
-                  isConnected={false}
-                />
-              </div>
+              {isLoading && !isDisconnecting ? ( // Show loader only for initial fetch
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <ConnectionCard
+                    logo="/gmail.webp"
+                    logoAlt="Gmail Logo"
+                    title={isGmailConnected ? "Gmail" : "Connect your Gmail"}
+                    subtitle={isGmailConnected ? gmailEmail : "No account connected"}
+                    actionType={isGmailConnected ? "disconnect" : "connect"}
+                    onAction={() => isGmailConnected ? setShowDisconnectModal({ service: 'gmail' }) : setIsGmailFlowOpen(true)}
+                    isConnected={isGmailConnected}
+                  />
 
-              <div className="flex items-center">
-                <ConnectionCard
-                  logo="/OutlookLogo.png"
-                  logoAlt="Outlook Logo"
-                  title="Ganesh's Outlook"
-                  subtitle="ganesh123@outlook.com"
-                  actionType="resync"
-                  onAction={handleDisconnectOutlook}
-                  isConnected={true}
-                />
-
-              </div>
+                  <ConnectionCard
+                    logo="/OutlookLogo.png"
+                    logoAlt="Outlook Logo"
+                    title={isOutlookConnected ? "Outlook" : "Connect your Outlook"}
+                    subtitle={isOutlookConnected ? outlookEmail : "No account connected"}
+                    actionType={isOutlookConnected ? "disconnect" : "connect"}
+                    onAction={() => isOutlookConnected ? setShowDisconnectModal({ service: 'outlook' }) : setIsOutlookFlowOpen(true)}
+                    isConnected={isOutlookConnected}
+                  />
+                </>
+              )}
             </div>
           </div>
 
-          <hr className="border-border" style={{ margin: "1rem 0" }} />
+          <hr className="border-border" />
 
-          <div style={{ marginTop: "0" }}>
-            <h3 className="font-medium mb-2" >Automatically forward existing newsletters to Rainbox</h3>
+          <div>
+            <h3 className="font-medium mb-2">Automatically forward existing newsletters</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              You can also get your newsletters frraom Gmail, Outlook or other email clients to Rainbox by setting up forwarding rules. This option is suitable if you don't want to connect your Gmail or Outlook. Check the guide below to learn email forwarding.
+              You can also get your newsletters from other email clients to Rainbox by setting up forwarding rules.
             </p>
-
             <div className="space-y-2">
               <a href="#" className="flex items-center gap-2 text-primary hover:underline">
-                <Image src="/YoutubeLogo.png" alt="Rainbox Logo" width={24} height={24} className="w-5 h-5" />
+                <Image src="/YoutubeLogo.png" alt="YouTube Logo" width={24} height={24} className="w-5 h-5" />
                 <span className="text-sm">Forwarding from Gmail</span>
               </a>
               <a href="#" className="flex items-center gap-2 text-primary hover:underline">
-                <Image src="/YoutubeLogo.png" alt="Rainbox Logo" width={24} height={24} className="w-5 h-5" />
+                <Image src="/YoutubeLogo.png" alt="YouTube Logo" width={24} height={24} className="w-5 h-5" />
                 <span className="text-sm">Forwarding from Outlook</span>
               </a>
             </div>
           </div>
         </div>
 
+        <AddMailBox
+          showAddMailbox={showAddMailbox}
+          handleCloseModal={handleCloseModals}
+          fullName={fullName}
+          setFullName={setFullName}
+          username={username}
+          setUsername={setUsername}
+          handleCreateMailbox={handleCreateMailbox}
+        // error={error}
+        />
 
-
-        {/* Add a New Mailbox Modal */}
-        <AddMailBox showAddMailbox={showAddMailbox} handleCloseModal={handleCloseModal} fullName={fullName} setFullName={setFullName} username={username} setUsername={setUsername} handleCreateMailbox={handleAddMailbox} />
-
-        {/* Disconnect Outlook Modal */}
-        <DisconnectBox showDisconnectOutlook={showDisconnectOutlook} handleCloseModal={handleCloseModal} />
+        {/* --- PASS THE LOADING STATE HERE --- */}
+        <DisconnectBox
+          showDisconnectBox={!!showDisconnectModal.service}
+          handleCloseModal={handleCloseModals}
+          serviceName={showDisconnectModal.service || ''}
+          handleDisconnect={handleDisconnect}
+          isDisconnecting={isDisconnecting}
+        />
       </div>
+
       <GmailConnectionFlow
         isOpen={isGmailFlowOpen}
         onClose={() => setIsGmailFlowOpen(false)}
         onConnectionComplete={() => setIsGmailFlowOpen(false)}
       />
+
+      <OutlookConnectionFlow
+        isOpen={isOutlookFlowOpen}
+        onClose={() => setIsOutlookFlowOpen(false)}
+        onConnectionComplete={() => setIsOutlookFlowOpen(false)}
+      />
     </>
-  )
+  );
 }

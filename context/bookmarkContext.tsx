@@ -1,5 +1,3 @@
-// /context/bookmarkContext.tsx
-
 "use client";
 
 import React, {
@@ -187,7 +185,6 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         api.get<ApiBookmark[]>("/bookmarks"),
         api.get<TagWithCount[]>("/bookmarks/tags"),
       ]);
-      console.log("bookmarksResponse.data: ", bookmarksResponse.data)
       setBookmarks(bookmarksResponse.data.map(mapApiBookmarkToLocal));
       setAllApiTags(tagsResponse.data);
     } catch (error) {

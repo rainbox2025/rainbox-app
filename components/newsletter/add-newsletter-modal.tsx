@@ -1,15 +1,17 @@
+// src/components/newsletter/add-newsletter-modal.tsx
+"use client";
+
 import React from 'react';
 import { BaseModal } from './base-modal';
 import ConnectionCard from '@/components/settings/ConnectionCard';
-import { Connection } from '@/types/data';
 import Image from 'next/image';
-import { Button } from '../ui/button';
 
 // Import contexts and flows for both Gmail and Outlook
 import { useGmail } from "@/context/gmailContext";
-import { GmailConnectionFlow } from '../connect-gmail/flow'; // Assuming path is correct
+import { GmailConnectionFlow } from '../connect-gmail/flow';
 import { useOutlook } from '@/context/outlookContext';
-import { OutlookConnectionFlow } from '../connect-outlook/flow'; // Assuming index.tsx is the flow entry
+import { OutlookConnectionFlow } from '../connect-outlook/flow';
+import { useAuth } from '@/context/authContext';
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 }) => {
   // State and hooks for Gmail
   const { email: gmailEmail, isConnected: gmailIsConnected } = useGmail();
+  const { user } = useAuth();
   const [isGmailFlowOpen, setIsGmailFlowOpen] = React.useState(false);
 
   // State and hooks for Outlook
@@ -31,10 +34,11 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
 
   const handleCopyRainboxEmail = () => {
-    navigator.clipboard.writeText("nothing");
+    // Replace with actual rainbox email logic if available
+    navigator.clipboard.writeText("your-unique-address@rainbox.ai");
   };
 
-  // Close child flows when the main modal closes
+  // Close child connection flows when the main modal closes
   React.useEffect(() => {
     if (!isOpen) {
       setIsGmailFlowOpen(false);
@@ -44,9 +48,8 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Add a Newsletter to Rainbox">
-      <div className="flex flex-col ">
-        {/* Scrollable content */}
-        <div className="flex-grow overflow-y-auto space-y-6  custom-scrollbar">
+      <div className="flex flex-col">
+        <div className="flex-grow overflow-y-auto space-y-6 custom-scrollbar">
           <Image src="/newsletter-placeholder.png" alt="newsletter-placeholder" width={200} height={200} className='h-40 rounded-lg w-full' />
           <div>
             <h3 className="text-sm font-semibold mb-1">
@@ -56,9 +59,9 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle="ganesh123@rainbox.ai"
+              subtitle={`${user?.email || "Not connected"}`}
               actionType="copy"
-              onAction={() => handleCopyRainboxEmail()}
+              onAction={handleCopyRainboxEmail}
               isConnected={true}
             />
           </div>
@@ -78,15 +81,13 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                   logoAlt="Outlook Logo"
                   title="Outlook"
                   subtitle={outlookEmail || "Not connected"}
-                  actionType={outlookIsConnected ? "select-sender" : "connect"}
+                  actionType="select-sender"
                   onAction={() => {
-                    if (outlookIsConnected && outlookEmail) {
+                    if (outlookEmail) {
                       onSelectSender(outlookEmail, "Outlook");
-                    } else {
-                      setIsOutlookFlowOpen(true); // Open the modal flow
                     }
                   }}
-                  isConnected={outlookIsConnected}
+                  isConnected={true}
                 />
               )}
 
@@ -97,18 +98,15 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                   logoAlt="Gmail Logo"
                   title="Gmail"
                   subtitle={gmailEmail || "Not connected"}
-                  actionType={gmailIsConnected ? "select-sender" : "connect"}
+                  actionType="select-sender"
                   onAction={() => {
-                    if (gmailIsConnected && gmailEmail) {
+                    if (gmailEmail) {
                       onSelectSender(gmailEmail, "Gmail");
-                    } else {
-                      setIsGmailFlowOpen(true); // Open the modal flow
                     }
                   }}
-                  isConnected={gmailIsConnected}
+                  isConnected={true}
                 />
               )}
-
             </div>
           </div>
 
@@ -122,10 +120,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
             )}
             {/* Outlook Connection Link */}
             {!outlookIsConnected ? (
-              <button onClick={() => {
-                console.log('clicked');
-                setIsOutlookFlowOpen(true)
-              }} className="text-sm underline">Connect Outlook</button>
+              <button onClick={() => setIsOutlookFlowOpen(true)} className="text-sm underline">Connect Outlook</button>
             ) : (
               <button title='Already connected' className="text-sm underline text-muted-foreground cursor-not-allowed">Outlook Connected</button>
             )}
@@ -139,8 +134,6 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
         onClose={() => setIsGmailFlowOpen(false)}
         onConnectionComplete={() => {
           setIsGmailFlowOpen(false);
-          // Optional: you could close the main modal here too if desired
-          // onClose();
         }}
       />
       <OutlookConnectionFlow
@@ -150,6 +143,6 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
           setIsOutlookFlowOpen(false);
         }}
       />
-    </BaseModal>
+    </BaseModal >
   );
 };
