@@ -7,6 +7,7 @@ import { GmailConnectionFlow } from '@/components/connect-gmail/flow';
 import { OutlookConnectionFlow } from '@/components/connect-outlook/flow';
 import AddMailBox from '../add-mail-box';
 import DisconnectBox from '../disconnect-box';
+import { AnimatePresence, motion } from "framer-motion";
 import { useGmail } from '@/context/gmailContext';
 import { useOutlook } from '@/context/outlookContext';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +17,7 @@ export default function MailboxTab() {
   const { isConnected: isGmailConnected, email: gmailEmail, isLoading: isGmailLoading, disconnectGmail } = useGmail();
   const { user } = useAuth();
   const { isConnected: isOutlookConnected, email: outlookEmail, isLoading: isOutlookLoading, disconnectOutlook } = useOutlook();
-
+  const [copied, setCopied] = useState(false);
   const [showAddMailbox, setShowAddMailbox] = useState(false);
   const [showDisconnectModal, setShowDisconnectModal] = useState<{ service: 'gmail' | 'outlook' | null }>({ service: null });
   const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
@@ -63,6 +64,12 @@ export default function MailboxTab() {
     setError('');
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`${user?.user_name || 'user'}@rainbox.ai`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500); // hide after 1.5 sec
+  };
+
   const isLoading = isGmailLoading || isOutlookLoading;
 
   return (
@@ -79,15 +86,30 @@ export default function MailboxTab() {
             <p className="text-sm text-muted-foreground mb-4">
               Use this email address when subscribing to newsletters. All newsletters sent to this address will appear here in Meco.
             </p>
-            <ConnectionCard
-              logo="/RainboxLogo.png"
-              logoAlt="Rainbox Logo"
-              title="Rainbox - Primary Email"
-              subtitle={`${user?.user_name || 'user'}@rainbox.ai`}
-              actionType="copy"
-              onAction={() => navigator.clipboard.writeText(`${user?.user_name || 'user'}@rainbox.ai`)}
-              isConnected={true}
-            />
+            <div className="relative">
+              <ConnectionCard
+                logo="/RainboxLogo.png"
+                logoAlt="Rainbox Logo"
+                title="Rainbox - Primary Email"
+                subtitle={`${user?.user_name || 'user'}@rainbox.ai`}
+                actionType="copy"
+                onAction={handleCopy}
+                isConnected={true}
+              />
+              <AnimatePresence>
+                {copied && (
+                  <motion.div
+                    className="absolute top-full mt-2 right-4 bg-muted text-foreground px-2 py-1 rounded text-xs shadow z-10"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    Copied!
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               onClick={() => setShowAddMailbox(true)}
               className="mt-4 flex items-center gap-2 px-4 py-2 border border-border rounded-md bg-hovered hover:bg-hovered transition-colors text-sm"

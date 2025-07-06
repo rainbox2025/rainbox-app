@@ -33,11 +33,6 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
   const { email: outlookEmail, isConnected: outlookIsConnected } = useOutlook();
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
 
-  const handleCopyRainboxEmail = () => {
-    // Replace with actual rainbox email logic if available
-    navigator.clipboard.writeText("your-unique-address@rainbox.ai");
-  };
-
   // Close child connection flows when the main modal closes
   React.useEffect(() => {
     if (!isOpen) {
@@ -59,9 +54,11 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle={`${user?.email || "Not connected"}`}
+              subtitle={`${user?.user_name || 'user_name'}@rainbox.ai`}
               actionType="copy"
-              onAction={handleCopyRainboxEmail}
+              onAction={() => {
+                navigator.clipboard.writeText(user?.email || "");
+              }}
               isConnected={true}
             />
           </div>
