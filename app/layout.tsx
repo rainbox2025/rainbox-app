@@ -50,13 +50,13 @@ export default function RootLayout({
           <Notification />
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
-              <SidebarProvider>
-                <SendersProvider>
-                  <BookmarkProvider>
-                    <MailsProvider>
-                      <GmailProvider>
-                        <OutlookProvider>
-                          <AuthProvider>
+              <AuthProvider>
+                <SidebarProvider>
+                  <SendersProvider>
+                    <BookmarkProvider>
+                      <MailsProvider>
+                        <GmailProvider>
+                          <OutlookProvider>
                             <FoldersProvider>
                               <SettingsProvider>
                                 <OnboardingProvider>
@@ -64,13 +64,14 @@ export default function RootLayout({
                                 </OnboardingProvider>
                               </SettingsProvider>
                             </FoldersProvider>
-                          </AuthProvider>
-                        </OutlookProvider>
-                      </GmailProvider>
-                    </MailsProvider>
-                  </BookmarkProvider>
-                </SendersProvider>
-              </SidebarProvider>
+
+                          </OutlookProvider>
+                        </GmailProvider>
+                      </MailsProvider>
+                    </BookmarkProvider>
+                  </SendersProvider>
+                </SidebarProvider>
+              </AuthProvider>
             </div>
           </main>
         </ThemeProvider>

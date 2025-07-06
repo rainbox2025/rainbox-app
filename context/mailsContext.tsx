@@ -10,6 +10,7 @@ import { Mail } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 import { useSenders } from "./sendersContext";
+import { useAuth } from "./authContext";
 
 interface PaginationInfo {
   currentPage: number;
@@ -31,7 +32,7 @@ interface MailsContextType {
   summarizeLoading: boolean;
   refreshMails: () => Promise<void>;
   markAsReadAllBySenderId: (senderId: string) => Promise<void>;
-  loadMoreMails: () => void; // Simplified function for the component
+  loadMoreMails: () => void;
   paginationInfo: PaginationInfo;
   summarizeError?: string | null;
 }
@@ -63,8 +64,10 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
   const [bookmarkError, setBookmarkError] = useState<string | null>(null);
   const [summarizeError, setSummarizeError] = useState<string | null>(null);
   const [summarizeLoading, setSummarizeLoading] = useState(false);
+  const { accessToken } = useAuth();
 
-  // General fetch function
+
+
   const fetchMails = useCallback(
     async (page: number = 1) => {
       if (page === 1) setIsMailsLoading(true);
@@ -108,16 +111,27 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
         setIsFetchingMore(false);
       }
     },
-    [api, selectedSender, supabase.auth]
+    [api, selectedSender]
   );
 
-  // Trigger fetch when selectedSender changes (or for initial load)
+
   useEffect(() => {
+
+    if (!accessToken) {
+
+      setMails([]);
+      setPaginationInfo(INITIAL_PAGINATION_STATE);
+      return;
+    }
+
+
     setMails([]);
     setSelectedMail(null);
     setPaginationInfo(INITIAL_PAGINATION_STATE);
     fetchMails(1);
-  }, [selectedSender]); // fetchMails is stable due to useCallback
+
+
+  }, [accessToken, selectedSender, fetchMails]);
 
   const loadMoreMails = useCallback(() => {
     if (!isFetchingMore && paginationInfo.hasMore) {

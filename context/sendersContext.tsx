@@ -11,6 +11,7 @@ import {
 import { SenderType } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
+import { useAuth } from "./authContext";
 
 interface SendersContextType {
   senders: SenderType[];
@@ -43,6 +44,7 @@ export const SendersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
+  const { accessToken } = useAuth();
   const [selectedSender, setSelectedSender] = useState<SenderType | null>(null);
   const [senders, setSenders] = useState<SenderType[]>([]);
   const [isSendersLoading, setIsSendersLoading] = useState(false);
@@ -68,7 +70,15 @@ export const SendersProvider = ({
     } finally {
       setIsSendersLoading(false);
     }
-  }, []);
+  }, [api]);
+
+  useEffect(() => {
+    if (accessToken) {
+      fetchSenders();
+    } else {
+      setSenders([]);
+    }
+  }, [accessToken, fetchSenders]);
 
   const updateSender = useCallback(
     async (id: string, formData: FormData) => {
@@ -167,9 +177,7 @@ export const SendersProvider = ({
     setSenders((prev) => [...prev, sender]);
   };
 
-  useEffect(() => {
-    fetchSenders();
-  }, []);
+
 
   return (
     <SendersContext.Provider

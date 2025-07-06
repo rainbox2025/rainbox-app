@@ -13,6 +13,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
 import { AxiosResponse } from "axios";
 import { useSenders } from "./sendersContext";
+import { useAuth } from "./authContext";
 
 interface FoldersContextType {
   folders: FolderType[];
@@ -69,6 +70,8 @@ export const FoldersProvider = ({
   );
   const [sidebarOrder, setSidebarOrder] = useState<any>(null);
   const [isSidebarOrderLoading, setIsSidebarOrderLoading] = useState(true);
+  const { accessToken } = useAuth();
+
 
   const api = useAxios();
 
@@ -99,7 +102,7 @@ export const FoldersProvider = ({
     } finally {
       setIsSidebarOrderLoading(false);
     }
-  }, []);
+  }, [api]);
 
   const saveSidebarOrder = useCallback(
     async (order: any) => {
@@ -113,9 +116,11 @@ export const FoldersProvider = ({
   );
 
   useEffect(() => {
-    fetchFolders();
-    fetchSidebarOrder();
-  }, []);
+    if (accessToken) {
+      fetchFolders();
+      fetchSidebarOrder();
+    }
+  }, [accessToken, fetchFolders, fetchSidebarOrder]);
 
   const createFolder = useCallback(
     async (name: string) => {

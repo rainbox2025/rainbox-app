@@ -1,9 +1,11 @@
 "use client";
-import { createContext, useState, useEffect, useContext } from "react";
+
+import { createContext, useState, useEffect, useContext, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { User } from '@/types/data';
-import { useAxios } from "@/hooks/useAxios"; // Adjust this path if your hook is elsewhere
+import axios from "axios";
+import { config } from "@/config";
 
 interface AuthContextType {
   user: User | null;
@@ -23,9 +25,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Initialize the custom axios instance.
-  // It must be called at the top level of the component.
-  const api = useAxios();
+
+
+
+  const authApi = useMemo(() => {
+    const instance = axios.create({
+      baseURL: config.api.baseURL,
+    });
+    instance.interceptors.request.use(
+      (config) => {
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return instance;
+  }, [accessToken]);
 
   const fetchUser = async () => {
     try {
@@ -69,6 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAccessToken(null);
         router.push('/auth');
       } else if (session) {
+
         fetchUser();
       }
     });
@@ -93,10 +111,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     formData.append('avatar', file);
 
     try {
-      // Use the custom axios instance. The base URL is already configured in useAxios.
-      const response = await api.post('/avatar', formData, {
+
+      const response = await authApi.post('/avatar', formData, {
         headers: {
-          // Important for file uploads with FormData
           'Content-Type': 'multipart/form-data',
         },
       });
@@ -111,8 +128,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteAccount = async (feedback: string) => {
     try {
-      // Use the custom axios instance. For axios.delete, the payload is in the `data` property.
-      await api.delete('/account/delete', {
+
+      await authApi.delete('/account/delete', {
         data: { feedback }
       });
 
