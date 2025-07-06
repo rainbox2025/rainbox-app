@@ -84,8 +84,8 @@ export const BasicModal: React.FC<BasicModalProps> = ({
               onChange={(e) => setValue(e.target.value)}
               placeholder="Folder Name"
               className="w-full p-sm border border-border dark:border-border rounded-md 
-                         bg-content dark:bg-content 
-                         focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+             bg-content dark:bg-content 
+             text-sm focus:outline-none focus:ring-0"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !isLoading) handleSave();
                 if (e.key === 'Escape' && !isLoading) onClose();
