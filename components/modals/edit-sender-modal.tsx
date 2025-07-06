@@ -123,9 +123,24 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
                       <PlusIcon className="h-6 w-6 text-white" />
                     </div>
                   )}
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleIconChange} disabled={isLoading} />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden focus:outline-none focus:ring-0"
+                    onChange={handleIconChange}
+                    disabled={isLoading}
+                  />
                 </div>
-                <input ref={titleInputRef} type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Feed Title" className="flex-1 p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm" disabled={isLoading} />
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Feed Title"
+                  className="flex-1 p-sm border border-border rounded-md bg-content text-sm"
+                  disabled={isLoading}
+                />
               </div>
             </div>
 
@@ -135,7 +150,7 @@ export const EditSenderModal: React.FC<EditSenderModalProps> = ({
                 <select
                   value={folderId}
                   onChange={(e) => setFolderId(e.target.value)}
-                  className="w-full p-sm border border-border rounded-md bg-content appearance-none focus:outline-none focus:ring-2 focus:ring-ring text-sm cursor-pointer"
+                  className="w-full p-sm border border-border rounded-md bg-content appearance-none text-sm cursor-pointer"
                   disabled={isLoading}
                 >
                   {/* Use empty string for "No Folder" value */}

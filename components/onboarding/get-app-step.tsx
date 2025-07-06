@@ -18,7 +18,7 @@ export const GetAppStep = () => {
         className="w-full h-auto rounded-md mt-4"
         style={{ aspectRatio: "350/300", objectFit: "contain" }}
       />
-      <div className="flex justify-end space-x-2 mt-6">
+      <div className="flex justify-between space-x-2 mt-6">
         <Button variant="ghost" onClick={previousStep} size="sm">← Back</Button>
         <Button onClick={nextStep} size="sm">Do it later →</Button>
       </div>

@@ -61,7 +61,7 @@ export const ConnectStep: React.FC<ConnectStepProps> = ({ onConnect, onSelectSen
         </div>
       )}
 
-      <div className="flex justify-end space-x-2 mt-6">
+      <div className="flex justify-between space-x-2 mt-6">
         <Button variant="ghost" onClick={previousStep} size="sm">← Back</Button>
         <Button onClick={nextStep} size="sm">{
           isGmailConnected || isOutlookConnected ? "Next →" : "Do it later →"
