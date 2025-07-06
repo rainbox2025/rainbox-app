@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAxios } from "@/hooks/useAxios";
+import { useAuth } from "./authContext";
 
 // --- HELPERS (UNCHANGED) ---
 const getNodePath = (node: Node, root: Node): number[] => {
@@ -178,6 +179,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [activeTagModal, setActiveTagModal] =
     useState<ActiveTagModalData | null>(null);
   const api = useAxios();
+  const { accessToken } = useAuth();
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -192,11 +194,17 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    if (accessToken) {
+      fetchAllData();
+    } else {
+      setBookmarks([]);
+      setAllApiTags([]);
+      setIsLoading(false);
+    }
+  }, [accessToken, fetchAllData])
 
   useEffect(() => {
     const derivedTags = Array.from(

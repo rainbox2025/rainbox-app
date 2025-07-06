@@ -9,6 +9,7 @@ import { Sender, OnboardingResult } from "./gmailContext"; // Re-using types fro
 import { filterAvailableSenders } from "@/lib/senderUtils";
 import { useMemo } from "react";
 import { useSenders } from "./sendersContext";
+import { useAuth } from "./authContext";
 
 // --- Type Definitions ---
 type SendersResponse = {
@@ -105,6 +106,7 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
   const [sendersError, setSendersError] = useState<string | null>(null);
   const [isAddingSender, setIsAddingSender] = useState<boolean>(false);
   const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
+  const { accessToken } = useAuth();
 
   // You need to create this API endpoint: /api/outlook/status
   const checkConnectionStatus = useCallback(async () => {
@@ -120,11 +122,16 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
-    checkConnectionStatus();
-  }, [checkConnectionStatus]);
+    if (accessToken) {
+      checkConnectionStatus();
+    } else {
+      setIsConnected(false);
+      setEmail(null);
+    }
+  }, [accessToken, checkConnectionStatus]);
 
   const resetConnectionAttempt = () => {
     setConnectionAttemptStatus('idle');

@@ -7,6 +7,7 @@ import { useAxios } from "@/hooks/useAxios";
 import { Suspense } from 'react';
 import { useSenders } from "./sendersContext";
 import { filterAvailableSenders } from "@/lib/senderUtils";
+import { useAuth } from "./authContext";
 
 // --- Type Definitions ---
 export type Sender = {
@@ -121,7 +122,7 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [connectionAttemptStatus, setConnectionAttemptStatus] = useState<ConnectionStatus>('idle');
-
+  const { accessToken } = useAuth();
   const [senders, setSenders] = useState<Sender[]>([]);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
@@ -143,11 +144,16 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
-    checkConnectionStatus();
-  }, [checkConnectionStatus]);
+    if (accessToken) {
+      checkConnectionStatus();
+    } else {
+      setIsConnected(false);
+      setEmail(null);
+    }
+  }, [accessToken, checkConnectionStatus]);
 
   const resetConnectionAttempt = () => {
     setConnectionAttemptStatus('idle');

@@ -67,7 +67,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
 
 
 
-  }, [user?.id]);
+  }, [user, api]);
 
 
 
@@ -85,7 +85,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }, 750);
 
     return () => clearTimeout(handler);
-  }, [preferences]);
+  }, [preferences, api]);
 
 
   const updatePreferences = useCallback((newPrefs: Partial<Preferences>) => {
