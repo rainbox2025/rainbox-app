@@ -1,20 +1,73 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import React from 'react'
+"use client";
+import { config } from "@/config";
+import { useAuth } from "@/context/authContext";
+import { createClient } from "@/utils/supabase/client";
+import { enqueueSnackbar, SnackbarProvider } from "notistack";
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from "react";
 
-export default function AddMailBox({ showAddMailbox, handleCloseModal, fullName, setFullName, username, setUsername, handleCreateMailbox }: {
+export default function AddMailBox({
+  showAddMailbox,
+  handleCloseModal,
+  username,
+  setUsername,
+}: {
   showAddMailbox: boolean;
   handleCloseModal: () => void;
-  fullName: string;
-  setFullName: (fullName: string) => void;
   username: string;
   setUsername: (username: string) => void;
-  handleCreateMailbox: () => void;
 }) {
+  const supabase = createClient();
+  const { user, secondaryEmails, setSecondaryEmails } = useAuth();
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const handleCreateMail = async (name: string) => {
+    try {
+      const { data: existingUsers, error: exisingUserError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_name", name);
+      if (exisingUserError) {
+        setError(exisingUserError.message);
+        return;
+      }
+      if (existingUsers.length > 0) {
+        setError("User name already exists.");
+        return;
+      }
+      const { data: existingMailbox, error: existingMailboxError } =
+        await supabase.from("secondary_emails").select("*").eq("name", name);
+      if (existingMailboxError) {
+        setError(existingMailboxError.message);
+        return;
+      }
+      if (existingMailbox.length > 0) {
+        setError("User name already exists.");
+        return;
+      }
+      await supabase.from("secondary_emails").insert({
+        user_id: user?.id,
+        name: name,
+      });
+
+      setError("");
+      setMessage("Mailbox created successfully");
+      setSecondaryEmails([...secondaryEmails, name]);
+      enqueueSnackbar("Mailbox created successfully", {
+        variant: "success",
+      });
+      setUsername("");
+      handleCloseModal();
+    } catch (error) {
+      console.log(error);
+      setError("An error occurred while adding the secondary email.");
+    }
+  };
   return (
     <div>
-      {showAddMailbox && (
+      <SnackbarProvider />
 
+      {showAddMailbox && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
           <AnimatePresence>
             <motion.div
@@ -25,11 +78,12 @@ export default function AddMailBox({ showAddMailbox, handleCloseModal, fullName,
             >
               <div className="p-md">
                 <div className="flex justify-between items-start mb-4">
-                  <div className='flex flex-col gap-1'>
+                  <div className="flex flex-col gap-1">
                     <h2 className="text-sm font-semibold">Add a New Mailbox</h2>
-                    <p className="mb-2 text-xs text-muted-foreground">Create a new Rainbox address for your Newsletters</p>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      Create a new Rainbox address for your Newsletters
+                    </p>
                   </div>
-
 
                   <button
                     onClick={handleCloseModal}
@@ -52,19 +106,6 @@ export default function AddMailBox({ showAddMailbox, handleCloseModal, fullName,
                   </button>
                 </div>
 
-                <input
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your name"
-                  className="w-full p-sm border border-border dark:border-border rounded-md 
-                            bg-content dark:bg-content 
-                            focus:outline-none focus:ring-2 focus:ring-ring text-sm mb-4"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateMailbox();
-                    if (e.key === 'Escape') handleCloseModal();
-                  }}
-                />
-
                 <div className="flex">
                   <input
                     type="text"
@@ -76,23 +117,30 @@ export default function AddMailBox({ showAddMailbox, handleCloseModal, fullName,
                       focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                   />
                   <div className="bg-sidebar px-3 py-3 border-t border-r border-b rounded-r-md text-sm">
-                    @rainbox.app
+                    @{config.emailDomain}
                   </div>
                 </div>
-
-                <div className="flex justify-end space-x-2 mt-4">
-                  <button
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateMailbox}
-                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative"
-                  >
-                    <span className="text-sm ">Done</span>
-                  </button>
+                <div className="flex justify-between items-center">
+                  {error && (
+                    <div className="text-red-500 text-sm mt-2">{error}</div>
+                  )}
+                  {message && (
+                    <div className="text-green-500 text-sm mt-2">{message}</div>
+                  )}
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <button
+                      onClick={handleCloseModal}
+                      className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleCreateMail(username)}
+                      className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative"
+                    >
+                      <span className="text-sm ">Done</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -100,5 +148,5 @@ export default function AddMailBox({ showAddMailbox, handleCloseModal, fullName,
         </div>
       )}
     </div>
-  )
+  );
 }

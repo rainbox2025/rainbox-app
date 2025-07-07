@@ -24,7 +24,6 @@ export async function GET(request: Request) {
   const { data: user } = await supabase.auth.getUser();
   console.log("user", user);
   if (user) {
-    //check if user exists in users table
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*")
@@ -33,15 +32,12 @@ export async function GET(request: Request) {
     if (userError) {
       console.log(userError.code + " " + userError.message);
     }
-    console.log(userData);
     if (!userData) {
-      const { data: userData, error: userInsertError } = await supabase
-        .from("users")
-        .insert({
-          id: user.user?.id,
-          email: user.user?.email,
-          avatar_url: user.user?.user_metadata.avatar_url,
-        });
+      const { error: userInsertError } = await supabase.from("users").insert({
+        id: user.user?.id,
+        email: user.user?.email,
+        avatar_url: user.user?.user_metadata.avatar_url,
+      });
       if (userInsertError) {
         console.log(userInsertError.code + " " + userInsertError.message);
       }

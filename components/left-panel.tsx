@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BookmarkIcon as HeroBookmarkIcon, // Renamed to avoid conflict
   SquaresPlusIcon,
@@ -63,7 +63,11 @@ export default function LeftPanel() {
   };
 
   const handleCopyEmail = () => {
-    if (user?.email && typeof navigator !== "undefined" && navigator.clipboard) {
+    if (
+      user?.email &&
+      typeof navigator !== "undefined" &&
+      navigator.clipboard
+    ) {
       navigator.clipboard.writeText(user.email);
       setShowCopiedMessage(true);
       setTimeout(() => setShowCopiedMessage(false), 1000);
@@ -72,13 +76,25 @@ export default function LeftPanel() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (showUserModal && userModalRef.current && !userModalRef.current.contains(event.target as Node)) {
+      if (
+        showUserModal &&
+        userModalRef.current &&
+        !userModalRef.current.contains(event.target as Node)
+      ) {
         setShowUserModal(false);
       }
-      if (showEmailModal && emailModalRef.current && !emailModalRef.current.contains(event.target as Node)) {
+      if (
+        showEmailModal &&
+        emailModalRef.current &&
+        !emailModalRef.current.contains(event.target as Node)
+      ) {
         setShowEmailModal(false);
       }
-      if (showThemeModal && themeModalRef.current && !themeModalRef.current.contains(event.target as Node)) {
+      if (
+        showThemeModal &&
+        themeModalRef.current &&
+        !themeModalRef.current.contains(event.target as Node)
+      ) {
         setShowThemeModal(false);
       }
     }
@@ -88,15 +104,21 @@ export default function LeftPanel() {
     };
   }, [showUserModal, showEmailModal, showThemeModal]);
 
-  const toggleUserModal = () => setShowUserModal(prev => !prev);
-  const toggleEmailModal = () => setShowEmailModal(prev => !prev);
-  const toggleThemeModal = () => setShowThemeModal(prev => !prev);
+  const toggleUserModal = () => setShowUserModal((prev) => !prev);
+  const toggleEmailModal = () => setShowEmailModal((prev) => !prev);
+  const toggleThemeModal = () => setShowThemeModal((prev) => !prev);
 
   return (
     <>
       <div className="h-full w-12 bg-content flex flex-col items-center border-r border-border py-3 gap-2">
         <div className="mb-2">
-          <Image src="/RainboxLogo.png" alt="Logo" className="w-8 h-8" width={32} height={32} />
+          <Image
+            src="/RainboxLogo.png"
+            alt="Logo"
+            className="w-8 h-8"
+            width={32}
+            height={32}
+          />
         </div>
 
         <Link href="/dashboard" passHref>
@@ -104,7 +126,9 @@ export default function LeftPanel() {
             onClick={handleSectionChange}
             className={cn(
               "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
-              (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) && activeClass
+              (pathname === "/dashboard" ||
+                pathname.startsWith("/dashboard/")) &&
+                activeClass
             )}
             title="Inbox"
           >
@@ -117,7 +141,8 @@ export default function LeftPanel() {
             onClick={handleSectionChange}
             className={cn(
               "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
-              (pathname === "/bookmark" || pathname.startsWith("/bookmark/")) && activeClass
+              (pathname === "/bookmark" || pathname.startsWith("/bookmark/")) &&
+                activeClass
             )}
             title="Bookmarks"
           >
@@ -130,7 +155,7 @@ export default function LeftPanel() {
         <button
           onClick={() => setIsAddNewsletterFlowOpen(true)}
           className={cn(
-            "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
+            "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
             // pathname.startsWith("/discover") && activeClass // Example if /discover is a page
           )}
           title="Discover"
@@ -138,7 +163,6 @@ export default function LeftPanel() {
           <SquaresPlusIcon className="w-5 h-5" />
         </button>
         {/* </Link> */}
-
 
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
@@ -163,7 +187,13 @@ export default function LeftPanel() {
             className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
             title="Appearance"
           >
-            {theme === "dark" ? <MoonIcon className="w-5 h-5" /> : theme === "light" ? <SunIcon className="w-5 h-5" /> : <ComputerDesktopIcon className="w-5 h-5" />}
+            {theme === "dark" ? (
+              <MoonIcon className="w-5 h-5" />
+            ) : theme === "light" ? (
+              <SunIcon className="w-5 h-5" />
+            ) : (
+              <ComputerDesktopIcon className="w-5 h-5" />
+            )}
           </button>
           {showThemeModal && (
             <div className="absolute left-14 bottom-0 z-40">
@@ -174,8 +204,11 @@ export default function LeftPanel() {
                       setTheme("light");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "light" ? "text-foreground font-medium" : "text-muted-foreground"
-                      }`}
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
+                      theme === "light"
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }`}
                   >
                     <SunIcon className="w-4 h-4" />
                     <span className="text-xs">Light</span>
@@ -186,8 +219,11 @@ export default function LeftPanel() {
                       setTheme("dark");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "dark" ? "text-foreground font-medium" : "text-muted-foreground"
-                      }`}
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
+                      theme === "dark"
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }`}
                   >
                     <MoonIcon className="w-4 h-4" />
                     <span className="text-xs">Dark</span>
@@ -198,8 +234,11 @@ export default function LeftPanel() {
                       setTheme("system");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "system" ? "text-foreground font-medium" : "text-muted-foreground"
-                      }`}
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
+                      theme === "system"
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }`}
                   >
                     <ComputerDesktopIcon className="w-4 h-4" />
                     <span className="text-xs">System</span>
@@ -232,12 +271,20 @@ export default function LeftPanel() {
             onClick={toggleUserModal}
             title="Account"
           >
-            {user?.avatar_url ? <Image src={user.avatar_url} alt="Avatar" width={28} height={28} className="rounded-full" /> : <UserCircleIcon className="w-6 h-6 text-muted-foreground" />}
+            {user?.avatar_url ? (
+              <Image
+                src={user.avatar_url}
+                alt="Avatar"
+                width={28}
+                height={28}
+                className="rounded-full"
+              />
+            ) : (
+              <UserCircleIcon className="w-6 h-6 text-muted-foreground" />
+            )}
           </button>
           {showUserModal && (
-            <div
-              className="absolute left-14 bottom-0 bg-content text-popover-foreground rounded-lg shadow-xl p-3 w-40 z-50"
-            >
+            <div className="absolute left-14 bottom-0 bg-content text-popover-foreground rounded-lg shadow-xl p-3 w-40 z-50">
               <div className="flex flex-col items-center space-y-2">
                 {user?.avatar_url ? (
                   <Image
@@ -260,8 +307,6 @@ export default function LeftPanel() {
                   </p>
                 </div>
 
-
-
                 <button
                   onClick={logout}
                   className="w-full bg-destructive text-destructive-foreground rounded-md py-1 text-xs hover:bg-destructive/90 transition-colors"
@@ -274,11 +319,21 @@ export default function LeftPanel() {
         </div>
       </div>
 
-      {isFeedbackOpen && <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <AddNewsletterFlow isOpen={isAddNewsletterFlowOpen} onClose={() => setIsAddNewsletterFlowOpen(false)} />
+      {isFeedbackOpen && (
+        <FeedbackModal
+          isOpen={isFeedbackOpen}
+          onClose={() => setIsFeedbackOpen(false)}
+        />
+      )}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+      <AddNewsletterFlow
+        isOpen={isAddNewsletterFlowOpen}
+        onClose={() => setIsAddNewsletterFlowOpen(false)}
+      />
       {/* <GmailConnection /> */}
-
     </>
   );
 }

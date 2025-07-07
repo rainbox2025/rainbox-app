@@ -9,4 +9,5 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
   },
+  emailDomain: process.env.NEXT_PUBLIC_EMAIL_DOMAIN,
 };
