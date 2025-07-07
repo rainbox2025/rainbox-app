@@ -7,7 +7,7 @@ import { User } from "@/types/data";
 import axios from "axios";
 import { config } from "@/config";
 import { getSecondaryEmails } from "@/app/(actions)/mailbox/actions";
-import { useAxios } from "@/hooks/useAxios";
+
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [secondaryEmails, setSecondaryEmails] = useState<string[]>([]);
-  const api = useAxios();
+
   const authApi = useMemo(() => {
     const instance = axios.create({
       baseURL: config.api.baseURL,
@@ -187,10 +187,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const deleteSecondaryEmail = async (email: string, userId: string) => {
     try {
-      await api.delete(
+      await authApi.delete(
         `/settings/secondary-email-id?userId=${userId}&email=${email}`
       );
-    } catch (error) {}
+    } catch (error) { }
   };
 
   return (
