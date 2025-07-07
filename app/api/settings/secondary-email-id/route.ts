@@ -30,6 +30,7 @@ export const DELETE = async (req: NextRequest) => {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
+    const email = searchParams.get("name");
     if (!userId) {
       return new Response("Missing userId parameter", { status: 400 });
     }
@@ -37,7 +38,8 @@ export const DELETE = async (req: NextRequest) => {
     const { data, error } = await supabase
       .from("secondary_emails")
       .delete()
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("name", email);
     if (error) {
       return new Response("Internal server error", { status: 500 });
     }

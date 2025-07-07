@@ -7,7 +7,7 @@ import { User } from "@/types/data";
 import axios from "axios";
 import { config } from "@/config";
 import { getSecondaryEmails } from "@/app/(actions)/mailbox/actions";
-
+import { useAxios } from "@/hooks/useAxios";
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
@@ -18,6 +18,7 @@ interface AuthContextType {
   setSecondaryEmails: (secondaryEmails: string[]) => void;
   updateAvatar: (file: File) => Promise<void>;
   deleteAccount: (feedback: string) => Promise<void>;
+  deleteSecondaryEmail: (email: string, userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [secondaryEmails, setSecondaryEmails] = useState<string[]>([]);
-
+  const api = useAxios();
   const authApi = useMemo(() => {
     const instance = axios.create({
       baseURL: config.api.baseURL,
@@ -184,6 +185,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error("Failed to delete account.");
     }
   };
+  const deleteSecondaryEmail = async (email: string, userId: string) => {
+    try {
+      await api.delete(
+        `/settings/secondary-email-id?userId=${userId}&email=${email}`
+      );
+    } catch (error) {}
+  };
 
   return (
     <AuthContext.Provider
@@ -197,6 +205,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSecondaryEmails,
         updateAvatar,
         deleteAccount,
+        deleteSecondaryEmail,
       }}
     >
       {children}

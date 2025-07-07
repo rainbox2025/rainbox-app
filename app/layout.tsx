@@ -41,16 +41,16 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className={GeistSans.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Notification />
-          <main className="min-h-screen flex flex-col items-center">
-            <div className="flex-1 w-full flex flex-col items-center">
-              <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Notification />
+            <main className="min-h-screen flex flex-col items-center">
+              <div className="flex-1 w-full flex flex-col items-center">
                 <SidebarProvider>
                   <SendersProvider>
                     <BookmarkProvider>
@@ -64,17 +64,16 @@ export default function RootLayout({
                                 </OnboardingProvider>
                               </SettingsProvider>
                             </FoldersProvider>
-
                           </OutlookProvider>
                         </GmailProvider>
                       </MailsProvider>
                     </BookmarkProvider>
                   </SendersProvider>
                 </SidebarProvider>
-              </AuthProvider>
-            </div>
-          </main>
-        </ThemeProvider>
+              </div>
+            </main>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ import LeftPanel from "@/components/left-panel";
 import Inbox from "@/components/sidebar/Inbox";
 import { useSidebar } from "@/context/sidebarContext";
 import { OnboardingFlow } from "@/components/onboarding/flow"; // <-- IMPORT THE FLOW
+import { AuthProvider } from "@/context/authContext";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const fetchUser = async () => {
       try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) {
           redirect("/auth");
         }

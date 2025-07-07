@@ -23,12 +23,20 @@ export default function AddMailBox({
   const [message, setMessage] = useState("");
   const handleCreateMail = async (name: string) => {
     try {
+      const { data: existingUsers, error: exisingUserError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_name", name);
+      if (exisingUserError) {
+        setError(exisingUserError.message);
+        return;
+      }
+      if (existingUsers.length > 0) {
+        setError("User name already exists.");
+        return;
+      }
       const { data: existingMailbox, error: existingMailboxError } =
-        await supabase
-          .from("secondary_emails")
-          .select("*")
-          .eq("name", name)
-          .eq("user_id", user?.id);
+        await supabase.from("secondary_emails").select("*").eq("name", name);
       if (existingMailboxError) {
         setError(existingMailboxError.message);
         return;
