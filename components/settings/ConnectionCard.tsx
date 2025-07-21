@@ -8,24 +8,22 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
-import { enqueueSnackbar } from "notistack";
-import { removeSecondaryEmail } from "@/app/(actions)/mailbox/actions";
-import { useAuth } from "@/context/authContext";
-
 type ConnectionCardProps = {
   logo: string;
   logoAlt: string;
   title: string;
   subtitle?: string | null;
-  actionType?: string;
+  actionType?:
+  | "connect"
+  | "copy"
+  | "disconnect"
+  | "select-sender"
+  | "manage-secondary";
   onAction?: () => void;
-  // This prop seems unused in the original button text logic, but kept for API consistency.
-  // The button text logic currently uses hardcoded "Connect" or "Disconnect".
   actionText?: string;
   isConnected?: boolean;
   className?: string;
   isLoading?: boolean;
-  // If 'resync' has two distinct actions, you might need a second handler
   onSecondaryAction?: () => void;
 };
 
@@ -36,42 +34,19 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   subtitle,
   actionType,
   onAction,
-  actionText, // Kept, but original connect button text doesn't use it.
+  actionText,
   isConnected,
   className,
   isLoading = false,
-  onSecondaryAction, // For the second button in "resync"
+  onSecondaryAction,
 }) => {
-  console.log(subtitle);
-  const { user, setSecondaryEmails, secondaryEmails } = useAuth();
-  const handleRemoveSecondaryEmail = async () => {
-    try {
-      const { error } = await removeSecondaryEmail(subtitle!, user?.id!);
-      if (error) {
-        enqueueSnackbar(error, {
-          variant: "error",
-        });
-      }
-      enqueueSnackbar("Secondary email removed", {
-        variant: "success",
-      });
-      setSecondaryEmails(secondaryEmails.filter((email) => email !== subtitle));
-    } catch (error) {
-      console.error(error);
-    }
-  };
   return (
     <div
       className={`border border-border rounded-md pr-2 pl-0 py-0 flex justify-between items-center w-full ${className}`}
     >
-      {/* Increased pr-2 for a bit more space for the button on the right */}
       <div className="flex items-center gap-2 p-sm flex-grow min-w-0">
-        {" "}
-        {/* Added min-w-0 for flex-grow to not overflow */}
         {logo.includes("svg") ? (
           <div className="bg-content rounded p-1 border border-border flex-shrink-0">
-            {" "}
-            {/* Added flex-shrink-0 */}
             <svg className="h-6 w-6" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -98,26 +73,19 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             width={24}
             height={24}
             className="w-8 h-8 flex-shrink-0"
-          /> // Added flex-shrink-0
+          />
         )}
         <div className="min-w-0">
-          {" "}
-          {/* Added min-w-0 to allow text truncation if needed */}
           <div className={`text-sm text-muted-foreground truncate`}>
             {title}
-          </div>{" "}
-          {/* Added truncate */}
-          <div className={`text-sm font-medium truncate`}>{subtitle}</div>{" "}
-          {/* Added truncate */}
+          </div>
+          <div className={`text-sm font-medium truncate`}>{subtitle}</div>
         </div>
       </div>
 
-      {/* Action Buttons Section - aligned to the right */}
       <div className="flex items-center flex-shrink-0">
-        {" "}
-        {/* Wrapper for buttons, prevents shrinking */}
         {actionType === "connect" && (
-          <button // Changed div to button for accessibility
+          <button
             type="button"
             className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             onClick={onAction}
@@ -135,7 +103,6 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                 <PlusIcon className="h-5 w-5 group-hover:text-primary" />
               )}
               <span className="hidden sm:inline text-sm text-muted-foreground">
-                {/* Logic for connect button text based on isConnected and actionText */}
                 {isLoading
                   ? "Processing..."
                   : isConnected
@@ -146,7 +113,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           </button>
         )}
         {actionType === "copy" && (
-          <button // Changed div to button
+          <button
             type="button"
             className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             onClick={onAction}
@@ -162,46 +129,59 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         )}
         {actionType === "disconnect" && (
           <div className="flex items-center gap-1">
-            {" "}
-            {/* Kept gap-1 as per original for this specific group */}
-            <button // Changed div to button
+            <button
               type="button"
               className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              // onClick={onAction} // Replaced with re-sync
               aria-label="Re-sync account"
             >
               <div className="flex justify-center items-center gap-2">
-                <ArrowPathIcon title="Re-sync" className="h-5 w-5" />{" "}
-                {/* Icon for Re-sync */}
+                <ArrowPathIcon title="Re-sync" className="h-5 w-5" />
               </div>
             </button>
-            <button // Changed div to button
+            <button
               type="button"
               className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              onClick={onSecondaryAction || onAction} // Assumes a secondary action or the same onAction handles it
+              onClick={onSecondaryAction || onAction}
               aria-label="Cancel or disconnect"
             >
               <XMarkIcon title="Disconnect" className="h-5 w-5" />
-              {/* Optional: Add text for this button on larger screens if desired */}
-              {/* <span className="hidden sm:inline text-sm text-muted-foreground">Cancel</span> */}
             </button>
           </div>
         )}
         {actionType === "select-sender" && (
-          <button // Changed div to button
+          <button
             type="button"
             className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             onClick={onAction}
             aria-label="Select Sender"
           >
             <div className="flex justify-center items-center gap-2">
-              {/* Icon first for better visual when text is hidden, then text */}
               <span className="hidden sm:inline text-sm text-muted-foreground">
                 Select Sender
               </span>
               <ArrowRightIcon className="h-5 w-5 group-hover:text-primary text-muted-foreground" />
             </div>
           </button>
+        )}
+        {actionType === "manage-secondary" && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              onClick={onAction}
+              aria-label="Copy Email"
+            >
+              <ClipboardIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="border-border p-2 cursor-pointer rounded-md bg-hovered hover:bg-hovered transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              onClick={onSecondaryAction}
+              aria-label="Delete Email"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          </div>
         )}
       </div>
     </div>

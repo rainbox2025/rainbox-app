@@ -9,12 +9,12 @@ import AddMailBox from "../add-mail-box";
 import DisconnectBox from "../disconnect-box";
 import { useGmail } from "@/context/gmailContext";
 import { useOutlook } from "@/context/outlookContext";
-import { CopyCheckIcon, CopyIcon, Loader2, Trash2Icon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { config } from "@/config";
-import { Button } from "@/components/ui/button";
 import { enqueueSnackbar } from "notistack";
 import { AnimatePresence, motion } from "framer-motion";
+
 export default function MailboxTab() {
   const {
     isConnected: isGmailConnected,
@@ -22,7 +22,8 @@ export default function MailboxTab() {
     isLoading: isGmailLoading,
     disconnectGmail,
   } = useGmail();
-  const { user, deleteSecondaryEmail, setSecondaryEmails } = useAuth();
+  const { user, deleteSecondaryEmail, setSecondaryEmails, secondaryEmails } =
+    useAuth();
   const {
     isConnected: isOutlookConnected,
     email: outlookEmail,
@@ -37,27 +38,11 @@ export default function MailboxTab() {
   const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  // --- ADD THIS STATE ---
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-
-  // State for AddMailBox modal
   const [username, setUsername] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [error, setError] = useState("");
-  const { secondaryEmails } = useAuth();
 
-  const handleCreateMailbox = () => {
-    if (!username || !fullName) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-    setShowAddMailbox(false);
-    setError("");
-  };
-
-  // --- UPDATE THIS FUNCTION ---
   const handleDisconnect = async () => {
-    setIsDisconnecting(true); // Set loading to true
+    setIsDisconnecting(true);
     try {
       if (showDisconnectModal.service === "gmail") {
         await disconnectGmail();
@@ -66,38 +51,40 @@ export default function MailboxTab() {
       }
     } catch (e) {
       console.error("Failed to disconnect:", e);
-      // Optionally show an error toast
     } finally {
-      setIsDisconnecting(false); // Reset loading state
-      setShowDisconnectModal({ service: null }); // Close modal
+      setIsDisconnecting(false);
+      setShowDisconnectModal({ service: null });
     }
   };
 
   const handleCloseModals = () => {
     setShowAddMailbox(false);
     setShowDisconnectModal({ service: null });
-    setError("");
   };
+
   const handleDeleteEmail = async (email: string) => {
+    const originalEmails = [...secondaryEmails];
+    setSecondaryEmails(secondaryEmails.filter((e) => e !== email));
+
     try {
       await deleteSecondaryEmail(email, user?.id ?? "");
-      setSecondaryEmails(secondaryEmails.filter((e) => e != email));
       enqueueSnackbar({
         message: "Email deleted!",
         variant: "success",
       });
     } catch (error) {
       enqueueSnackbar({
-        message: "Failed to delete Email",
+        message: "Failed to delete email. Please try again.",
         variant: "error",
       });
+      setSecondaryEmails(originalEmails);
     }
   };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`${user?.user_name || "user"}@rainbox.ai`);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500); // hide after 1.5 sec
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const isLoading = isGmailLoading || isOutlookLoading;
@@ -119,7 +106,7 @@ export default function MailboxTab() {
               Use this email address when subscribing to newsletters. All
               newsletters sent to this address will appear here in Meco.
             </p>
-            <div className="relative">
+            <div className="relative space-y-4">
               <ConnectionCard
                 logo="/RainboxLogo.png"
                 logoAlt="Rainbox Logo"
@@ -127,12 +114,11 @@ export default function MailboxTab() {
                 subtitle={`${user?.user_name || "user"}@rainbox.ai`}
                 actionType="copy"
                 onAction={handleCopy}
-                isConnected={true}
               />
               <AnimatePresence>
                 {copied && (
                   <motion.div
-                    className="absolute top-full mt-2 right-4 bg-muted text-foreground px-2 py-1 rounded text-xs shadow z-10"
+                    className="absolute top-14 mt-2 right-4 bg-muted text-foreground px-2 py-1 rounded text-xs shadow z-10"
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
@@ -143,34 +129,20 @@ export default function MailboxTab() {
                 )}
               </AnimatePresence>
               {secondaryEmails.map((email) => {
+                const fullEmail = `${email}@${config.emailDomain ?? ""}`.replace(/%$/, '');
                 return (
-                  <div className="flex justify-between border items-center rounded-md px-md py-sm mt-sm">
-                    <div>{email.concat(`@${config.emailDomain ?? ""}`)} </div>
-                    <div className="flex gap-1">
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `${user?.user_name || "user"}@rainbox.ai`
-                          );
-                          enqueueSnackbar({
-                            message: "Copied!",
-                            variant: "success",
-                          });
-                        }}
-                        variant={"outline"}
-                      >
-                        <CopyIcon />
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          handleDeleteEmail(email);
-                        }}
-                        variant={"outline"}
-                      >
-                        <Trash2Icon />
-                      </Button>
-                    </div>
-                  </div>
+                  <ConnectionCard
+                    key={email}
+                    logo="/RainboxLogo.png"
+                    logoAlt="Rainbox Logo"
+                    title="Rainbox - Secondary Email"
+                    subtitle={fullEmail}
+                    actionType="manage-secondary"
+                    onAction={() => {
+                      navigator.clipboard.writeText(fullEmail);
+                    }}
+                    onSecondaryAction={() => handleDeleteEmail(email)}
+                  />
                 );
               })}
             </div>
@@ -192,7 +164,7 @@ export default function MailboxTab() {
             </p>
 
             <div className="space-y-4">
-              {isLoading && !isDisconnecting ? ( // Show loader only for initial fetch
+              {isLoading && !isDisconnecting ? (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
@@ -213,7 +185,6 @@ export default function MailboxTab() {
                     }
                     isConnected={isGmailConnected}
                   />
-
                   <ConnectionCard
                     logo="/OutlookLogo.png"
                     logoAlt="Outlook Logo"
@@ -284,7 +255,6 @@ export default function MailboxTab() {
           setUsername={setUsername}
         />
 
-        {/* --- PASS THE LOADING STATE HERE --- */}
         <DisconnectBox
           showDisconnectBox={!!showDisconnectModal.service}
           handleCloseModal={handleCloseModals}

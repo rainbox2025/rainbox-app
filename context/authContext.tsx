@@ -190,7 +190,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await authApi.delete(
         `/settings/secondary-email-id?userId=${userId}&email=${email}`
       );
-    } catch (error) { }
+    } catch (error) {
+      console.error("Failed to delete secondary email:", error);
+      throw error;
+    }
   };
 
   return (
