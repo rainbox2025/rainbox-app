@@ -100,12 +100,15 @@ export const OnboardingFlow = () => {
     case 'none':
     default:
       const renderProgressBar = () => (
-        <div className="w-[90%] mb-5 bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
-          <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(currentStep / 5) * 100}%` }}
-          />
-        </div>
+        <>
+          <div className="w-[90%] mb-5 bg-gray-200 dark:bg-gray-700 h-2 rounded-full ">
+            <div
+              className="bg-primary h-2 rounded-full transition-all duration-300 "
+              style={{ width: `${(currentStep / 5) * 100}%` }}
+            />
+          </div>
+          <div className="border-b border-border"></div>
+        </>
       );
 
       const renderStepContent = () => {
@@ -121,8 +124,8 @@ export const OnboardingFlow = () => {
 
       return (
         <Dialog open={modalState === 'open'} onOpenChange={(isOpen) => !isOpen && setModalState('closed')}>
-          <DialogContent className="sm:max-w-sm bg-content rounded-lg shadow-xl border border-border p-0 overflow-hidden">
-            <DialogHeader className="p-6 pb-0 border-b border-border">
+          <DialogContent className="sm:max-w-sm bg-content h-[70vh] rounded-lg shadow-xl border border-border p-0 overflow-hidden">
+            <DialogHeader className="p-6 pb-0 ">
               {renderProgressBar()}
             </DialogHeader>
             {renderStepContent()}
