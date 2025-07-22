@@ -12,6 +12,7 @@ import { GmailConnectionFlow } from '../connect-gmail/flow';
 import { useOutlook } from '@/context/outlookContext';
 import { OutlookConnectionFlow } from '../connect-outlook/flow';
 import { useAuth } from '@/context/authContext';
+import { config } from '@/config';
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle={`${user?.user_name || 'user_name'}@rainbox.app`}
+              subtitle={`${user?.user_name || 'user_name'}@${config.emailDomain}`}
               actionType="copy"
               onAction={() => {
                 navigator.clipboard.writeText(user?.email || "");
