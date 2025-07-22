@@ -114,7 +114,7 @@ export default function AddMailBox({
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full p-sm border border-border dark:border-border rounded-md 
                       bg-content dark:bg-content 
-                      focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                      focus:outline-none  text-sm"
                   />
                   <div className="bg-sidebar px-3 py-3 border-t border-r border-b rounded-r-md text-sm">
                     @{config.emailDomain}
