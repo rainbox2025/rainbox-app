@@ -54,7 +54,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               logo="/RainboxLogo.png"
               logoAlt="Rainbox Logo"
               title="Rainbox - Primary Email"
-              subtitle={`${user?.user_name || 'user_name'}@rainbox.ai`}
+              subtitle={`${user?.user_name || 'user_name'}@rainbox.app`}
               actionType="copy"
               onAction={() => {
                 navigator.clipboard.writeText(user?.email || "");

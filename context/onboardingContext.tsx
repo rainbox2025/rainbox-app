@@ -69,6 +69,7 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
   const isOnboardingComplete = async (): Promise<boolean> => {
     try {
       const { data } = await api.get<{ isComplete: boolean }>('/onboarding');
+      console.log("is onboarding complete?", data.isComplete);
       return data.isComplete;
     } catch (error) {
       console.error("Could not check onboarding status, assuming complete to avoid blocking user:", error);
