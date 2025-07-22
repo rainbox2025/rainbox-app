@@ -82,7 +82,7 @@ export default function MailboxTab() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`${user?.user_name || "user"}@rainbox.app`);
+    navigator.clipboard.writeText(`${user?.user_name || "user"}@${config.emailDomain}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -111,7 +111,7 @@ export default function MailboxTab() {
                 logo="/RainboxLogo.png"
                 logoAlt="Rainbox Logo"
                 title="Rainbox - Primary Email"
-                subtitle={`${user?.user_name || "user"}@rainbox.app`}
+                subtitle={`${user?.user_name || "user"}@${config.emailDomain}`}
                 actionType="copy"
                 onAction={handleCopy}
               />

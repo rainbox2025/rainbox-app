@@ -7,6 +7,7 @@ import { useAuth } from "@/context/authContext";
 import { useOnboarding } from "@/context/onboardingContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Loader2 } from "lucide-react";
+import { config } from "@/config";
 
 export const UsernameStep = () => {
   const { user } = useAuth();
@@ -122,7 +123,7 @@ export const UsernameStep = () => {
             autoFocus // Automatically focus on mount
           />
           <div className="bg-gray-100 dark:bg-neutral-900 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
-            @rainbox.app
+            @${config.emailDomain}
           </div>
           {isChecking && <Loader2 className="animate-spin h-4 w-4 absolute right-[130px] top-1/2 -translate-y-1/2 text-muted-foreground" />}
         </div>

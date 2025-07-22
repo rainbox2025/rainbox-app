@@ -12,6 +12,7 @@ import { useOnboarding } from "@/context/onboardingContext";
 import Image from "next/image";
 import ConnectionCard from "./settings/ConnectionCard";
 import { useGmail } from "@/context/gmailContext";
+import { config } from "@/config";
 
 export const OnboardingModal = () => {
   const {
@@ -199,7 +200,7 @@ export const OnboardingModal = () => {
                   aria-describedby="username-error"
                 />
                 <div className="bg-gray-100 dark:bg-neutral-900 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
-                  @rainbox.app
+                  @${config.emailDomain}
                 </div>
               </div>
               {userNameError && (
