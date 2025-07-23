@@ -117,7 +117,7 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Select Newsletters">
-      <div className="flex flex-col h-[75vh] overflow-y-hidden">
+      <div className="flex flex-col h-[75vh] overflow-y-hidden custom-scrollbar">
         <div className='px-1'>
           <p className="text-xs text-muted-foreground mb-4">
             Choose senders to import newsletters from your connected {connectedAccountName || 'email'}.

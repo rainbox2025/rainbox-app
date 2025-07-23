@@ -92,12 +92,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (authUser) {
           const { data: userProfile } = await supabase
             .from("users")
-            .select("avatar_url, full_name")
+            .select("avatar_url, full_name, user_name")
             .eq("id", authUser.id)
             .single();
 
           const fullName =
             userProfile?.full_name || authUser.user_metadata?.full_name || "";
+
 
           setUser({
             id: authUser.id,
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               authUser.user_metadata?.avatar_url ||
               "",
             full_name: fullName,
-            user_name: fullName.split(" ")[0] || "",
+            user_name: userProfile?.user_name || "user_name",
           });
 
           const { data: sessionData } = await supabase.auth.getSession();

@@ -1,3 +1,6 @@
+"use client";
+
+import React from "react";
 import Image from "next/image";
 import {
   ArrowRightIcon,
@@ -7,6 +10,7 @@ import {
   TrashIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { AnimatePresence, motion } from "framer-motion";
 
 type ConnectionCardProps = {
   logo: string;
@@ -25,6 +29,7 @@ type ConnectionCardProps = {
   className?: string;
   isLoading?: boolean;
   onSecondaryAction?: () => void;
+  isCopied?: boolean;
 };
 
 const ConnectionCard: React.FC<ConnectionCardProps> = ({
@@ -39,10 +44,11 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   className,
   isLoading = false,
   onSecondaryAction,
+  isCopied,
 }) => {
   return (
     <div
-      className={`border border-border rounded-md pr-2 pl-0 py-0 flex justify-between items-center w-full ${className}`}
+      className={`relative border border-border rounded-md pr-2 pl-0 py-0 flex justify-between items-center w-full ${className}`}
     >
       <div className="flex items-center gap-2 p-sm flex-grow min-w-0">
         {logo.includes("svg") ? (
@@ -184,6 +190,20 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {isCopied && (
+          <motion.div
+            className="absolute top-12 -translate-y-1/2 right-9 bg-card text-foreground px-2 py-1 rounded text-xs shadow-lg z-10 border border-border"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.1 }}
+          >
+            Copied!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

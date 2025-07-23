@@ -12,8 +12,6 @@ import { useOutlook } from "@/context/outlookContext";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { config } from "@/config";
-import { enqueueSnackbar } from "notistack";
-import { AnimatePresence, motion } from "framer-motion";
 
 export default function MailboxTab() {
   const {
@@ -37,7 +35,7 @@ export default function MailboxTab() {
   }>({ service: null });
   const [isGmailFlowOpen, setIsGmailFlowOpen] = useState(false);
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [username, setUsername] = useState("");
 
@@ -68,26 +66,21 @@ export default function MailboxTab() {
 
     try {
       await deleteSecondaryEmail(email, user?.id ?? "");
-      enqueueSnackbar({
-        message: "Email deleted!",
-        variant: "success",
-      });
     } catch (error) {
-      enqueueSnackbar({
-        message: "Failed to delete email. Please try again.",
-        variant: "error",
-      });
       setSecondaryEmails(originalEmails);
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(`${user?.user_name || "user"}@${config.emailDomain}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 1500);
   };
 
   const isLoading = isGmailLoading || isOutlookLoading;
+  const primaryEmail = `${user?.user_name || "user"}@${config.emailDomain}`;
 
   return (
     <>
@@ -106,30 +99,19 @@ export default function MailboxTab() {
               Use this email address when subscribing to newsletters. All
               newsletters sent to this address will appear here in Meco.
             </p>
-            <div className="relative space-y-4">
+            <div className="space-y-4">
               <ConnectionCard
                 logo="/RainboxLogo.png"
                 logoAlt="Rainbox Logo"
                 title="Rainbox - Primary Email"
-                subtitle={`${user?.user_name || "user"}@${config.emailDomain}`}
+                subtitle={primaryEmail}
                 actionType="copy"
-                onAction={handleCopy}
+                onAction={() => handleCopy("primary", primaryEmail)}
+                isCopied={copiedId === "primary"}
               />
-              <AnimatePresence>
-                {copied && (
-                  <motion.div
-                    className="absolute top-14 mt-2 right-4 bg-muted text-foreground px-2 py-1 rounded text-xs shadow z-10"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Copied!
-                  </motion.div>
-                )}
-              </AnimatePresence>
               {secondaryEmails.map((email) => {
-                const fullEmail = `${email}@${config.emailDomain ?? ""}`.replace(/%$/, '');
+                const fullEmail = `${email}@${config.emailDomain ?? ""
+                  }`.replace(/%$/, "");
                 return (
                   <ConnectionCard
                     key={email}
@@ -138,10 +120,9 @@ export default function MailboxTab() {
                     title="Rainbox - Secondary Email"
                     subtitle={fullEmail}
                     actionType="manage-secondary"
-                    onAction={() => {
-                      navigator.clipboard.writeText(fullEmail);
-                    }}
+                    onAction={() => handleCopy(email, fullEmail)}
                     onSecondaryAction={() => handleDeleteEmail(email)}
+                    isCopied={copiedId === email}
                   />
                 );
               })}

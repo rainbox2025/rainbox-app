@@ -8,7 +8,7 @@ import { useOnboarding } from "@/context/onboardingContext";
 export const GetAppStep = () => {
   const { nextStep, previousStep } = useOnboarding();
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-2 px-6">
       <h2 className="text-md font-medium text-foreground">Read anywhere, anytime</h2>
       <Image
         src="/getAppImage.png"

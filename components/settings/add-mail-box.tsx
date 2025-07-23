@@ -120,27 +120,23 @@ export default function AddMailBox({
                     @{config.emailDomain}
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  {error && (
-                    <div className="text-red-500 text-sm mt-2">{error}</div>
-                  )}
-                  {message && (
-                    <div className="text-green-500 text-sm mt-2">{message}</div>
-                  )}
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <button
-                      onClick={handleCloseModal}
-                      className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleCreateMail(username)}
-                      className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative"
-                    >
-                      <span className="text-sm ">Done</span>
-                    </button>
-                  </div>
+                {error && (
+                  <div className="text-red-500 text-sm mt-2">{error}</div>
+                )}
+
+                <div className="flex justify-end space-x-2 mt-4">
+                  <button
+                    onClick={handleCloseModal}
+                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleCreateMail(username)}
+                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm relative"
+                  >
+                    <span className="text-sm ">Done</span>
+                  </button>
                 </div>
               </div>
             </motion.div>
