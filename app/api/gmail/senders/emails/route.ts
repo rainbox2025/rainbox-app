@@ -16,19 +16,18 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 export async function POST(request: Request) {
   const supabase = await createClient();
   try {
-    // Get authenticated user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get user's non-onboarded Gmail senders
     const { data: senders, error: sendersError } = await supabase
       .from("senders")
-      .select("id, email")
+      .select("id, email, email_count")
       .eq("user_id", user.id)
       .eq("mail_service", "gmail")
       .eq("is_onboarded", false);
@@ -40,7 +39,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Return early if no senders need processing
     if (!senders || senders.length === 0) {
       return NextResponse.json(
         {
@@ -75,16 +73,16 @@ export async function POST(request: Request) {
     let processedEmails: any[] = [];
     let pageToken: string | undefined = undefined;
 
-    // Create query to fetch emails only from tracked senders
     const senderQuery = senders.map((s) => `from:${s.email}`).join(" OR ");
 
-    // Loop through all pages of results
+    const senderEmailCount: Record<string, number> = {};
+
     do {
       const messagesRes: any = await gmail.users.messages.list({
         userId: "me",
         maxResults: 100,
         pageToken: pageToken,
-        q: senderQuery, // Only fetch emails from our senders
+        q: senderQuery,
       });
 
       if (!messagesRes.data.messages) break;
@@ -105,11 +103,12 @@ export async function POST(request: Request) {
           const senderEmail = extractEmail(from);
           if (!senderEmail) return null;
 
-          // Find matching sender from our database
           const sender = senders.find((s) => s.email === senderEmail);
           if (!sender) return null;
 
-          // Extract body
+          // Track email count per sender
+          senderEmailCount[sender.id] = (senderEmailCount[sender.id] || 0) + 1;
+
           let body = "";
           if (msg.data.payload?.parts) {
             const textPart = msg.data.payload.parts.find(
@@ -135,20 +134,15 @@ export async function POST(request: Request) {
         })
       );
 
-      // Add valid emails to our collection
       const validEmails = emailsToInsert.filter(Boolean);
       processedEmails = [...processedEmails, ...validEmails];
 
-      // Get next page token
       pageToken = messagesRes.data.nextPageToken;
-
-      // Optional: Add a small delay to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 100));
     } while (pageToken);
 
-    // Insert emails in batches
     if (processedEmails.length > 0) {
-      const batches = chunkArray(processedEmails, 50); // Process 50 emails at a time
+      const batches = chunkArray(processedEmails, 50);
 
       for (const batch of batches) {
         const { error: insertError } = await supabase
@@ -163,11 +157,22 @@ export async function POST(request: Request) {
           );
         }
 
-        // Add a small delay between batches
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      // Update senders as onboarded
+      // Update sender email_count values
+      for (const [senderId, count] of Object.entries(senderEmailCount)) {
+        const { error: countError } = await supabase
+          .from("senders")
+          .update({ email_count: count })
+          .eq("id", senderId);
+
+        if (countError) {
+          console.error("Error updating email count:", countError);
+        }
+      }
+
+      // Mark all senders as onboarded
       const { error: updateError } = await supabase
         .from("senders")
         .update({ is_onboarded: true })
