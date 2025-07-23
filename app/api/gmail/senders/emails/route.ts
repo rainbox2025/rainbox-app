@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const { data: senders, error: sendersError } = await supabase
       .from("senders")
-      .select("id, email, email_count")
+      .select("id, email, count")
       .eq("user_id", user.id)
       .eq("mail_service", "gmail")
       .eq("is_onboarded", false);
@@ -164,7 +164,7 @@ export async function POST(request: Request) {
       for (const [senderId, count] of Object.entries(senderEmailCount)) {
         const { error: countError } = await supabase
           .from("senders")
-          .update({ email_count: count })
+          .update({ count: count })
           .eq("id", senderId);
 
         if (countError) {
