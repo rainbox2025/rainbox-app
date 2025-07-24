@@ -5,14 +5,14 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/outlook/senders?pageToken={nextPageToken}&pageSize=50
- * Auth required. Extracts user from Supabase session.
+ * Auth required. Extracts user from Supabase session and filters onboarded senders.
  */
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies();
     const supabase = await createClient();
 
-    // 👇 Get the logged-in user (from Supabase session)
+    // Get the logged-in user
     const {
       data: { user },
       error: userError,
@@ -25,11 +25,12 @@ export async function GET(request: Request) {
       );
     }
 
+    const userId = user.id;
     const tokensCookie = cookieStore.get("outlook_consent_tokens");
 
     if (!tokensCookie) {
       return NextResponse.json(
-        { error: "No authentication tokens found" },
+        { error: "No Outlook tokens found" },
         { status: 401 }
       );
     }
@@ -42,13 +43,32 @@ export async function GET(request: Request) {
       100
     );
 
-    // Build base URL
+    // Fetch onboarded Outlook senders from Supabase
+    const { data: onboardedSenders, error: dbError } = await supabase
+      .from("senders")
+      .select("email")
+      .eq("user_id", userId)
+      .eq("is_onboarded", true)
+      .eq("mail_service", "outlook");
+
+    if (dbError) {
+      console.error("Supabase DB error:", dbError);
+      return NextResponse.json(
+        { error: "Failed to fetch onboarded senders" },
+        { status: 500 }
+      );
+    }
+
+    const onboardedEmails = new Set(
+      onboardedSenders.map((s) => s.email.toLowerCase())
+    );
+
+    // Build Microsoft Graph API URL
     let apiUrl = new URL("https://graph.microsoft.com/v1.0/me/messages");
     apiUrl.searchParams.set("$select", "from");
     apiUrl.searchParams.set("$top", pageSize.toString());
     apiUrl.searchParams.set("$orderby", "receivedDateTime desc");
 
-    // Handle skip token
     let currentSkip = 0;
     if (rawPageToken) {
       try {
@@ -71,24 +91,6 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-
-    if (!data.value || data.value.length === 0) {
-      return NextResponse.json(
-        {
-          senders: [],
-          nextPageToken: null,
-          pageInfo: {
-            currentPage: Math.floor(currentSkip / pageSize) + 1,
-            pageSize,
-            totalProcessed: 0,
-            hasNextPage: false,
-            message: "No more results available",
-          },
-        },
-        { status: 200 }
-      );
-    }
-
     const senderMap = new Map();
     let validSendersCount = 0;
 
@@ -96,9 +98,9 @@ export async function GET(request: Request) {
       if (message.from) {
         const { emailAddress } = message.from;
         const name = emailAddress.name || "";
-        const email = emailAddress.address;
+        const email = emailAddress.address.toLowerCase();
 
-        if (email && isValidEmail(email)) {
+        if (email && isValidEmail(email) && !onboardedEmails.has(email)) {
           senderMap.set(email, {
             name,
             email,
@@ -120,7 +122,6 @@ export async function GET(request: Request) {
         : (currentSkip + pageSize).toString();
 
     return NextResponse.json({
-      userId: user.id,
       senders: Array.from(senderMap.values()),
       nextPageToken,
       pageInfo: {

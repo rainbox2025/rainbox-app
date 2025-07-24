@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -16,9 +17,10 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -45,6 +47,25 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
+
+    const { data: onboardedSenders, error: dbError } = await supabase
+      .from("senders")
+      .select("email")
+      .eq("user_id", user.id)
+      .eq("is_onboarded", true)
+      .eq("mail_service", "outlook");
+
+    if (dbError) {
+      console.error("Supabase error:", dbError);
+      return NextResponse.json(
+        { error: "Failed to fetch onboarded senders" },
+        { status: 500 }
+      );
+    }
+
+    const onboardedEmails = new Set(
+      onboardedSenders.map((s) => s.email.toLowerCase())
+    );
 
     let apiUrl = new URL("https://graph.microsoft.com/v1.0/me/messages");
     const filterQuery = `contains(from/emailAddress/address,'${sender}') or contains(from/emailAddress/name,'${sender}')`;
@@ -79,9 +100,9 @@ export async function GET(request: Request) {
       if (message.from) {
         const { emailAddress } = message.from;
         const name = emailAddress.name || "";
-        const email = emailAddress.address;
+        const email = emailAddress.address?.toLowerCase();
 
-        if (email && isValidEmail(email)) {
+        if (email && isValidEmail(email) && !onboardedEmails.has(email)) {
           senderMap.set(email, {
             name,
             email,
@@ -109,7 +130,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error("Search error:", error);
+    console.error("Outlook search error:", error);
     return NextResponse.json(
       { error: "Failed to search senders", details: error.message },
       { status: 500 }
