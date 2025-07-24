@@ -2,9 +2,10 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
+import { google } from "googleapis";
+import { initOauthCLient } from "@/lib/oauth";
 // TODO
 export const resetPasswordAction = async () => {};
 
@@ -219,6 +220,84 @@ export const signInWithGoogleAction = async () => {
 
 export const signOutAction = async () => {
   const supabase = await createClient();
+  const cookieStore = cookies();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    try {
+      const { data: gmailTokenData } = await supabase
+        .from("gmail_tokens")
+        .select("tokens, email")
+        .eq("user_email", user.email)
+        .single();
+
+      if (gmailTokenData) {
+        const oauth2Client = initOauthCLient(
+          process.env.CLIENT_ID,
+          process.env.CLIENT_SECRET,
+          process.env.REDIRECT_URI
+        );
+        oauth2Client.setCredentials(gmailTokenData.tokens);
+
+        const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+        await gmail.users.stop({ userId: "me" }).catch(() => {});
+        await oauth2Client
+          .revokeToken(gmailTokenData.tokens.access_token)
+          .catch(() => {});
+
+        await supabase
+          .from("gmail_watch")
+          .delete()
+          .eq("email", gmailTokenData.email);
+        await supabase
+          .from("gmail_tokens")
+          .delete()
+          .eq("user_email", user.email);
+      }
+    } catch (error) {}
+
+    try {
+      const { data: outlookTokenData } = await supabase
+        .from("outlook_tokens")
+        .select("tokens")
+        .eq("user_email", user.email)
+        .single();
+
+      if (outlookTokenData) {
+        const { data: watchData } = await supabase
+          .from("outlook_watch")
+          .select("subscription_id")
+          .eq("user_email", user.email)
+          .single();
+
+        if (watchData?.subscription_id) {
+          await fetch(
+            `https://graph.microsoft.com/v1.0/subscriptions/${watchData.subscription_id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${outlookTokenData.tokens.access_token}`,
+              },
+            }
+          ).catch(() => {});
+        }
+        await supabase
+          .from("outlook_watch")
+          .delete()
+          .eq("user_email", user.email);
+        await supabase
+          .from("outlook_tokens")
+          .delete()
+          .eq("user_email", user.email);
+      }
+    } catch (error) {}
+
+    cookieStore.delete("consent_tokens");
+  }
+
   await supabase.auth.signOut();
   return redirect("/auth");
 };

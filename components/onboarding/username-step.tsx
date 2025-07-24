@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/authContext";
 import { useOnboarding } from "@/context/onboardingContext";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Loader2 } from "lucide-react";
+import { Loader2, LoaderCircle } from "lucide-react";
 import { config } from "@/config";
 
 export const UsernameStep = () => {
@@ -111,22 +111,27 @@ export const UsernameStep = () => {
         This will be your unique address for subscribing to newsletters.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-        <div className="flex relative">
+        <div className="flex relative items-center w-full">
           <Input
-            ref={inputRef} // Attach the ref here
+            ref={inputRef}
             type="text"
             placeholder="username"
             value={userName}
             onChange={handleUsernameChange}
-            className={`w-full text-black dark:text-white rounded-r-none ${error ? "border-red-500" : "border-input"}`}
+            className={`w-full text-black dark:text-white rounded-r-none pr-10 ${error ? "border-red-500" : "border-input"}`}
             disabled={isLoading}
-            autoFocus // Automatically focus on mount
+            autoFocus
           />
+          <div className="relative">
+            {isChecking && (
+              <Loader2 className="animate-spin h-4 w-4 absolute right-2 top-[-8px] text-muted-foreground" />
+            )}
+          </div>
           <div className="bg-gray-100 dark:bg-neutral-900 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
             @{config.emailDomain}
           </div>
-          {isChecking && <Loader2 className="animate-spin h-4 w-4 absolute right-[130px] top-1/2 -translate-y-1/2 text-muted-foreground" />}
         </div>
+
         {error && <p className="text-red-500 text-xs">{error}</p>}
         <Button
           type="submit"
