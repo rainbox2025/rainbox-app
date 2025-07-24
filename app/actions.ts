@@ -199,6 +199,7 @@ export async function verifyOtpAndSignInAction(
 export const signInWithGoogleAction = async () => {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {

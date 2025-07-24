@@ -11,7 +11,6 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 export async function POST(request: Request) {
   const supabase = await createClient();
   try {
-    // Get authenticated user
     const {
       data: { user },
       error: authError,
@@ -20,7 +19,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get user's non-onboarded Outlook senders
     const { data: senders, error: sendersError } = await supabase
       .from("senders")
       .select("id, email")
@@ -35,7 +33,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Return early if no senders need processing
     if (!senders || senders.length === 0) {
       return NextResponse.json(
         {
@@ -62,9 +59,9 @@ export async function POST(request: Request) {
     let processedEmails: any[] = [];
     let skipToken: string | undefined = undefined;
 
-    // Process emails in batches
+    const senderEmailCount: Record<string, number> = {};
+
     do {
-      // Build the filter for multiple senders
       const senderFilter = senders
         .map((s) => `from/emailAddress/address eq '${s.email}'`)
         .join(" or ");
@@ -93,7 +90,6 @@ export async function POST(request: Request) {
       }
 
       const data = await response.json();
-
       if (!data.value) break;
 
       const emailsToInsert = data.value.map((message: any) => {
@@ -101,6 +97,9 @@ export async function POST(request: Request) {
           (s) => s.email === message.from.emailAddress.address
         );
         if (!sender) return null;
+
+        // Track count per sender
+        senderEmailCount[sender.id] = (senderEmailCount[sender.id] || 0) + 1;
 
         return {
           user_id: user.id,
@@ -112,21 +111,17 @@ export async function POST(request: Request) {
         };
       });
 
-      // Add valid emails to our collection
       const validEmails = emailsToInsert.filter(Boolean);
       processedEmails = [...processedEmails, ...validEmails];
 
-      // Get next page token from @odata.nextLink
       const nextSkip = data["@odata.nextLink"]
         ? new URL(data["@odata.nextLink"]).searchParams.get("$skip")
         : undefined;
       skipToken = nextSkip !== null ? nextSkip : undefined;
 
-      // Optional: Add a small delay to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 100));
     } while (skipToken);
 
-    // Insert emails in batches
     if (processedEmails.length > 0) {
       const batches = chunkArray(processedEmails, 50);
 
@@ -143,11 +138,25 @@ export async function POST(request: Request) {
           );
         }
 
-        // Add a small delay between batches
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      // Update senders as onboarded
+      // Update sender `count` values
+      for (const [senderId, count] of Object.entries(senderEmailCount)) {
+        const { error: countError } = await supabase
+          .from("senders")
+          .update({ count: count })
+          .eq("id", senderId);
+
+        if (countError) {
+          console.error(
+            `Error updating count for sender ${senderId}:`,
+            countError
+          );
+        }
+      }
+
+      // Mark senders as onboarded
       const { error: updateError } = await supabase
         .from("senders")
         .update({ is_onboarded: true })
