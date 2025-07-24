@@ -49,7 +49,7 @@ export default function Inbox() {
     addSenderToFolder,
     moveSenderToRoot
   } = useFolders();
-  const { senders, setSenders, isSendersLoading } = useSenders();
+  const { senders, setSenders, isSendersLoading, selectedSender, setSelectedSender } = useSenders();
 
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([]);
   const [activeItem, setActiveItem] = useState<SidebarItem | null>(null);
@@ -369,7 +369,11 @@ export default function Inbox() {
           </button>
         </div>
 
-        <div className="px-md py-sm flex items-center justify-between hover:bg-accent rounded-md cursor-pointer">
+        <div
+          className={`px-md py-sm flex items-center justify-between rounded-md cursor-pointer ${!selectedSender ? 'bg-accent' : 'hover:bg-accent'
+            }`}
+          onClick={() => setSelectedSender(null)}
+        >
           <div className="flex items-center space-x-md">
             <FolderIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium">All</span>
