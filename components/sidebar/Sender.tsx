@@ -10,6 +10,7 @@ import { SenderIcon } from "./sender-icon";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useFolders } from "@/context/foldersContext";
+import { useSidebar } from "@/context/sidebarContext";
 
 interface SenderProps {
   sender: SenderType;
@@ -29,6 +30,7 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
   } = useSenders();
 
   const { folders, updateSenderInUI } = useFolders();
+  const { closeSidebar } = useSidebar();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -78,7 +80,12 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
       >
         <div
           className="flex items-center space-x-md overflow-hidden flex-1 cursor-pointer"
-          onClick={() => setSelectedSender(liveSender)}
+          onClick={() => {
+            setSelectedSender(liveSender);
+            if (window.innerWidth < 768) {
+              closeSidebar();
+            }
+          }}
         >
           <div className=" flex-shrink-0">
             <SenderIcon sender={liveSender} />

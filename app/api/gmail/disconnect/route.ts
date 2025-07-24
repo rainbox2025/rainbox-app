@@ -38,53 +38,30 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    try {
-      await gmail.users.stop({
-        userId: "me",
-      });
-    } catch (error) {
+    await gmail.users.stop({ userId: "me" }).catch((error) => {
       console.error("Error stopping Gmail watch:", error);
-    }
+    });
 
-    const { error: watchError } = await supabase
+    await supabase
       .from("gmail_watch")
       .delete()
       .eq("email", tokenData.email);
 
-    if (watchError) {
-      console.error("Error deleting watch record:", watchError);
-    }
-
-    const { error: deleteError } = await supabase
+    await supabase
       .from("gmail_tokens")
       .delete()
       .eq("user_email", user.email);
 
-    if (deleteError) {
-      console.error("Error deleting token:", deleteError);
-    }
-
-    try {
-      await oauth2Client.revokeToken(tokenData.tokens.access_token);
-    } catch (error) {
+    await oauth2Client.revokeToken(tokenData.tokens.access_token).catch((error) => {
       console.error("Error revoking token:", error);
-    }
+    });
 
-    const cookieStore = cookies();
-    cookieStore.delete("consent_tokens");
+    cookies().delete("consent_tokens");
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Gmail disconnected successfully",
-      },
-      {
-        headers: {
-          "Set-Cookie":
-            "consent_tokens=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-        },
-      }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Gmail disconnected successfully",
+    });
   } catch (error: any) {
     console.error("Disconnect error:", error);
     return NextResponse.json(
