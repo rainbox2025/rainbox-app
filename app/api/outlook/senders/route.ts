@@ -1,21 +1,36 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 /**
  * GET /api/outlook/senders?pageToken={nextPageToken}&pageSize=50
- * Takes in cookie for token and uses it to make the request
- * Returns unique senders for each page
+ * Auth required. Extracts user from Supabase session and filters onboarded senders.
  */
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies();
+    const supabase = await createClient();
+
+    // Get the logged-in user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized. No active Supabase session." },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
     const tokensCookie = cookieStore.get("outlook_consent_tokens");
 
     if (!tokensCookie) {
       return NextResponse.json(
-        { error: "No authentication tokens found" },
+        { error: "No Outlook tokens found" },
         { status: 401 }
       );
     }
@@ -28,13 +43,32 @@ export async function GET(request: Request) {
       100
     );
 
-    // Build base URL
+    // Fetch onboarded Outlook senders from Supabase
+    const { data: onboardedSenders, error: dbError } = await supabase
+      .from("senders")
+      .select("email")
+      .eq("user_id", userId)
+      .eq("is_onboarded", true)
+      .eq("mail_service", "outlook");
+
+    if (dbError) {
+      console.error("Supabase DB error:", dbError);
+      return NextResponse.json(
+        { error: "Failed to fetch onboarded senders" },
+        { status: 500 }
+      );
+    }
+
+    const onboardedEmails = new Set(
+      onboardedSenders.map((s) => s.email.toLowerCase())
+    );
+
+    // Build Microsoft Graph API URL
     let apiUrl = new URL("https://graph.microsoft.com/v1.0/me/messages");
     apiUrl.searchParams.set("$select", "from");
     apiUrl.searchParams.set("$top", pageSize.toString());
     apiUrl.searchParams.set("$orderby", "receivedDateTime desc");
 
-    // Handle skip token
     let currentSkip = 0;
     if (rawPageToken) {
       try {
@@ -57,52 +91,16 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-
-    // Check if we're requesting beyond available data
-    if (!data.value || data.value.length === 0) {
-      return NextResponse.json(
-        {
-          senders: [],
-          nextPageToken: null,
-          pageInfo: {
-            currentPage: 1,
-            pageSize,
-            totalProcessed: 0,
-            hasNextPage: false,
-            message: "No more results available",
-          },
-        },
-        { status: 200 }
-      );
-    }
-
-    // Before processing messages, verify if we have data for this skip value
-    if (currentSkip > 0 && (!data.value || data.value.length === 0)) {
-      return NextResponse.json({
-        senders: [],
-        nextPageToken: null,
-        pageInfo: {
-          currentPage: Math.floor(currentSkip / pageSize) + 1,
-          pageSize,
-          totalProcessed: 0,
-          hasNextPage: false,
-          message: "No more senders available",
-        },
-      });
-    }
-
     const senderMap = new Map();
     let validSendersCount = 0;
 
-    // Process messages to extract unique senders
     data.value.forEach((message: any) => {
       if (message.from) {
         const { emailAddress } = message.from;
         const name = emailAddress.name || "";
-        const email = emailAddress.address;
+        const email = emailAddress.address.toLowerCase();
 
-        // Only add if it's a valid email address
-        if (email && isValidEmail(email)) {
+        if (email && isValidEmail(email) && !onboardedEmails.has(email)) {
           senderMap.set(email, {
             name,
             email,
@@ -113,13 +111,11 @@ export async function GET(request: Request) {
       }
     });
 
-    const actualResultCount = validSendersCount;
     const isLastPage =
       !data["@odata.nextLink"] ||
-      actualResultCount < pageSize ||
+      validSendersCount < pageSize ||
       validSendersCount === 0;
 
-    // Only provide nextPageToken if we have valid senders
     const nextPageToken =
       isLastPage || validSendersCount === 0
         ? null
@@ -131,7 +127,7 @@ export async function GET(request: Request) {
       pageInfo: {
         currentPage: Math.floor(currentSkip / pageSize) + 1,
         pageSize,
-        totalProcessed: actualResultCount,
+        totalProcessed: validSendersCount,
         hasNextPage: !isLastPage && validSendersCount > 0,
       },
     });
@@ -144,14 +140,10 @@ export async function GET(request: Request) {
   }
 }
 
-// Add this helper function at the top of the file
+// Helper
 function isValidEmail(email: string): boolean {
-  // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  // Check if it's not an Exchange DN format
   const isExchangeDN =
     email.includes("/O=") || email.includes("/OU=") || email.includes("/CN=");
-
   return emailRegex.test(email) && !isExchangeDN;
 }
