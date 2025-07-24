@@ -22,18 +22,14 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
   const { showCommentModal, showTagModal, removeBookmark } = useBookmarks();
 
   const mailObject = bookmark.mailId ? mails.find(m => m.id === bookmark.mailId) : null;
-
+  console.log("mailObject: ", mailObject)
   let resolvedSender: SenderType | null | undefined = null;
   if (mailObject) {
-    if (mailObject.sender) {
-      resolvedSender = mailObject.sender;
-    } else if (mailObject.sender_id) {
-      resolvedSender = senders.find(s => s.id === mailObject.sender_id);
-    }
+    resolvedSender = senders.find(s => s.id === mailObject.sender_id);
   }
 
   const title = mailObject?.subject || bookmark.text.substring(0, 70) + (bookmark.text.length > 70 ? '...' : '');
-  const mailSenderName = resolvedSender?.name || (mailObject ? "Unknown Sender" : "Web Highlight");
+  const mailSenderName = bookmark.sender_name || resolvedSender?.name || "Web Highlight";
   const mailSenderDomain = resolvedSender?.domain;
 
   const handleCommentClick = (event: React.MouseEvent<HTMLButtonElement>) => {
