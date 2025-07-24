@@ -58,6 +58,7 @@ export interface Bookmark {
   tags?: string[];
   createdAt?: number;
   isConfirmed?: boolean;
+  sender_name?: string;
 }
 
 // Interface that accurately reflects the raw API JSON response (snake_case, stringified range).

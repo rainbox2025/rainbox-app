@@ -128,7 +128,7 @@ export default function LeftPanel() {
               "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
               (pathname === "/dashboard" ||
                 pathname.startsWith("/dashboard/")) &&
-                activeClass
+              activeClass
             )}
             title="Inbox"
           >
@@ -142,7 +142,7 @@ export default function LeftPanel() {
             className={cn(
               "p-xs rounded-sm hover:bg-hover transition-colors text-muted-foreground hover:text-foreground",
               (pathname === "/bookmark" || pathname.startsWith("/bookmark/")) &&
-                activeClass
+              activeClass
             )}
             title="Bookmarks"
           >
@@ -153,7 +153,7 @@ export default function LeftPanel() {
         {/* Discover Button - Assuming it navigates somewhere or sets a mode */}
         {/* <Link href="/discover" passHref> */}
         <button
-          onClick={() => setIsAddNewsletterFlowOpen(true)}
+          // onClick={() => setIsAddNewsletterFlowOpen(true)}
           className={cn(
             "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
             // pathname.startsWith("/discover") && activeClass // Example if /discover is a page
@@ -204,11 +204,10 @@ export default function LeftPanel() {
                       setTheme("light");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
-                      theme === "light"
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "light"
                         ? "text-foreground font-medium"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     <SunIcon className="w-4 h-4" />
                     <span className="text-xs">Light</span>
@@ -219,11 +218,10 @@ export default function LeftPanel() {
                       setTheme("dark");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
-                      theme === "dark"
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "dark"
                         ? "text-foreground font-medium"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     <MoonIcon className="w-4 h-4" />
                     <span className="text-xs">Dark</span>
@@ -234,11 +232,10 @@ export default function LeftPanel() {
                       setTheme("system");
                       setShowThemeModal(false);
                     }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${
-                      theme === "system"
+                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "system"
                         ? "text-foreground font-medium"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     <ComputerDesktopIcon className="w-4 h-4" />
                     <span className="text-xs">System</span>
