@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -39,12 +38,10 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
     setActiveModal('addNewsletter');
   };
 
-
-
   const handleAddNewsletters = async (selected: Sender[]) => {
+    setActiveModal('success');
     await fetchSenders();
     console.log(`${selected.length} newsletters successfully onboarded.`);
-    setActiveModal('success');
   };
 
   const handleTryAgainError = () => {
@@ -69,14 +66,12 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
         onAddNewsletters={handleAddNewsletters}
         connectedAccountName={currentConnectedAccount?.name}
       />
-
       <SuccessModal
         isOpen={activeModal === 'success'}
         onClose={closeModal}
         mainText='Woohoo! Selected Newsletters are successfully added to your feed.'
         buttonText='Done'
       />
-
       <ErrorModal
         isOpen={activeModal === 'error'}
         onClose={closeModal}

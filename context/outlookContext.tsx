@@ -166,53 +166,53 @@ export const OutlookProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const fetchSenders = useCallback(async (token?: string) => {
-    if (isLoadingSenders) return;
+    // This function now ONLY handles pagination (loading more results)
+    if (isLoadingSenders || !token) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/outlook/senders", {
-        params: { pageToken: token, pageSize: 20 },
+        params: { pageToken: token, pageSize: 100 },
       });
 
       setSenders(prev => {
         const localEmails = new Set(prev.map(s => s.email));
         const uniqueNewSenders = filterAvailableSenders(data.senders, onboardedSenderEmails, localEmails);
-        return token ? [...prev, ...uniqueNewSenders] : uniqueNewSenders;
+        return [...prev, ...uniqueNewSenders];
       });
       setNextPageToken(data.nextPageToken);
     } catch (err) {
-      setSendersError("Failed to fetch Outlook senders.");
+      setSendersError("Failed to fetch more Outlook senders.");
     } finally {
       setIsLoadingSenders(false);
     }
-  }, []);
+  }, [api, isLoadingSenders, onboardedSenderEmails]);
 
   const searchSenders = useCallback(async (query: string) => {
-    if (!query) {
-      setSenders([]);
-      setNextPageToken(null);
-      await fetchSenders();
-      return;
-    }
-
+    // This function now handles initial load AND searching. It always REPLACES the list.
     if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
-      const { data } = await api.get<SendersResponse>("/outlook/senders/search", {
-        params: { sender: query, pageSize: 50 },
-      });
+      const endpoint = query ? "/outlook/senders/search" : "/outlook/senders";
+      const params = query
+        ? { sender: query, pageSize: 100 }
+        : { pageSize: 100 };
 
-      const availableSearchResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+      const { data } = await api.get<SendersResponse>(endpoint, { params });
 
-      setSenders(availableSearchResults);
+      const availableResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+
+      setSenders(availableResults);
       setNextPageToken(data.nextPageToken);
     } catch (err) {
       setSendersError("Failed to search Outlook senders.");
+      setSenders([]);
+      setNextPageToken(null);
     } finally {
       setIsLoadingSenders(false);
     }
-  }, []);
+  }, [api, isLoadingSenders, onboardedSenderEmails]);
 
   const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
     setIsAddingSender(true);

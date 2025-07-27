@@ -42,49 +42,62 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSenderEmails, setSelectedSenderEmails] = useState<Set<string>>(new Set());
+  const [allSelectedObjects, setAllSelectedObjects] = useState<Sender[]>([]);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [isSearching, setIsSearching] = useState(false);
+  const lastSearchedTerm = useRef<string | null>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setIsSubmitting(false);
       setSelectedSenderEmails(new Set());
+      setAllSelectedObjects([]);
       setSearchTerm('');
-      // The search effect below will handle the initial fetch.
+      lastSearchedTerm.current = null;
     }
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
-      // This will run for both search terms and the initial empty string
-      searchSenders(debouncedSearchTerm);
-    }
-  }, [isOpen, debouncedSearchTerm, searchSenders]);
+    if (!isOpen) return;
+    const trimmedSearch = debouncedSearchTerm.trim();
+    if (trimmedSearch === lastSearchedTerm.current) return;
 
-  const selectedSenders = useMemo(() => {
-    return senders.filter(s => selectedSenderEmails.has(s.email));
-  }, [senders, selectedSenderEmails]);
+    if (trimmedSearch) setIsSearching(true);
+
+    searchSenders(trimmedSearch).finally(() => {
+      setIsSearching(false);
+    });
+    lastSearchedTerm.current = trimmedSearch;
+  }, [isOpen, debouncedSearchTerm, searchSenders]);
 
   const unselectedSenders = useMemo(() => {
     return senders.filter(s => !selectedSenderEmails.has(s.email));
   }, [senders, selectedSenderEmails]);
 
-  const toggleSenderSelection = (email: string) => {
-    setSelectedSenderEmails(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(email)) newSet.delete(email);
-      else newSet.add(email);
-      return newSet;
-    });
+  // --- THIS IS THE FIX ---
+  // The state updates are no longer nested, preventing race conditions.
+  const toggleSenderSelection = (sender: Sender) => {
+    const email = sender.email;
+    const newSelectedEmails = new Set(selectedSenderEmails);
+
+    if (newSelectedEmails.has(email)) {
+      newSelectedEmails.delete(email);
+      setAllSelectedObjects(current => current.filter(s => s.email !== email));
+    } else {
+      newSelectedEmails.add(email);
+      setAllSelectedObjects(current => [...current, sender]);
+    }
+
+    setSelectedSenderEmails(newSelectedEmails);
   };
 
   const handleAddSelected = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const sendersToAdd = senders.filter(s => selectedSenderEmails.has(s.email));
+      const sendersToAdd = allSelectedObjects;
       await Promise.all(
         sendersToAdd.map(s => addSender({ name: s.name, email: s.email }))
       );
@@ -94,7 +107,6 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
         onAddNewsletters(sendersToAdd);
       } else {
         console.error("Onboarding failed:", result?.message);
-        // Optionally show an error toast to the user here
       }
     } catch (error) {
       console.error("An error occurred while adding newsletters:", error);
@@ -109,11 +121,11 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
       const { scrollTop, scrollHeight, clientHeight } = container;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
 
-      if (isNearBottom && !isLoadingSenders && nextPageToken) {
+      if (isNearBottom && !isLoadingSenders && nextPageToken && !debouncedSearchTerm.trim()) {
         fetchSenders(nextPageToken);
       }
     }
-  }, [isLoadingSenders, nextPageToken, fetchSenders]);
+  }, [isLoadingSenders, nextPageToken, fetchSenders, debouncedSearchTerm]);
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Select Newsletters">
@@ -133,18 +145,18 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="p-3 pl-10 w-full bg-content border border-hovered rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm"
             />
-            {isLoadingSenders && !unselectedSenders.length && (
+            {isSearching && (
               <div className="absolute inset-y-0 right-2 pl-3 flex items-center pointer-events-none">
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               </div>
             )}
           </div>
-          {selectedSenders.length > 0 && (
+          {allSelectedObjects.length > 0 && (
             <div className="mb-4">
               <h3 className="text-sm font-semibold mb-1.5">Selected Newsletters</h3>
               <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
-                {selectedSenders.map((sender) => (
-                  <div key={`selected-${sender.email}`} onClick={() => toggleSenderSelection(sender.email)} className="flex cursor-pointer items-center p-2 border border-blue-400 rounded-lg">
+                {allSelectedObjects.map((sender) => (
+                  <div key={`selected-${sender.email}`} onClick={() => toggleSenderSelection(sender)} className="flex cursor-pointer items-center p-2 border border-blue-400 rounded-lg">
                     <CheckCircleIcon className="w-5 h-5 text-blue-400 mr-2.5 flex-shrink-0" />
                     <div><p className="text-sm font-medium">{sender.name || sender.email}</p><p className="text-xs text-muted-foreground">{sender.email}</p></div>
                   </div>
@@ -156,36 +168,34 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
             Available Senders
           </h3>
         </div>
-
         <div
           ref={listContainerRef}
           onScroll={handleScroll}
           className="flex-grow overflow-y-auto pr-1 space-y-1.5 custom-scrollbar px-1"
         >
-          {isLoadingSenders && !unselectedSenders.length ? (
+          {isLoadingSenders && !isSearching && unselectedSenders.length === 0 ? (
             <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : unselectedSenders.length > 0 ? (
             <>
               {unselectedSenders.map((sender) => (
-                <div key={sender.email} onClick={() => toggleSenderSelection(sender.email)} className="flex items-center p-2 border border-hovered rounded-lg cursor-pointer hover:border-hovered/50 hover:bg-hovered transition-colors">
+                <div key={sender.email} onClick={() => toggleSenderSelection(sender)} className="flex items-center p-2 border border-hovered rounded-lg cursor-pointer hover:border-hovered/50 hover:bg-hovered transition-colors">
                   <CircleIcon className="w-4 h-4 text-muted-foreground mr-3 flex-shrink-0" />
                   <div><p className="text-sm font-medium">{sender.name || sender.email}</p><p className="text-xs text-muted-foreground">{sender.email}</p></div>
                 </div>
               ))}
-              {isLoadingSenders && unselectedSenders.length > 0 && (
+              {isLoadingSenders && !isSearching && unselectedSenders.length > 0 && (
                 <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
               )}
             </>
-          ) : !isLoadingSenders ? (
-            <p className="text-xs text-muted-foreground text-center py-4">No senders found.</p>
+          ) : !isLoadingSenders && !isSearching ? (
+            <p className="text-xs text-muted-foreground text-center py-4">No senders found for your search.</p>
           ) : null}
         </div>
-
         <div className="mt-auto pt-4 border-t border-hovered flex justify-between items-center px-1">
           <button onClick={onBack} className="bg-hovered text-sm font-medium py-2 px-4 rounded-md flex items-center">
             <ArrowLeftIcon className="w-4 h-4 mr-1.5" /> Back
           </button>
-          <Button onClick={handleAddSelected} disabled={selectedSenders.length === 0 || isSubmitting}>
+          <Button onClick={handleAddSelected} disabled={allSelectedObjects.length === 0 || isSubmitting}>
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isSubmitting ? 'Adding...' : 'Add Selected'}
             {!isSubmitting && <ArrowRightIcon className="w-4 h-4 ml-1.5" />}
