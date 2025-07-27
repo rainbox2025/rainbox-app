@@ -10,6 +10,7 @@ import { useOutlook } from "@/context/outlookContext";
 import { OutlookConnectionFlow } from "../connect-outlook/flow";
 import { useAuth } from "@/context/authContext";
 import { config } from "@/config";
+import AddMailBox from "../settings/add-mail-box";
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
     useOutlook();
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [isAddMailboxOpen, setIsAddMailboxOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -100,7 +102,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                     logoAlt="Rainbox Logo"
                     title="Rainbox - Secondary Email"
                     subtitle={fullEmail}
-                    actionType="manage-secondary"
+                    actionType="copy"
                     onAction={() => handleCopy(email, fullEmail)}
                     onSecondaryAction={() => handleDeleteEmail(email)}
                     isCopied={copiedId === email}
@@ -153,7 +155,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
           </div>
 
           <div className="w-full flex items-center justify-between px-2 text-sm">
-            <button className="text-sm underline">Create new mailbox</button>
+            <button onClick={() => setIsAddMailboxOpen(true)} className="text-sm underline">Create new mailbox</button>
             {!gmailIsConnected ? (
               <button
                 onClick={() => setIsGmailFlowOpen(true)}
@@ -187,6 +189,11 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
           </div>
         </div>
       </div>
+
+      <AddMailBox
+        showAddMailbox={isAddMailboxOpen}
+        handleCloseModal={() => setIsAddMailboxOpen(false)}
+      />
 
       <GmailConnectionFlow
         isOpen={isGmailFlowOpen}

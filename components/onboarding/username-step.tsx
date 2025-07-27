@@ -14,19 +14,19 @@ export const UsernameStep = () => {
   const { nextStep, checkUserName, updateUserName } = useOnboarding();
 
   const [userName, setUserName] = useState("");
-  const debouncedUserName = useDebounce(userName, 500); // Debounce the input value
+  const debouncedUserName = useDebounce(userName, 500);
 
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Create a ref for the input element to manage focus
+
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // This effect handles the username availability check
+
   useEffect(() => {
-    // A function to prevent running on the initial empty state
+
     const checkAvailability = async () => {
       if (debouncedUserName.length < 3) {
         if (debouncedUserName.length > 0) setError("Username must be at least 3 characters.");
@@ -60,20 +60,20 @@ export const UsernameStep = () => {
       }
     };
 
-    // Only run the check if the user has typed something
+
     if (debouncedUserName) {
       checkAvailability();
     } else {
-      // Clear errors if input is empty
+
       setError("");
       setIsValid(false);
     }
-  }, [debouncedUserName, checkUserName]); // Depend on the debounced value
+  }, [debouncedUserName, checkUserName]);
 
-  // This effect restores focus to the input after a check completes
+
   useEffect(() => {
     if (!isChecking && inputRef.current) {
-      // Set focus and move cursor to the end of the input
+
       const end = inputRef.current.value.length;
       inputRef.current.setSelectionRange(end, end);
       inputRef.current.focus();
@@ -81,7 +81,7 @@ export const UsernameStep = () => {
   }, [isChecking]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // The onChange handler is now very simple: it only updates the state.
+
     setUserName(e.target.value.trim());
   };
 
@@ -111,14 +111,14 @@ export const UsernameStep = () => {
         This will be your unique address for subscribing to newsletters.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-        <div className="flex relative items-center w-full">
+        <div className={`flex w-full items-center rounded-md border ${error ? "border-red-500" : "border-input"}`}>
           <Input
             ref={inputRef}
             type="text"
             placeholder="username"
             value={userName}
             onChange={handleUsernameChange}
-            className={`w-full text-black dark:text-white rounded-r-none pr-10 ${error ? "border-red-500" : "border-input"}`}
+            className="w-full border-0 bg-transparent text-black dark:text-white focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
             disabled={isLoading}
             autoFocus
           />
@@ -127,7 +127,7 @@ export const UsernameStep = () => {
               <Loader2 className="animate-spin h-4 w-4 absolute right-2 top-[-8px] text-muted-foreground" />
             )}
           </div>
-          <div className="bg-gray-100 dark:bg-neutral-900 flex items-center px-3 rounded-r-md border border-l-0 border-input text-sm text-muted-foreground">
+          <div className="flex items-center whitespace-nowrap bg-gray-100 dark:bg-neutral-900 px-3 h-full text-sm text-muted-foreground border-l">
             @{config.emailDomain}
           </div>
         </div>

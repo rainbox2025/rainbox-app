@@ -46,42 +46,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return instance;
   }, [accessToken]);
 
-  const fetchUser = async () => {
-    try {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userProfile } = await supabase
-          .from("users")
-          .select("avatar_url, full_name, user_name")
-          .eq("id", authUser.id)
-          .single();
-
-        const fullName =
-          userProfile?.full_name || authUser.user_metadata?.full_name || "";
-
-        setUser({
-          id: authUser.id,
-          email: authUser.email || "",
-          avatar_url:
-            userProfile?.avatar_url || authUser.user_metadata?.avatar_url || "",
-          full_name: fullName,
-          user_name: userProfile?.user_name || "user_name",
-        });
-
-        const { data: sessionData } = await supabase.auth.getSession();
-        setAccessToken(sessionData.session?.access_token || null);
-      } else {
-        setUser(null);
-        setAccessToken(null);
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      setUser(null);
-      setAccessToken(null);
-    }
-  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -108,7 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               authUser.user_metadata?.avatar_url ||
               "",
             full_name: fullName,
-            user_name: userProfile?.user_name || "user_name",
+            user_name: userProfile?.user_name || authUser.user_metadata?.user_name,
           });
 
           const { data: sessionData } = await supabase.auth.getSession();

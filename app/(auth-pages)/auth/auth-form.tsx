@@ -137,12 +137,12 @@ export default function AuthPage() {
   const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
   const placeholderClasses = "placeholder:text-muted-foreground";
 
-  const primaryButtonBaseClasses = "w-full h-12 bg-secondary hover:bg-hovered text-primary rounded-xl font-medium text-base";
+  const primaryButtonBaseClasses = "w-full h-12 rounded-xl font-medium text-base";
   const googleButtonClasses = "w-full h-12 flex items-center justify-center px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground";
 
 
   return (
-    <div className="flex flex-col items-center justify-between py-10 min-h-screen font-sans "> {/* Assuming bg-background is defined for page bg */}
+    <div className="flex flex-col items-center justify-between py-10 min-h-screen font-sans ">
       <Toaster position="top-center" reverseOrder={false} />
       <div>
 
@@ -206,13 +206,13 @@ export default function AuthPage() {
                 sitekey={siteKey}
                 onChange={onRecaptchaChange}
                 theme={captchaTheme}
-                className="flex justify-center align-center rounded-xl"
+                className="flex justify-center items-center rounded-xl overflow-hidden bg-transparent border-none"
               />
             )}
             <Button
               type="submit"
               className={primaryButtonBaseClasses}
-              disabled={isLoading}
+              disabled={isLoading || email.trim() === "" || !!(siteKey && !recaptchaToken)}
             >
               {isLoading ? "Sending..." : "Continue with email"}
             </Button>
@@ -263,7 +263,7 @@ export default function AuthPage() {
             <Button
               type="submit"
               className={primaryButtonBaseClasses}
-              disabled={isLoading}
+              disabled={isLoading || otp.length !== 6 || (showNameField && name.trim() === "")}
             >
               {isLoading ? "Verifying..." : (
                 <>
@@ -272,34 +272,17 @@ export default function AuthPage() {
                 </>
               )}
             </Button>
-            {/* <Button
-              type="button"
-              variant="link" 
-              onClick={() => {
-                setStep("email");
-                setShowNameField(false);
-                setOtp("");
-                if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-                  recaptchaRef.current?.reset();
-                  setRecaptchaToken(null);
-                }
-              }}
-              disabled={isLoading}
-              className="w-full text-sm text-primary hover:text-primary hover:underline p-0 h-auto" 
-            >
-              Use a different email or resend code
-            </Button> */}
           </form>
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground mt-8 text-center"> {/* Used text-muted-foreground */}
+      <div className="text-xs text-muted-foreground mt-8 text-center">
         By continuing you agree to the{" "} <br />
-        <Link href="/terms" className="underline hover:text-primary"> {/* Using text-primary for link hover */}
+        <Link href="/terms" className="underline hover:text-primary">
           Terms of Use
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="underline hover:text-primary"> {/* Using text-primary for link hover */}
+        <Link href="/privacy" className="underline hover:text-primary">
           Privacy Policy
         </Link>
         .
