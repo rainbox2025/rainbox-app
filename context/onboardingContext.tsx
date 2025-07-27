@@ -52,8 +52,23 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
 
   const checkUserName = async (name: string): Promise<boolean> => {
     const supabase = createClient();
-    const { data } = await supabase.from("users").select("id").eq("user_name", name).single();
-    return !data;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id")
+        .eq("user_name", name)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking username availability:", error);
+        return false;
+      }
+      return !data;
+
+    } catch (e) {
+      console.error("A critical error occurred while checking username:", e);
+      return false;
+    }
   };
 
   const updateUserName = async (userId: string, name: string) => {

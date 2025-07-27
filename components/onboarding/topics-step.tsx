@@ -55,6 +55,7 @@ export const TopicsStep = () => {
       </div>
       <div className="flex justify-between space-x-2 mt-6">
         <Button variant="ghost" onClick={previousStep} size="sm">← Back</Button>
+        {/* <Button onClick={nextStep} size="sm" disabled={selectedTopics.length < 3 || !country}>Next →</Button> */}
         <Button onClick={nextStep} size="sm" disabled={selectedTopics.length < 3 || !country}>Next →</Button>
       </div>
     </div>

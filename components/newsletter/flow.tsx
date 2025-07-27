@@ -1,4 +1,4 @@
-// src/components/newsletter/flow.tsx
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -6,7 +6,7 @@ import { AddNewsletterModal } from './add-newsletter-modal';
 import { SelectNewslettersModal } from './select-newsletters-modal';
 import { SuccessModal } from '../modals/succeed-modal';
 import { ErrorModal } from '../modals/error-modal';
-import { Sender } from '@/context/gmailContext'; // Import the correct Sender type
+import { Sender } from '@/context/gmailContext';
 import { useSenders } from '@/context/sendersContext';
 
 export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
@@ -39,8 +39,8 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
     setActiveModal('addNewsletter');
   };
 
-  // This is now called AFTER the SelectNewslettersModal has successfully
-  // saved and onboarded the senders via the context.
+
+
   const handleAddNewsletters = async (selected: Sender[]) => {
     await fetchSenders();
     console.log(`${selected.length} newsletters successfully onboarded.`);
@@ -57,20 +57,11 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
 
   return (
     <div>
-      {/* 
-        This modal now uses context internally to get connection status.
-        The `connections` prop is no longer needed.
-      */}
       <AddNewsletterModal
         isOpen={activeModal === 'addNewsletter'}
         onClose={closeModal}
         onSelectSender={handleSelectSender}
       />
-
-      {/* 
-        This modal is now self-sufficient using the GmailContext.
-        The `suggestedSenders` prop has been removed.
-      */}
       <SelectNewslettersModal
         isOpen={activeModal === 'selectNewsletters'}
         onClose={closeModal}

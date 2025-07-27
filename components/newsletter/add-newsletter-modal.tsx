@@ -10,6 +10,7 @@ import { useOutlook } from "@/context/outlookContext";
 import { OutlookConnectionFlow } from "../connect-outlook/flow";
 import { useAuth } from "@/context/authContext";
 import { config } from "@/config";
+import AddMailBox from "../settings/add-mail-box";
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
     useOutlook();
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [isAddMailboxOpen, setIsAddMailboxOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -57,8 +59,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
     }
   };
 
-  const primaryEmail = `${user?.user_name || "user_name"}@${config.emailDomain
-    }`;
+  const primaryEmail = `${user?.user_name}@${config.emailDomain}`;
 
   return (
     <BaseModal
@@ -66,17 +67,17 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
       onClose={onClose}
       title="Add a Newsletter to Rainbox"
     >
-      <div className="flex flex-col max-h-[75vh] overflow-y-hidden custom-scrollbar">
-        <div className="flex-grow overflow-y-auto space-y-6 custom-scrollbar">
+      <div className="flex flex-col max-h-[75vh]">
+        <div className="flex-grow overflow-y-auto pr-2 space-y-6 custom-scrollbar">
           <Image
             src="/newsletter-placeholder.png"
             alt="newsletter-placeholder"
             width={200}
             height={200}
-            className="h-40 rounded-lg w-full"
+            className="h-40 rounded-lg w-full object-cover"
           />
           <div>
-            <h3 className="text-sm font-semibold mb-1">
+            <h3 className="text-sm font-semibold mb-2">
               Subscribe to newsletters with your Rainbox email
             </h3>
             <div className="space-y-2">
@@ -100,7 +101,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                     logoAlt="Rainbox Logo"
                     title="Rainbox - Secondary Email"
                     subtitle={fullEmail}
-                    actionType="manage-secondary"
+                    actionType="copy"
                     onAction={() => handleCopy(email, fullEmail)}
                     onSecondaryAction={() => handleDeleteEmail(email)}
                     isCopied={copiedId === email}
@@ -112,11 +113,10 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
 
           <div>
             {(outlookIsConnected || gmailIsConnected) && (
-              <h3 className="text-sm font-semibold mb-1">
+              <h3 className="text-sm font-semibold mb-2">
                 Select newsletters from your connected email
               </h3>
             )}
-
             <div className="flex flex-col gap-2">
               {outlookIsConnected && (
                 <ConnectionCard
@@ -133,7 +133,6 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
                   isConnected={true}
                 />
               )}
-
               {gmailIsConnected && (
                 <ConnectionCard
                   logo="/gmail.webp"
@@ -151,43 +150,49 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
               )}
             </div>
           </div>
+        </div>
 
-          <div className="w-full flex items-center justify-between px-2 text-sm">
-            <button className="text-sm underline">Create new mailbox</button>
-            {!gmailIsConnected ? (
-              <button
-                onClick={() => setIsGmailFlowOpen(true)}
-                className="text-sm underline"
-              >
-                Connect Gmail
-              </button>
-            ) : (
-              <button
-                title="Already connected"
-                className="text-sm underline text-muted-foreground cursor-not-allowed"
-              >
-                Gmail Connected
-              </button>
-            )}
-            {!outlookIsConnected ? (
-              <button
-                onClick={() => setIsOutlookFlowOpen(true)}
-                className="text-sm underline"
-              >
-                Connect Outlook
-              </button>
-            ) : (
-              <button
-                title="Already connected"
-                className="text-sm underline text-muted-foreground cursor-not-allowed"
-              >
-                Outlook Connected
-              </button>
-            )}
-          </div>
+        <div className="flex-shrink-0 w-full flex items-center justify-between pt-2 px-2 mt-2 border-t border-border">
+          <button onClick={() => setIsAddMailboxOpen(true)} className="text-sm border-hovered border-b ">
+            Create new mailbox
+          </button>
+          {!gmailIsConnected ? (
+            <button
+              onClick={() => setIsGmailFlowOpen(true)}
+              className="text-sm border-hovered border-b "
+            >
+              Connect Gmail
+            </button>
+          ) : (
+            <button
+              title="Already connected"
+              className="text-sm border-hovered border-b text-muted-foreground cursor-not-allowed"
+            >
+              Gmail Connected
+            </button>
+          )}
+          {!outlookIsConnected ? (
+            <button
+              onClick={() => setIsOutlookFlowOpen(true)}
+              className="text-sm border-hovered border-b "
+            >
+              Connect Outlook
+            </button>
+          ) : (
+            <button
+              title="Already connected"
+              className="text-sm border-hovered border-b  text-muted-foreground cursor-not-allowed"
+            >
+              Outlook Connected
+            </button>
+          )}
         </div>
       </div>
 
+      <AddMailBox
+        showAddMailbox={isAddMailboxOpen}
+        handleCloseModal={() => setIsAddMailboxOpen(false)}
+      />
       <GmailConnectionFlow
         isOpen={isGmailFlowOpen}
         onClose={() => setIsGmailFlowOpen(false)}

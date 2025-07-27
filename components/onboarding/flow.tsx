@@ -66,8 +66,7 @@ export const OnboardingFlow = () => {
     return null;
   }
 
-  // --- TOP-LEVEL ROUTER LOGIC ---
-  // This switch ensures only ONE modal flow is rendered at a time.
+
   switch (activeSubFlow) {
     case 'gmail_connect':
       return <GmailConnectionFlow isOpen={true} onClose={handleSubFlowClose} onConnectionComplete={handleSubFlowClose} />;
@@ -96,12 +95,11 @@ export const OnboardingFlow = () => {
         />
       );
 
-    // The default case renders the main onboarding dialog
     case 'none':
     default:
       const renderProgressBar = () => (
         <>
-          <div className="w-[90%] mb-5 bg-gray-200 dark:bg-gray-700 h-2 rounded-full ">
+          <div className="w-[99%] mb-5 bg-gray-200 dark:bg-gray-700 h-2 rounded-full ">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300 "
               style={{ width: `${(currentStep / 5) * 100}%` }}
@@ -123,8 +121,13 @@ export const OnboardingFlow = () => {
       };
 
       return (
-        <Dialog open={modalState === 'open'} onOpenChange={(isOpen) => !isOpen && setModalState('closed')}>
-          <DialogContent className="sm:max-w-sm bg-content h-[70vh] rounded-lg shadow-xl border border-border p-0 overflow-hidden">
+        <Dialog open={modalState === 'open'}>
+          <DialogContent
+            className="sm:max-w-sm bg-content h-[70vh] rounded-lg shadow-xl border border-border p-0 overflow-hidden [&>button]:hidden"
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
+          >
             <DialogHeader className="p-6 pb-0 ">
               {renderProgressBar()}
             </DialogHeader>

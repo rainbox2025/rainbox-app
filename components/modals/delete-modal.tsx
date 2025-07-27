@@ -7,7 +7,7 @@ interface DeleteConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => Promise<void> | void;
   itemName: string;
-  itemType: 'folder' | 'sender' | 'markasread' | 'markasunread' | 'tag' | 'mutenotification' | 'unmutenotification'; // Added 'tag'
+  itemType: 'folder' | 'sender' | 'markasread' | 'markasunread' | 'tag' | 'mutenotification' | 'unmutenotification' | 'secondary-email';
   showUnfollowOption?: boolean;
   isLoading: boolean;
   onUnfollowChange?: (isChecked: boolean) => void;
@@ -70,8 +70,14 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           confirmText: "Unmute",
           confirmClass: "bg-primary text-primary-foreground hover:bg-primary/80"
         };
-
-      case 'tag': // New case for tags
+      case 'secondary-email':
+        return {
+          title: "Delete Secondary Email",
+          description: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+          confirmText: "Delete Email",
+          confirmClass: "bg-destructive text-destructive-foreground hover:bg-destructive/80"
+        };
+      case 'tag':
         return {
           title: "Delete Tag",
           description: `Are you sure you want to delete the tag "${itemName}"? This will remove the tag from all associated items. This action cannot be undone.`,
@@ -91,22 +97,18 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   const { title, description, confirmText, confirmClass } = getModalContent();
 
   const handleConfirm = async () => {
-    // The parent now controls the loading state. This function just calls onConfirm.
     try {
       await onConfirm();
-      // Only close if the confirm was successful.
-      // If onConfirm throws an error, this line won't be reached.
       onClose();
     } catch (error) {
       console.error("Error confirming action:", error);
-      // The modal stays open on error. The context can show an error message.
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-screen h-screen !mt-0">
       <AnimatePresence>
-        {isOpen && ( // Ensure motion div is only rendered when isOpen is true for exit animation
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

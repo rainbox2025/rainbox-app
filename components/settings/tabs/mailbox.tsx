@@ -12,6 +12,7 @@ import { useOutlook } from "@/context/outlookContext";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { config } from "@/config";
+import { DeleteConfirmationModal } from "@/components/modals/delete-modal";
 
 export default function MailboxTab() {
   const {
@@ -37,7 +38,10 @@ export default function MailboxTab() {
   const [isOutlookFlowOpen, setIsOutlookFlowOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [username, setUsername] = useState("");
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [emailToDelete, setEmailToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDisconnect = async () => {
     setIsDisconnecting(true);
@@ -60,14 +64,26 @@ export default function MailboxTab() {
     setShowDisconnectModal({ service: null });
   };
 
-  const handleDeleteEmail = async (email: string) => {
-    const originalEmails = [...secondaryEmails];
-    setSecondaryEmails(secondaryEmails.filter((e) => e !== email));
+  const handleOpenDeleteModal = (email: string) => {
+    setEmailToDelete(email);
+    setIsDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!emailToDelete || !user) {
+      return;
+    }
+
+    setIsDeleting(true);
     try {
-      await deleteSecondaryEmail(email, user?.id ?? "");
+
+      await deleteSecondaryEmail(emailToDelete, user.id);
+      setIsDeleteModalOpen(false);
+      setEmailToDelete(null);
     } catch (error) {
-      setSecondaryEmails(originalEmails);
+      console.error("Failed to delete secondary email:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -121,7 +137,7 @@ export default function MailboxTab() {
                     subtitle={fullEmail}
                     actionType="manage-secondary"
                     onAction={() => handleCopy(email, fullEmail)}
-                    onSecondaryAction={() => handleDeleteEmail(email)}
+                    onSecondaryAction={() => handleOpenDeleteModal(email)}
                     isCopied={copiedId === email}
                   />
                 );
@@ -232,8 +248,6 @@ export default function MailboxTab() {
         <AddMailBox
           showAddMailbox={showAddMailbox}
           handleCloseModal={handleCloseModals}
-          username={username}
-          setUsername={setUsername}
         />
 
         <DisconnectBox
@@ -256,6 +270,17 @@ export default function MailboxTab() {
         onClose={() => setIsOutlookFlowOpen(false)}
         onConnectionComplete={() => setIsOutlookFlowOpen(false)}
       />
+
+      {emailToDelete && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          itemName={`${emailToDelete}@${config.emailDomain}`}
+          itemType="secondary-email"
+          isLoading={isDeleting}
+        />
+      )}
     </>
   );
 }
