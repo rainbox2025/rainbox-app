@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { enqueueSnackbar, SnackbarProvider } from "notistack";
+import { SnackbarProvider } from "notistack";
 import { Loader2 } from "lucide-react";
 
 import { config } from "@/config";
@@ -132,9 +132,6 @@ export default function AddMailBox({
       if (insertError) throw insertError;
 
       setSecondaryEmails([...secondaryEmails, mailboxName]);
-      enqueueSnackbar("Mailbox created successfully", { variant: "success" });
-
-      // Reset state and close modal on success
       setMailboxName("");
       handleCloseModal();
 

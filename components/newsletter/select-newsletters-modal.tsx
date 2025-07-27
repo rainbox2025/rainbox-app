@@ -122,7 +122,7 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
           <p className="text-xs text-muted-foreground mb-4">
             Choose senders to import newsletters from your connected {connectedAccountName || 'email'}.
           </p>
-          <div className="relative mb-4">
+          <div className="relative mb-2">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <SearchIcon className="h-4 w-4" />
             </div>
