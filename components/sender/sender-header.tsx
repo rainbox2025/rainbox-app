@@ -35,8 +35,9 @@ export const SenderHeader = ({
     unsubscribingId,
     togglingReadId,
     togglingNotificationId,
+    fetchSenders,
   } = useSenders();
-  const { updateSenderInUI } = useFolders();
+  const { updateSenderInUI, fetchFolders } = useFolders();
 
   // State management for dropdown and all associated modals
   const [menuOpen, setMenuOpen] = useState(false);
@@ -87,7 +88,13 @@ export const SenderHeader = ({
           </Select>
           <button
             className="p-xs rounded-full hover:bg-muted transition-colors"
-            onClick={() => refreshMails()}
+            onClick={async () => {
+              await Promise.all([
+                refreshMails(),
+                fetchFolders(),
+                fetchSenders(),
+              ]);
+            }}
             title="Refresh"
           >
             <RefreshCcw className="w-4 h-4 text-muted-foreground" />

@@ -17,6 +17,7 @@ import { useAuth } from "./authContext";
 
 interface FoldersContextType {
   folders: FolderType[];
+  fetchFolders: () => Promise<void>;
   setFolders: Dispatch<SetStateAction<FolderType[]>>;
   isFoldersLoading: boolean;
   foldersListError: string | null;
@@ -363,6 +364,7 @@ export const FoldersProvider = ({
     <FoldersContext.Provider
       value={{
         folders,
+        fetchFolders,
         setFolders,
         isFoldersLoading,
         foldersListError,

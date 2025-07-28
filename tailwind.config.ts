@@ -37,6 +37,7 @@ const config = {
         sidebar: "var(--sidebar)",
         content: "var(--content)",
         hovered: "var(--hovered)",
+        captcha: "var(--captcha)",
         
         // Primary color variations
         primary: {

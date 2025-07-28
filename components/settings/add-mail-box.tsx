@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SnackbarProvider } from "notistack";
 import { Loader2 } from "lucide-react";
 
 import { config } from "@/config";
 import { useAuth } from "@/context/authContext";
-import { useDebounce } from "@/hooks/useDebounce"; // Assuming you have this hook
+import { useDebounce } from "@/hooks/useDebounce";
 import { createClient } from "@/utils/supabase/client";
 
 export default function AddMailBox({
@@ -20,7 +20,6 @@ export default function AddMailBox({
   const supabase = createClient();
   const { user, secondaryEmails, setSecondaryEmails } = useAuth();
 
-  // State for the input and validation
   const [mailboxName, setMailboxName] = useState("");
   const debouncedMailboxName = useDebounce(mailboxName, 500);
 
@@ -29,38 +28,38 @@ export default function AddMailBox({
   const [isValid, setIsValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Function to check if the name is already taken
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wasCheckingRef = useRef(false);
+
   const checkMailboxAvailability = async (name: string) => {
     try {
-      // Check in primary usernames
       const { data: existingUser, error: userError } = await supabase
         .from("users")
         .select("user_name")
         .eq("user_name", name)
         .single();
 
-      if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (userError && userError.code !== "PGRST116") {
         throw new Error("Failed to check primary usernames.");
       }
       if (existingUser) {
-        return false; // Name is taken
+        return false;
       }
 
-      // Check in secondary mailboxes
       const { data: existingMailbox, error: mailboxError } = await supabase
         .from("secondary_emails")
         .select("name")
         .eq("name", name)
         .single();
 
-      if (mailboxError && mailboxError.code !== 'PGRST116') {
+      if (mailboxError && mailboxError.code !== "PGRST116") {
         throw new Error("Failed to check secondary mailboxes.");
       }
       if (existingMailbox) {
-        return false; // Name is taken
+        return false;
       }
 
-      return true; // Name is available
+      return true;
     } catch (err) {
       console.error(err);
       setError("Error checking availability. Please try again.");
@@ -68,17 +67,15 @@ export default function AddMailBox({
     }
   };
 
-  // Effect for real-time validation
   useEffect(() => {
     const validateMailboxName = async () => {
-      // Rule 1: Minimum length
       if (debouncedMailboxName.length < 3) {
-        if (debouncedMailboxName.length > 0) setError("Name must be at least 3 characters.");
+        if (debouncedMailboxName.length > 0)
+          setError("Name must be at least 3 characters.");
         setIsValid(false);
         return;
       }
 
-      // Rule 2: Allowed characters
       const usernameRegex = /^[a-zA-Z0-9_]+$/;
       if (!usernameRegex.test(debouncedMailboxName)) {
         setError("Only letters, numbers, and underscores are allowed.");
@@ -86,32 +83,45 @@ export default function AddMailBox({
         return;
       }
 
-      // Rule 3: Check availability in DB
       setError("");
       setIsChecking(true);
-      const isAvailable = await checkMailboxAvailability(debouncedMailboxName);
-      setIsChecking(false);
-
-      if (isAvailable) {
-        setIsValid(true);
-        setError("");
-      } else {
-        if (!error) { // Don't overwrite a specific error from the check function
+      wasCheckingRef.current = true;
+      try {
+        const isAvailable = await checkMailboxAvailability(
+          debouncedMailboxName
+        );
+        if (isAvailable) {
+          setIsValid(true);
+          setError("");
+        } else {
+          setIsValid(false);
           setError("This name is already taken.");
         }
+      } catch (err) {
         setIsValid(false);
+        setError("Error checking name. Please try again.");
+      } finally {
+        setIsChecking(false);
       }
     };
 
     if (debouncedMailboxName) {
       validateMailboxName();
     } else {
-      // Reset state if input is empty
       setError("");
       setIsValid(false);
       setIsChecking(false);
+      wasCheckingRef.current = false;
     }
-  }, [debouncedMailboxName, error]); // Added 'error' to dependency array to avoid race conditions
+  }, [debouncedMailboxName]);
+
+  useEffect(() => {
+    if (wasCheckingRef.current && !isChecking) {
+      inputRef.current?.focus();
+      wasCheckingRef.current = false;
+    }
+  }, [isChecking]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMailboxName(e.target.value.toLowerCase().trim());
@@ -124,17 +134,18 @@ export default function AddMailBox({
     setIsSubmitting(true);
     setError("");
     try {
-      const { error: insertError } = await supabase.from("secondary_emails").insert({
-        user_id: user.id,
-        name: mailboxName,
-      });
+      const { error: insertError } = await supabase
+        .from("secondary_emails")
+        .insert({
+          user_id: user.id,
+          name: mailboxName,
+        });
 
       if (insertError) throw insertError;
 
       setSecondaryEmails([...secondaryEmails, mailboxName]);
       setMailboxName("");
       handleCloseModal();
-
     } catch (err) {
       console.error(err);
       setError("Failed to create mailbox. Please try again.");
@@ -156,9 +167,7 @@ export default function AddMailBox({
 
   return (
     <div>
-      {/* It's better to have SnackbarProvider at the root of your app */}
       <SnackbarProvider />
-
       <AnimatePresence>
         {showAddMailbox && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -176,16 +185,34 @@ export default function AddMailBox({
                       Create a new Rainbox address for your newsletters.
                     </p>
                   </div>
-                  <button type="button" onClick={resetStateAndClose} className="text-muted-foreground hover:text-secondary-foreground">
-                    {/* SVG Close Icon */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <button
+                    type="button"
+                    onClick={resetStateAndClose}
+                    className="text-muted-foreground hover:text-secondary-foreground"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
 
-                <div className={`flex w-full items-center rounded-md border h-10 ${error ? "border-red-500" : "border-input"}`}>
+                <div
+                  className={`flex w-full items-center rounded-md border h-10 ${error ? "border-red-500" : "border-input"
+                    }`}
+                >
                   <input
+                    ref={inputRef}
                     type="text"
                     placeholder="mailbox-name"
                     value={mailboxName}
@@ -195,9 +222,11 @@ export default function AddMailBox({
                     autoFocus
                   />
                   <div className="relative pr-2">
-                    {isChecking && <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />}
+                    {isChecking && (
+                      <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
-                  <div className="flex items-center h-full whitespace-nowrap bg-sidebar px-3 text-sm text-muted-foreground border-l">
+                  <div className="flex items-center h-full whitespace-nowrap bg-sidebar rounded-r-md px-3 text-sm text-muted-foreground border-l">
                     @{config.emailDomain}
                   </div>
                 </div>
@@ -205,11 +234,23 @@ export default function AddMailBox({
                 {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
 
                 <div className="flex justify-end space-x-2 mt-4">
-                  <button type="button" onClick={resetStateAndClose} className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm">
+                  <button
+                    type="button"
+                    onClick={resetStateAndClose}
+                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-md transition-colors text-sm"
+                  >
                     Cancel
                   </button>
-                  <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled={!isValid || isLoading}>
-                    {isSubmitting ? <Loader2 className="animate-spin h-4 w-4 mx-auto" /> : "Create Mailbox"}
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/80 rounded-md transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!isValid || isLoading}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="animate-spin h-4 w-4 mx-auto" />
+                    ) : (
+                      "Create Mailbox"
+                    )}
                   </button>
                 </div>
               </form>
