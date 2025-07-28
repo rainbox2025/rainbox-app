@@ -8,7 +8,6 @@ interface MailBodyViewerProps {
   mailId?: string;
 }
 
-// Helper function to create SVG indicators
 const createIndicatorSvg = (type: 'comment' | 'tag', bookmarkId: string) => {
   const paths = {
     comment: "M5 2C3.34315 2 2 3.34315 2 5V9C2 10.6569 3.34315 12 5 12H6L8 15L10 12H11C12.6569 12 14 10.6569 14 9V5C14 3.34315 12.6569 2 11 2H5Z",
@@ -17,9 +16,6 @@ const createIndicatorSvg = (type: 'comment' | 'tag', bookmarkId: string) => {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="13" width="13" class="${type}-indicator-icon" data-bookmark-id="${bookmarkId}" style="margin: 0 2px; fill: currentColor; display: inline-block; cursor: pointer;"><path d="${paths[type]}"></path></svg>`;
 };
 
-// ** NEW, MORE ROBUST HIGHLIGHTING ENGINE **
-// This function is updated to specifically handle the single-node case,
-// which was previously failing, while preserving the working multi-node logic.
 const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean): void => {
   if (range.collapsed) {
     return;
@@ -27,10 +23,10 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
 
   const highlightClassName = `bookmark-highlight ${isConfirmed ? 'bookmark-highlight-confirmed' : 'bookmark-highlight-unconfirmed'}`;
 
-  // --- FIX START ---
-  // Case 1: The selection is completely within a single text node.
-  // This is the common case for single-line selections and was the source of the bug.
-  // We handle it directly with `surroundContents` for maximum reliability, avoiding the TreeWalker.
+
+
+
+
   if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
     try {
       const span = document.createElement('span');
@@ -40,38 +36,38 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
     } catch (e) {
       console.error("Highlighting failed for single text node range:", e);
     }
-    return; // Exit after handling the simple case.
+    return;
   }
-  // --- FIX END ---
 
-  // Case 2: The selection spans multiple nodes (this was already working correctly).
-  // We use a TreeWalker to find all intersecting text nodes.
+
+
+
   const walker = document.createTreeWalker(
     range.commonAncestorContainer,
     NodeFilter.SHOW_TEXT,
     {
       acceptNode: (node) => {
-        // The TreeWalker will only visit text nodes. We check if the range intersects this node.
+
         return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
       }
     }
   );
 
-  // Collect nodes first to avoid issues with modifying the DOM while iterating.
+
   const nodes: Text[] = [];
   while (walker.nextNode()) {
     nodes.push(walker.currentNode as Text);
   }
 
-  // Now, iterate over the collected nodes and wrap the relevant parts.
+
   nodes.forEach(node => {
     const localRange = document.createRange();
 
-    // Determine the part of the node to wrap.
+
     const start = (node === range.startContainer) ? range.startOffset : 0;
     const end = (node === range.endContainer) ? range.endOffset : node.length;
 
-    // Skip empty or invalid segments.
+
     if (start === end) {
       return;
     }
@@ -80,7 +76,7 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
     localRange.setEnd(node, end);
 
     try {
-      // A new span must be created for each distinct segment of the highlight.
+
       const span = document.createElement('span');
       span.className = highlightClassName;
       span.dataset.bookmarkId = bookmarkId;
@@ -107,12 +103,12 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
   useEffect(() => {
     if (!contentRef.current || !htmlContent) return;
 
-    // Start with a clean slate to ensure idempotency.
+
     contentRef.current.innerHTML = htmlContent;
 
-    // Sort bookmarks to apply them from the end of the document to the start.
+
     const sortedBookmarks = [...currentMailBookmarks].sort((a, b) => {
-      // Add a null check for serializedRange right at the start
+
       if (!a.serializedRange || !b.serializedRange) return 0;
       const rangeA = deserializeRange(a.serializedRange, contentRef.current!);
       const rangeB = deserializeRange(b.serializedRange, contentRef.current!);
@@ -130,7 +126,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       }
     });
 
-    // Attach event listeners and indicators after all DOM mutations are done.
+
     const processedBookmarkIds = new Set<string>();
     sortedBookmarks.forEach(bookmark => {
       if (!bookmark.serializedRange || processedBookmarkIds.has(bookmark.id)) return;
@@ -159,7 +155,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
         };
       });
 
-      // Add comment/tag indicators to the last span of a highlight.
+
       const lastSpan = highlightSpans[highlightSpans.length - 1];
       if (bookmark.isConfirmed && bookmark.comment) {
         const indicator = document.createElement('span');
@@ -175,22 +171,22 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       }
     });
 
-    // --- FIX IS HERE ---
-    // The line that cleared the user's selection has been removed.
-    // window.getSelection()?.removeAllRanges();  <- THIS LINE WAS REMOVED
+
+
+
 
   }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, showCommentModal, showTagModal]);
 
   const handleMouseUp = useCallback((event: MouseEvent) => {
     if (!contentRef.current) return;
 
-    // The popup opening is delayed slightly to allow other 'click' or 'mousedown' events
-    // (like hidePopup) to resolve first. This prevents race conditions.
+
+
     setTimeout(() => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) return;
 
-      // Ignore clicks inside popups or modals.
+
       const targetElement = event.target as HTMLElement;
       if (targetElement.closest('.selection-popup-class-name, .comment-modal-root-class, .tag-modal-root-class')) {
         return;
@@ -199,7 +195,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       const range = selection.getRangeAt(0);
       const text = range.toString().trim();
 
-      // Ensure the selection is valid and within the content area.
+
       if (text.length > 0 && contentRef.current?.contains(range.commonAncestorContainer)) {
         const rect = range.getBoundingClientRect();
         const newBookmark = addBookmark(text, range, contentRef.current, mailId);
@@ -207,17 +203,14 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
           showPopup(newBookmark.id, rect);
         }
       }
-      // It's good practice to clear the selection after processing it.
-      // But we will let the user do it
-      // selection.removeAllRanges(); 
-    }, 10); // A small delay is usually sufficient.
+    }, 10);
 
   }, [addBookmark, showPopup, mailId]);
 
   useEffect(() => {
     const currentContentElement = contentRef.current;
     if (currentContentElement) {
-      // Use document-level mouseup for creating highlights.
+
       document.addEventListener('mouseup', handleMouseUp);
       return () => document.removeEventListener('mouseup', handleMouseUp);
     }

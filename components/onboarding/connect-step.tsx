@@ -22,7 +22,7 @@ export const ConnectStep: React.FC<ConnectStepProps> = ({ onConnect, onSelectSen
   const isLoading = isGmailLoading || isOutlookLoading;
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-6 overflow-y-scroll custom-scrollbar">
       <h2 className="text-md font-medium text-foreground">Bring your existing newsletters</h2>
       <p className="text-xs text-muted-foreground mt-2">
         Sign in to Gmail or Outlook to sync your newsletters. All existing and future emails from selected senders will appear in Rainbox.

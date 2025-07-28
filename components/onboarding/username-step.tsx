@@ -21,12 +21,10 @@ export const UsernameStep = () => {
   const [isValid, setIsValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   const inputRef = useRef<HTMLInputElement>(null);
 
 
   useEffect(() => {
-
     const checkAvailability = async () => {
       if (debouncedUserName.length < 3) {
         if (debouncedUserName.length > 0) setError("Username must be at least 3 characters.");
@@ -34,9 +32,9 @@ export const UsernameStep = () => {
         return;
       }
 
-      const usernameRegex = /^[a-zA-Z0-9_]+$/;
+      const usernameRegex = /^[a-z0-9_-]+$/;
       if (!usernameRegex.test(debouncedUserName)) {
-        setError("Only letters, numbers, and underscores are allowed.");
+        setError("Only letters, numbers, underscores and hyphens are allowed.");
         setIsValid(false);
         return;
       }
@@ -73,7 +71,6 @@ export const UsernameStep = () => {
 
   useEffect(() => {
     if (!isChecking && inputRef.current) {
-
       const end = inputRef.current.value.length;
       inputRef.current.setSelectionRange(end, end);
       inputRef.current.focus();
@@ -81,8 +78,7 @@ export const UsernameStep = () => {
   }, [isChecking]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-
-    setUserName(e.target.value.trim());
+    setUserName(e.target.value.toLowerCase());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,7 +99,7 @@ export const UsernameStep = () => {
   const isLoading = isChecking || isSubmitting;
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-6 overflow-y-scroll custom-scrollbar">
       <h2 className="text-md font-medium text-foreground">
         Welcome! Let's create your Rainbox email address.
       </h2>
@@ -127,7 +123,7 @@ export const UsernameStep = () => {
               <Loader2 className="animate-spin h-4 w-4 absolute right-2 top-[-8px] text-muted-foreground" />
             )}
           </div>
-          <div className="flex items-center whitespace-nowrap bg-gray-100 dark:bg-neutral-900 px-3 h-full text-sm text-muted-foreground border-l">
+          <div className="flex items-center whitespace-nowrap px-3 h-full text-sm text-muted-foreground border-l">
             @{config.emailDomain}
           </div>
         </div>

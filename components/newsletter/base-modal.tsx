@@ -8,6 +8,7 @@ interface BaseModalProps {
   onClose: () => void;
   children: React.ReactNode;
   title?: string;
+  padding?: string;
   widthClass?: string;
 }
 
@@ -16,6 +17,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   onClose,
   children,
   title,
+  padding,
   widthClass = 'max-w-[440px]',
 }) => {
   if (!isOpen) {
@@ -53,7 +55,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
                 <CloseIcon className="w-6 h-6" />
               </button>
             )}
-            <div className="p-4 flex-grow overflow-y-auto">
+            <div className={` p-4 ${padding} flex-grow overflow-y-auto`}>
               {children}
             </div>
           </motion.div>

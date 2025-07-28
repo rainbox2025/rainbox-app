@@ -134,7 +134,7 @@ export default function AuthPage() {
   }, []);
 
 
-  const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  const inputBaseClasses = "h-12 px-4 rounded-xl border-hovered hover:bg-secondary text-muted-foreground focus-visible:outline-none focus-visible:ring-[0.2px] focus-visible:ring-ring focus-visible:ring-offset-[0.2px]";
   const placeholderClasses = "placeholder:text-muted-foreground";
 
   const primaryButtonBaseClasses = "w-full h-12 rounded-xl font-medium text-base";
@@ -216,7 +216,8 @@ export default function AuthPage() {
                       theme={captchaTheme}
                     />
                   </div>
-                  <div className="absolute bottom-[-5px] left-[0px] inset-0 rounded-xl border-8 border-content pointer-events-none"></div>
+                  <div className="absolute inset-[-15px] rounded-xl border-[20px] border-content pointer-events-none"></div>
+                  <div className="absolute inset-x-[-4px] inset-y-[-1px] rounded-xl border-x-[15px] border-y-[10px]  border-captcha pointer-events-none"></div>
                 </div>
               </div>
             )}

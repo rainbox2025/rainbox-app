@@ -37,9 +37,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
 
 
   useEffect(() => {
-
     if (!user) return;
-
     const fetchAllSettings = async () => {
       try {
         const [prefsRes, notifsRes] = await Promise.all([
@@ -57,17 +55,12 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
       } catch (error) {
         console.error("Failed to fetch settings:", error);
       } finally {
-
-
         isInitialFetchDone.current = true;
       }
     };
 
     fetchAllSettings();
-
-
-
-  }, [user, api]);
+  }, [api]);
 
 
 

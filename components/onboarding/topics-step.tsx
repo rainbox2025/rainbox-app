@@ -23,7 +23,7 @@ export const TopicsStep = () => {
   };
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-6 overflow-y-scroll custom-scrollbar">
       <h2 className="text-md font-medium text-foreground">Pick topics you love to read</h2>
       <p className="text-xs text-muted-foreground">
         We'll tailor our newsletter recommendations to match your interests.

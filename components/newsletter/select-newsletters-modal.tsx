@@ -128,9 +128,9 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
   }, [isLoadingSenders, nextPageToken, fetchSenders, debouncedSearchTerm]);
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Select Newsletters">
-      <div className="flex flex-col h-[75vh] overflow-y-hidden custom-scrollbar">
-        <div className='px-1'>
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Select Newsletters" padding='pr-1'>
+      <div className="flex flex-col max-h-[75vh] overflow-y-scroll custom-scrollbar">
+        <div className='pr-4'>
           <p className="text-xs text-muted-foreground mb-4">
             Choose senders to import newsletters from your connected {connectedAccountName || 'email'}.
           </p>
@@ -143,7 +143,7 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               placeholder="Search Newsletters"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="p-3 pl-10 w-full bg-content border border-hovered rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm"
+              className="p-3 pl-10 ml-[2px] w-full bg-content border border-hovered rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm"
             />
             {isSearching && (
               <div className="absolute inset-y-0 right-2 pl-3 flex items-center pointer-events-none">
@@ -151,10 +151,13 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               </div>
             )}
           </div>
+
+        </div>
+        <div className='h-[70vh] pr-1 overflow-y-scroll custom-scrollbar'>
           {allSelectedObjects.length > 0 && (
             <div className="mb-4">
-              <h3 className="text-sm font-semibold mb-1.5">Selected Newsletters</h3>
-              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+              <h3 className="text-sm font-semibold my-1.5">Selected Newsletters</h3>
+              <div className="space-y-1.5  pr-1 ">
                 {allSelectedObjects.map((sender) => (
                   <div key={`selected-${sender.email}`} onClick={() => toggleSenderSelection(sender)} className="flex cursor-pointer items-center p-2 border border-blue-400 rounded-lg">
                     <CheckCircleIcon className="w-5 h-5 text-blue-400 mr-2.5 flex-shrink-0" />
@@ -164,32 +167,33 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
               </div>
             </div>
           )}
-          <h3 className="text-sm font-semibold mb-1.5 sticky top-0 bg-content py-2 z-10">
+          <h3 className="text-sm font-semibold  sticky top-0 bg-content py-2 z-10">
             Available Senders
           </h3>
-        </div>
-        <div
-          ref={listContainerRef}
-          onScroll={handleScroll}
-          className="flex-grow overflow-y-auto pr-1 space-y-1.5 custom-scrollbar px-1"
-        >
-          {isLoadingSenders && !isSearching && unselectedSenders.length === 0 ? (
-            <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-          ) : unselectedSenders.length > 0 ? (
-            <>
-              {unselectedSenders.map((sender) => (
-                <div key={sender.email} onClick={() => toggleSenderSelection(sender)} className="flex items-center p-2 border border-hovered rounded-lg cursor-pointer hover:border-hovered/50 hover:bg-hovered transition-colors">
-                  <CircleIcon className="w-4 h-4 text-muted-foreground mr-3 flex-shrink-0" />
-                  <div><p className="text-sm font-medium">{sender.name || sender.email}</p><p className="text-xs text-muted-foreground">{sender.email}</p></div>
-                </div>
-              ))}
-              {isLoadingSenders && !isSearching && unselectedSenders.length > 0 && (
-                <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-              )}
-            </>
-          ) : !isLoadingSenders && !isSearching ? (
-            <p className="text-xs text-muted-foreground text-center py-4">No senders found for your search.</p>
-          ) : null}
+          <div
+            ref={listContainerRef}
+            onScroll={handleScroll}
+            className="flex-grow  pr-1 space-y-1.5"
+          >
+            {isLoadingSenders && !isSearching && unselectedSenders.length === 0 ? (
+              <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+            ) : unselectedSenders.length > 0 ? (
+              <>
+                {unselectedSenders.map((sender) => (
+                  <div key={sender.email} onClick={() => toggleSenderSelection(sender)} className="flex items-center p-2 border border-hovered rounded-lg cursor-pointer hover:border-hovered/50 hover:bg-hovered transition-colors">
+                    <CircleIcon className="w-4 h-4 text-muted-foreground mr-3 flex-shrink-0" />
+                    <div><p className="text-sm font-medium">{sender.name || sender.email}</p><p className="text-xs text-muted-foreground">{sender.email}</p></div>
+                  </div>
+                ))}
+                {isLoadingSenders && !isSearching && unselectedSenders.length > 0 && (
+                  <div className="flex justify-center items-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                )}
+              </>
+            ) : !isLoadingSenders && !isSearching ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No senders found for your search.</p>
+            ) : null}
+          </div>
+
         </div>
         <div className="mt-auto pt-4 border-t border-hovered flex justify-between items-center px-1">
           <button onClick={onBack} className="bg-hovered text-sm font-medium py-2 px-4 rounded-md flex items-center">
