@@ -37,6 +37,10 @@ const getNodeFromPath = (path: number[], root: Node): Node | null => {
 };
 
 // --- INTERFACES ---
+type ActiveAction = {
+  id: string;
+  type: 'confirm' | 'comment_open' | 'tag_open' | 'comment_save' | 'tag_update' | 'remove';
+};
 
 interface SerializedRangeNode {
   path: number[];
@@ -133,6 +137,7 @@ interface BookmarkContextType {
     serializedRange: SerializedRange,
     rootElement: HTMLElement
   ) => Range | null;
+  activeAction: ActiveAction | null;
   isTagRenameLoading: boolean;
   isTagDeleteLoading: boolean;
 }
@@ -181,6 +186,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     useState<ActiveTagModalData | null>(null);
   const api = useAxios();
   const { accessToken } = useAuth();
+  const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -304,43 +310,10 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     [getSerializedRange]
   );
 
-  const confirmBookmark = useCallback(
-    async (bookmarkId: string) => {
-      const bookmarkToConfirm = bookmarks.find((b) => b.id === bookmarkId);
-      if (!bookmarkToConfirm) return;
-
-      setBookmarks((prev) =>
-        prev.map((b) =>
-          b.id === bookmarkId ? { ...b, isConfirmed: true } : b
-        )
-      );
-      try {
-        const payload = {
-          text: bookmarkToConfirm.text,
-          serializedRange: bookmarkToConfirm.serializedRange,
-          mailId: bookmarkToConfirm.mailId,
-        };
-        const { data: serverBookmark } = await api.post<ApiBookmark>(
-          "/bookmarks/add",
-          { newBookmark: payload }
-        );
-
-        setBookmarks((prev) =>
-          prev.map((b) =>
-            b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b
-          )
-        );
-      } catch (error) {
-        console.error("Failed to save bookmark:", error);
-        setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
-      }
-    },
-    [api, bookmarks]
-  );
-
   const removeBookmark = useCallback(
     async (bookmarkId: string) => {
       const originalBookmarks = bookmarks;
+      setActiveAction({ id: bookmarkId, type: 'remove' });
       setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
 
       try {
@@ -362,21 +335,20 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const addOrUpdateComment = useCallback(
     async (bookmarkId: string, commentText: string) => {
+      setActiveAction({ id: bookmarkId, type: 'comment_save' }); // Use new action type
       const originalBookmarks = bookmarks;
       const normalizedComment = commentText.trim() || undefined;
 
       setBookmarks((prev) =>
         prev.map((b) => (b.id === bookmarkId ? { ...b, comment: normalizedComment } : b))
       );
-
       try {
-        await api.put("/bookmarks/comment", {
-          bookmarkId,
-          commentText: normalizedComment || null, // API expects null for empty
-        });
+        await api.put("/bookmarks/comment", { bookmarkId, commentText: normalizedComment || null });
       } catch (error) {
         console.error("Failed to update comment:", error);
         setBookmarks(originalBookmarks);
+      } finally {
+        setActiveAction(null); // Clear action
       }
     },
     [api, bookmarks]
@@ -384,28 +356,25 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const updateBookmarkTags = useCallback(
     async (bookmarkId: string, newTags: string[]) => {
+      setActiveAction({ id: bookmarkId, type: 'tag_update' }); // Use new action type
       const originalBookmarks = bookmarks;
-      const cleanedTags = Array.from(
-        new Set(newTags.map((t) => t.toLowerCase().trim()).filter(Boolean))
-      ).sort();
+      const cleanedTags = Array.from(new Set(newTags.map(t => t.toLowerCase().trim()).filter(Boolean))).sort();
 
-      setBookmarks((prev) =>
-        prev.map((b) => (b.id === bookmarkId ? { ...b, tags: cleanedTags } : b))
-      );
+      setBookmarks(prev => prev.map(b => (b.id === bookmarkId ? { ...b, tags: cleanedTags } : b)));
 
       try {
-        await api.put("/bookmarks/tags", {
-          bookmarkId,
-          newTags: cleanedTags,
-        });
-        await fetchAllData();
+        // This still correctly omits fetchAllData() to prevent the bug
+        await api.put("/bookmarks/tags", { bookmarkId, newTags: cleanedTags });
       } catch (error) {
         console.error("Failed to update tags:", error);
         setBookmarks(originalBookmarks);
+      } finally {
+        setActiveAction(null); // Clear action
       }
     },
-    [api, bookmarks, fetchAllData]
+    [api, bookmarks]
   );
+
 
   const renameTagGlobally = useCallback(
     async (oldTag: string, newTag: string) => {
@@ -495,19 +464,81 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     setActivePopup(null);
   }, [activePopup, getBookmarkById]);
 
-  const showCommentModal = useCallback((bookmarkId: string, rect: DOMRect) => {
-    setActiveCommentModal({ bookmarkId, rect });
-    setActivePopup(null);
-    setActiveTagModal(null);
-  }, []);
+  const confirmBookmark = useCallback(
+    async (bookmarkId: string) => {
+      setActiveAction({ id: bookmarkId, type: 'confirm' });
+      const bookmarkToConfirm = bookmarks.find((b) => b.id === bookmarkId);
+      if (!bookmarkToConfirm || bookmarkToConfirm.isConfirmed) return;
+
+      setActiveAction({ id: bookmarkId, type: 'confirm' }); // Set specific action
+      try {
+        const payload = { text: bookmarkToConfirm.text, serializedRange: bookmarkToConfirm.serializedRange, mailId: bookmarkToConfirm.mailId };
+        const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+        setBookmarks((prev) => prev.map((b) => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
+        setActivePopup(null);
+      } catch (error) {
+        console.error("Failed to save bookmark:", error);
+        setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
+      } finally {
+        setActiveAction(null); // Clear action
+      }
+    },
+    [api, bookmarks]
+  );
+
+
+  const showCommentModal = useCallback(async (bookmarkId: string, rect: DOMRect) => {
+    const bookmark = bookmarks.find(b => b.id === bookmarkId);
+    if (!bookmark) return;
+
+    if (bookmark.isConfirmed === false) {
+      setActiveAction({ id: bookmarkId, type: 'comment_open' }); // Set specific action
+      try {
+        const payload = { text: bookmark.text, serializedRange: bookmark.serializedRange, mailId: bookmark.mailId };
+        const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+        setBookmarks(prev => prev.map(b => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
+        setActiveCommentModal({ bookmarkId: serverBookmark.id, rect });
+        setActivePopup(null);
+      } catch (error) {
+        console.error("Failed to save bookmark before opening comment modal:", error);
+        setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+        setActivePopup(null);
+      } finally {
+        setActiveAction(null); // Clear action
+      }
+    } else {
+      setActiveCommentModal({ bookmarkId, rect });
+      setActivePopup(null);
+    }
+  }, [api, bookmarks]);
 
   const hideCommentModal = useCallback(() => setActiveCommentModal(null), []);
 
-  const showTagModal = useCallback((bookmarkId: string, rect: DOMRect) => {
-    setActiveTagModal({ bookmarkId, rect });
-    setActivePopup(null);
-    setActiveCommentModal(null);
-  }, []);
+  const showTagModal = useCallback(async (bookmarkId: string, rect: DOMRect) => {
+    const bookmark = bookmarks.find(b => b.id === bookmarkId);
+    if (!bookmark) return;
+
+    if (bookmark.isConfirmed === false) {
+      setActiveAction({ id: bookmarkId, type: 'tag_open' });
+      try {
+        const payload = { text: bookmark.text, serializedRange: bookmark.serializedRange, mailId: bookmark.mailId };
+        const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+        setBookmarks(prev => prev.map(b => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
+        setActiveTagModal({ bookmarkId: serverBookmark.id, rect });
+        setActivePopup(null);
+      } catch (error) {
+        console.error("Failed to save bookmark before opening tag modal:", error);
+        setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+        setActivePopup(null);
+      } finally {
+        setActiveAction(null); // Clear action
+      }
+    } else {
+      setActiveTagModal({ bookmarkId, rect });
+      setActivePopup(null);
+    }
+  }, [api, bookmarks]);
+
 
   const hideTagModal = useCallback(() => setActiveTagModal(null), []);
 
@@ -520,6 +551,9 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         removeBookmark,
         confirmBookmark,
         getBookmarkById,
+        isTagDeleteLoading,
+        isTagRenameLoading,
+        activeAction,
         activePopup,
         showPopup,
         hidePopup,
@@ -536,8 +570,6 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         updateBookmarkTags,
         renameTagGlobally,
         deleteTagGlobally,
-        isTagRenameLoading,
-        isTagDeleteLoading,
       }}
     >
       {children}

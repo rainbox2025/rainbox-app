@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useBookmarks } from '@/context/bookmarkContext'; // Adjust path as needed
 import { Button } from '../ui/button';
+import { Loader2 } from 'lucide-react';
 
 const CommentModal: React.FC = () => {
   const {
@@ -10,6 +11,7 @@ const CommentModal: React.FC = () => {
     hideCommentModal,
     getBookmarkById,
     addOrUpdateComment,
+    activeAction
   } = useBookmarks();
 
   const [note, setNote] = useState('');
@@ -18,6 +20,7 @@ const CommentModal: React.FC = () => {
   const [modalStyle, setModalStyle] = useState<React.CSSProperties>({});
 
   const bookmark = activeCommentModal ? getBookmarkById(activeCommentModal.bookmarkId) : null;
+  const isLoading = activeAction?.id === bookmark?.id && activeAction?.type === 'comment_save';
 
   useEffect(() => {
     if (bookmark) {
@@ -101,14 +104,23 @@ const CommentModal: React.FC = () => {
     return null;
   }
 
-  const handleSave = () => {
-    addOrUpdateComment(bookmark.id, note.trim());
+  const handleSave = async () => {
+    await addOrUpdateComment(bookmark.id, note.trim());
     hideCommentModal();
   };
 
+
   const handleCancel = () => {
-    hideCommentModal();
+    if (!isLoading) {
+      hideCommentModal();
+    }
   };
+
+  if (!activeCommentModal || !bookmark) {
+    return null;
+  }
+
+
 
   return (
     <div
@@ -123,21 +135,24 @@ const CommentModal: React.FC = () => {
         onChange={(e) => setNote(e.target.value)}
         placeholder="Add a note..."
         className="w-full h-12 p-2 bg-transparent rounded-md resize-none outline-none text-sm "
+        disabled={isLoading}
       />
       <div className="flex justify-end mt-3 space-x-2">
         <Button
           onClick={handleCancel}
           className="px-2 py-1 h-auto min-h-0 leading-none bg-secondary text-muted-foreground hover:bg-hovered text-xs font-medium rounded"
+          disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
-          className="px-2 py-1 h-auto min-h-0 leading-none bg-primary text-xs font-medium rounded"
+          className="px-2 py-1 h-auto min-h-0 leading-none bg-primary text-xs font-medium rounded w-16"
+          disabled={isLoading}
         >
-          Save
+          {/* {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save"} */}
+          {"Save"}
         </Button>
-
       </div>
 
     </div>

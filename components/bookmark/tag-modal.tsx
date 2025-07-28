@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBookmarks } from '@/context/bookmarkContext';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { Loader2 } from 'lucide-react';
 
 const TagModal: React.FC = () => {
   const {
@@ -11,6 +12,7 @@ const TagModal: React.FC = () => {
     getBookmarkById,
     updateBookmarkTags,
     allTags,
+    activeAction
   } = useBookmarks();
 
   const [inputValue, setInputValue] = useState('');
@@ -20,6 +22,7 @@ const TagModal: React.FC = () => {
   const [modalStyle, setModalStyle] = useState<React.CSSProperties>({});
 
   const bookmark = activeTagModal ? getBookmarkById(activeTagModal.bookmarkId) : null;
+  const isLoading = activeAction?.id === bookmark?.id && activeAction?.type === 'tag_update';
 
   useEffect(() => {
     if (bookmark) {
@@ -107,25 +110,24 @@ const TagModal: React.FC = () => {
     };
   }, [activeTagModal, hideTagModal, bookmark, selectedTags, updateBookmarkTags]);
 
-  const handleAddTag = useCallback((tag: string) => {
+  const handleAddTag = useCallback(async (tag: string) => {
     const normalizedTag = tag.toLowerCase().trim();
-    if (normalizedTag && bookmark && !selectedTags.includes(normalizedTag)) {
+    if (normalizedTag && bookmark && !selectedTags.includes(normalizedTag) && !isLoading) {
       const newTags = [...selectedTags, normalizedTag];
       setSelectedTags(newTags);
-      updateBookmarkTags(bookmark.id, newTags); // Update context immediately
+      await updateBookmarkTags(bookmark.id, newTags); // Await the API call
     }
     setInputValue('');
-    inputRef.current?.focus();
-  }, [bookmark, selectedTags, updateBookmarkTags]);
+    // No need to focus here, as the loading state handles user interaction
+  }, [bookmark, selectedTags, updateBookmarkTags, isLoading]);
 
-  const handleRemoveTag = useCallback((tagToRemove: string) => {
-    if (bookmark) {
+  const handleRemoveTag = useCallback(async (tagToRemove: string) => {
+    if (bookmark && !isLoading) {
       const newTags = selectedTags.filter(t => t !== tagToRemove);
       setSelectedTags(newTags);
-      updateBookmarkTags(bookmark.id, newTags); // Update context immediately
+      await updateBookmarkTags(bookmark.id, newTags); // Await the API call
     }
-    inputRef.current?.focus();
-  }, [bookmark, selectedTags, updateBookmarkTags]);
+  }, [bookmark, selectedTags, updateBookmarkTags, isLoading]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -169,9 +171,10 @@ const TagModal: React.FC = () => {
     <div
       ref={modalRef}
       style={modalStyle}
-      className="bg-sidebar shadow-xl rounded-lg p-1 border border-hovered flex flex-col text-sm tag-modal-root-class"
+      className="bg-sidebar shadow-xl rounded-lg p-1 border border-hovered flex flex-col text-sm tag-modal-root-class relative"
       onClick={(e) => e.stopPropagation()}
     >
+
       {/* Input Area: Selected Tags + Input Field */}
       <div
         className="flex flex-wrap items-center  gap-x-1.5 gap-y-1 p-2 rounded-md mb-2 cursor-text min-h-[38px] focus-within:border-primary"
@@ -200,7 +203,13 @@ const TagModal: React.FC = () => {
           onKeyDown={handleKeyDown}
           placeholder={selectedTags.length > 0 ? "typing here..." : "Find or create highlight tag..."}
           className="flex-grow bg-transparent outline-none text-xs p-0.5 min-w-[120px] placeholder-muted-foreground"
+          disabled={isLoading}
         />
+        {/* {isLoading && (
+          <div className=" inset-0 bg-sidebar/60 flex items-center justify-center z-10 rounded-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )} */}
       </div>
 
       {/* Suggestions Area */}

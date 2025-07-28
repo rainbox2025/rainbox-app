@@ -30,7 +30,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
           exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           // Note: Added `h-[calc(100%-3rem)]` and `top-[3rem]` to position it below the header
-          className="fixed top-[35px] right-0 h-[calc(100%-3rem)] w-[230px] md:w-[360px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
+          className="fixed top-[35px] right-0 h-[calc(100%-3rem)] w-[230px] md:w-[320px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
         >
           <div className="flex items-center justify-between p-sm border-b border-border flex-shrink-0">
             <h2 className="font-semibold text-base">Notes</h2>
