@@ -290,7 +290,7 @@ export default function AuthPage() {
 
       <div className="text-xs text-muted-foreground mt-8 text-center">
         By continuing you agree to the{" "} <br />
-        <Link href="/terms" className="underline hover:text-primary">
+        <Link href="/terms-of-use" className="underline hover:text-primary">
           Terms of Use
         </Link>{" "}
         and{" "}

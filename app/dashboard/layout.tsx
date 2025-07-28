@@ -9,12 +9,19 @@ import LeftPanel from "@/components/left-panel";
 import Inbox from "@/components/sidebar/Inbox";
 import { useSidebar } from "@/context/sidebarContext";
 import { OnboardingFlow } from "@/components/onboarding/flow"; // <-- IMPORT THE FLOW
-import { AuthProvider } from "@/context/authContext";
+import { AuthProvider, useAuth } from "@/context/authContext";
+import { useSenders } from "@/context/sendersContext";
+import { useFolders } from "@/context/foldersContext";
+import { useMails } from "@/context/mailsContext";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const sidebarContainerRef = useRef<HTMLDivElement>(null);
   const { isSidebarOpen, closeSidebar } = useSidebar();
+  const { fetchSenders } = useSenders();
+  const { fetchFolders, fetchSidebarOrder } = useFolders();
+  const { refreshMails } = useMails();
+  const { fetchUser: fetchAuthUser } = useAuth();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,6 +41,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       }
     };
     fetchUser();
+    fetchAuthUser();
+    fetchSenders();
+    fetchSidebarOrder();
+    fetchFolders();
+    refreshMails();
   }, []);
 
   useEffect(() => {

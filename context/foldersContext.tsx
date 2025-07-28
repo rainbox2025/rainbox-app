@@ -42,6 +42,7 @@ interface FoldersContextType {
   toggleNotificationFolder: (folderId: string, isRead: boolean) => Promise<void>;
   isTogglingReadStateId: string | null;
   isTogglingNotificationStateId: string | null;
+  fetchSidebarOrder: () => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -72,6 +73,7 @@ export const FoldersProvider = ({
   const [sidebarOrder, setSidebarOrder] = useState<any>(null);
   const [isSidebarOrderLoading, setIsSidebarOrderLoading] = useState(true);
   const { accessToken } = useAuth();
+  const { fetchSenders } = useSenders();
 
 
   const api = useAxios();
@@ -180,6 +182,8 @@ export const FoldersProvider = ({
             addSenderToRoot({ ...sender, folder_id: "null" });
           });
         }
+
+        fetchSenders();
       } catch (error) {
         setDeleteFolderError(
           error instanceof Error ? error.message : "Unknown error deleting folder"
@@ -375,6 +379,7 @@ export const FoldersProvider = ({
         deleteFolderError,
         deleteFolder,
         isDeletingFolderId,
+        fetchSidebarOrder,
         addSenderToFolder,
         moveSenderToRoot,
         getSenders,
