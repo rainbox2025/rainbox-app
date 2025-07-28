@@ -72,6 +72,7 @@ export const FoldersProvider = ({
   const [sidebarOrder, setSidebarOrder] = useState<any>(null);
   const [isSidebarOrderLoading, setIsSidebarOrderLoading] = useState(true);
   const { accessToken } = useAuth();
+  const { fetchSenders } = useSenders();
 
 
   const api = useAxios();
@@ -180,6 +181,8 @@ export const FoldersProvider = ({
             addSenderToRoot({ ...sender, folder_id: "null" });
           });
         }
+
+        fetchSenders();
       } catch (error) {
         setDeleteFolderError(
           error instanceof Error ? error.message : "Unknown error deleting folder"
