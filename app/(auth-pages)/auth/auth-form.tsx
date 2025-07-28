@@ -201,13 +201,24 @@ export default function AuthPage() {
               />
             </div>
             {siteKey && (
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={siteKey}
-                onChange={onRecaptchaChange}
-                theme={captchaTheme}
-                className="flex justify-center items-center rounded-xl overflow-hidden bg-transparent border-none"
-              />
+              <div className="flex justify-center">
+                <div
+                  className={`
+                    relative 
+                    rounded-xl
+                  `}
+                >
+                  <div className="rounded-xl overflow-hidden">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={siteKey}
+                      onChange={onRecaptchaChange}
+                      theme={captchaTheme}
+                    />
+                  </div>
+                  <div className="absolute bottom-[-5px] left-[0px] inset-0 rounded-xl border-8 border-content pointer-events-none"></div>
+                </div>
+              </div>
             )}
             <Button
               type="submit"

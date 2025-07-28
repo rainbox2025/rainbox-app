@@ -191,55 +191,54 @@ export const GmailProvider = ({ children }: { children: React.ReactNode }) => {
     new Set(onboardedSenders.map(s => s.email))
     , [onboardedSenders]);
 
+
   const fetchSenders = useCallback(async (token?: string) => {
-    if (isLoadingSenders) return;
+    // This function now ONLY handles pagination (loading more results)
+    if (isLoadingSenders || !token) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
       const { data } = await api.get<SendersResponse>("/gmail/senders", {
-        params: { pageToken: token, pageSize: 20 },
+        params: { pageToken: token, pageSize: 100 },
       });
 
       setSenders(prev => {
         const localEmails = new Set(prev.map(s => s.email));
         const uniqueNewSenders = filterAvailableSenders(data.senders, onboardedSenderEmails, localEmails);
-        return token ? [...prev, ...uniqueNewSenders] : uniqueNewSenders;
+        return [...prev, ...uniqueNewSenders];
       });
       setNextPageToken(data.nextPageToken);
     } catch (err) {
-      setSendersError("Failed to fetch senders.");
+      setSendersError("Failed to fetch more senders.");
     } finally {
       setIsLoadingSenders(false);
     }
-  }, [onboardedSenders]);
+  }, [api, isLoadingSenders, onboardedSenderEmails]);
 
   const searchSenders = useCallback(async (query: string) => {
-    if (!query) {
-      setSenders([]);
-      setNextPageToken(null);
-      await fetchSenders();
-      return;
-    }
-
     if (isLoadingSenders) return;
     setIsLoadingSenders(true);
     setSendersError(null);
     try {
-      const { data } = await api.get<SendersResponse>("/gmail/senders/search", {
-        params: { sender: query, pageSize: 50 },
-      });
+      const endpoint = query ? "/gmail/senders/search" : "/gmail/senders";
+      const params = query
+        ? { sender: query, pageSize: 100 }
+        : { pageSize: 100 };
 
-      // For search, we don't need to check against local state, only global.
-      const availableSearchResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+      const { data } = await api.get<SendersResponse>(endpoint, { params });
 
-      setSenders(availableSearchResults);
+      const availableResults = filterAvailableSenders(data.senders, onboardedSenderEmails);
+
+      setSenders(availableResults);
       setNextPageToken(data.nextPageToken);
     } catch (err) {
-      setSendersError("Failed to search senders.");
+      setSendersError("Failed to fetch or search senders.");
+      setSenders([]);
+      setNextPageToken(null);
     } finally {
       setIsLoadingSenders(false);
     }
-  }, []);
+  }, [api, isLoadingSenders, onboardedSenderEmails]);
 
   const addSender = async (senderData: Pick<Sender, 'name' | 'email'>): Promise<Sender | null> => {
     setIsAddingSender(true);
