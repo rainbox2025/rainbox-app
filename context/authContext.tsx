@@ -19,6 +19,7 @@ interface AuthContextType {
   updateAvatar: (file: File) => Promise<void>;
   deleteAccount: (feedback: string) => Promise<void>;
   deleteSecondaryEmail: (email: string, userId: string) => Promise<void>;
+  fetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,50 +47,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return instance;
   }, [accessToken]);
 
+  const fetchUser = async () => {
+    try {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("avatar_url, full_name, user_name")
+          .eq("id", authUser.id)
+          .single();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-        if (authUser) {
-          const { data: userProfile } = await supabase
-            .from("users")
-            .select("avatar_url, full_name, user_name")
-            .eq("id", authUser.id)
-            .single();
+        const fullName =
+          userProfile?.full_name || authUser.user_metadata?.full_name || "";
 
-          const fullName =
-            userProfile?.full_name || authUser.user_metadata?.full_name || "";
+        setUser({
+          id: authUser.id,
+          email: authUser.email || "",
+          avatar_url:
+            userProfile?.avatar_url ||
+            authUser.user_metadata?.avatar_url ||
+            "",
+          full_name: fullName,
+          user_name: userProfile?.user_name || authUser.user_metadata?.user_name,
+        });
 
-
-          setUser({
-            id: authUser.id,
-            email: authUser.email || "",
-            avatar_url:
-              userProfile?.avatar_url ||
-              authUser.user_metadata?.avatar_url ||
-              "",
-            full_name: fullName,
-            user_name: userProfile?.user_name || authUser.user_metadata?.user_name,
-          });
-
-          const { data: sessionData } = await supabase.auth.getSession();
-          setAccessToken(sessionData.session?.access_token || null);
-          const { data: secondaryEmailsData, error: secondaryEmailsError } =
-            await getSecondaryEmails(authUser.id);
-          if (secondaryEmailsError) {
-            console.error(secondaryEmailsError);
-          } else {
-            setSecondaryEmails(secondaryEmailsData || []);
-          }
+        const { data: sessionData } = await supabase.auth.getSession();
+        setAccessToken(sessionData.session?.access_token || null);
+        const { data: secondaryEmailsData, error: secondaryEmailsError } =
+          await getSecondaryEmails(authUser.id);
+        if (secondaryEmailsError) {
+          console.error(secondaryEmailsError);
+        } else {
+          setSecondaryEmails(secondaryEmailsData || []);
         }
-      } catch (error) {
-        console.error("Error fetching user:", error);
       }
-    };
-
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+  useEffect(() => {
     fetchUser();
 
     const {
@@ -176,6 +174,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         updateAvatar,
         deleteAccount,
         deleteSecondaryEmail,
+        fetchUser
       }}
     >
       {children}

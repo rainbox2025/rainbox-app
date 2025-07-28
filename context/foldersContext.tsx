@@ -42,6 +42,7 @@ interface FoldersContextType {
   toggleNotificationFolder: (folderId: string, isRead: boolean) => Promise<void>;
   isTogglingReadStateId: string | null;
   isTogglingNotificationStateId: string | null;
+  fetchSidebarOrder: () => Promise<void>;
 }
 
 const FoldersContext = createContext<FoldersContextType | null>(null);
@@ -378,6 +379,7 @@ export const FoldersProvider = ({
         deleteFolderError,
         deleteFolder,
         isDeletingFolderId,
+        fetchSidebarOrder,
         addSenderToFolder,
         moveSenderToRoot,
         getSenders,
