@@ -11,6 +11,7 @@ import React, {
 import { v4 as uuidv4 } from "uuid";
 import { useAxios } from "@/hooks/useAxios";
 import { useAuth } from "./authContext";
+import { useMails } from "./mailsContext";
 
 // --- HELPERS (UNCHANGED) ---
 const getNodePath = (node: Node, root: Node): number[] => {
@@ -187,6 +188,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const api = useAxios();
   const { accessToken } = useAuth();
   const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
+  const { bookmark: bookmarkMail } = useMails();
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -466,24 +468,29 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const confirmBookmark = useCallback(
     async (bookmarkId: string) => {
-      setActiveAction({ id: bookmarkId, type: 'confirm' });
       const bookmarkToConfirm = bookmarks.find((b) => b.id === bookmarkId);
       if (!bookmarkToConfirm || bookmarkToConfirm.isConfirmed) return;
 
-      setActiveAction({ id: bookmarkId, type: 'confirm' }); // Set specific action
+      setActiveAction({ id: bookmarkId, type: 'confirm' });
       try {
         const payload = { text: bookmarkToConfirm.text, serializedRange: bookmarkToConfirm.serializedRange, mailId: bookmarkToConfirm.mailId };
         const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+
+        if (bookmarkToConfirm.mailId) {
+          console.log("called bookmarkMail");
+          await bookmarkMail(bookmarkToConfirm.mailId, true);
+        }
+
         setBookmarks((prev) => prev.map((b) => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
         setActivePopup(null);
       } catch (error) {
         console.error("Failed to save bookmark:", error);
         setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
       } finally {
-        setActiveAction(null); // Clear action
+        setActiveAction(null);
       }
     },
-    [api, bookmarks]
+    [api, bookmarks, bookmarkMail]
   );
 
 
@@ -492,10 +499,16 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     if (!bookmark) return;
 
     if (bookmark.isConfirmed === false) {
-      setActiveAction({ id: bookmarkId, type: 'comment_open' }); // Set specific action
+      setActiveAction({ id: bookmarkId, type: 'comment_open' });
       try {
         const payload = { text: bookmark.text, serializedRange: bookmark.serializedRange, mailId: bookmark.mailId };
         const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+
+        // ADDED: Bookmark the mail if it has a mailId
+        if (bookmark.mailId) {
+          await bookmarkMail(bookmark.mailId, true);
+        }
+
         setBookmarks(prev => prev.map(b => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
         setActiveCommentModal({ bookmarkId: serverBookmark.id, rect });
         setActivePopup(null);
@@ -504,13 +517,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
         setActivePopup(null);
       } finally {
-        setActiveAction(null); // Clear action
+        setActiveAction(null);
       }
     } else {
       setActiveCommentModal({ bookmarkId, rect });
       setActivePopup(null);
     }
-  }, [api, bookmarks]);
+  }, [api, bookmarks, bookmarkMail]); // MODIFIED: Add bookmarkMail to dependencies
 
   const hideCommentModal = useCallback(() => setActiveCommentModal(null), []);
 
@@ -523,6 +536,12 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       try {
         const payload = { text: bookmark.text, serializedRange: bookmark.serializedRange, mailId: bookmark.mailId };
         const { data: serverBookmark } = await api.post<ApiBookmark>("/bookmarks/add", { newBookmark: payload });
+
+        // ADDED: Bookmark the mail if it has a mailId
+        if (bookmark.mailId) {
+          await bookmarkMail(bookmark.mailId, true);
+        }
+
         setBookmarks(prev => prev.map(b => b.id === bookmarkId ? mapApiBookmarkToLocal(serverBookmark) : b));
         setActiveTagModal({ bookmarkId: serverBookmark.id, rect });
         setActivePopup(null);
@@ -531,13 +550,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
         setActivePopup(null);
       } finally {
-        setActiveAction(null); // Clear action
+        setActiveAction(null);
       }
     } else {
       setActiveTagModal({ bookmarkId, rect });
       setActivePopup(null);
     }
-  }, [api, bookmarks]);
+  }, [api, bookmarks, bookmarkMail]); // MODIFIED: Add bookmarkMail to dependencies
 
 
   const hideTagModal = useCallback(() => setActiveTagModal(null), []);

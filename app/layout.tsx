@@ -53,8 +53,8 @@ export default function RootLayout({
               <div className="flex-1 w-full flex flex-col items-center">
                 <SidebarProvider>
                   <SendersProvider>
-                    <BookmarkProvider>
-                      <MailsProvider>
+                    <MailsProvider>
+                      <BookmarkProvider>
                         <GmailProvider>
                           <OutlookProvider>
                             <FoldersProvider>
@@ -66,8 +66,8 @@ export default function RootLayout({
                             </FoldersProvider>
                           </OutlookProvider>
                         </GmailProvider>
-                      </MailsProvider>
-                    </BookmarkProvider>
+                      </BookmarkProvider>
+                    </MailsProvider>
                   </SendersProvider>
                 </SidebarProvider>
               </div>

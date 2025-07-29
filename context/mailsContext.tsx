@@ -150,6 +150,11 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
         setMails((prev) =>
           prev.map((mail) => (mail.id === id ? { ...mail, read } : mail))
         );
+
+        if (selectedMail && selectedMail.id === id) {
+          setSelectedMail((prev) => (prev ? { ...prev, read } : null));
+        }
+
         if (selectedSender) {
           const newSenders = senders.map((sender) =>
             sender.id === selectedSender?.id
@@ -164,7 +169,7 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
         );
       }
     },
-    [api, senders, selectedSender, setSenders]
+    [api, senders, selectedSender, setSenders, selectedMail] // MODIFIED: Add selectedMail
   );
 
   const markAsReadAllBySenderId = useCallback(
@@ -196,13 +201,18 @@ export const MailsProvider = ({ children }: { children: React.ReactNode }) => {
             mail.id === id ? { ...mail, bookmarked: bookmark } : mail
           )
         );
+
+        if (selectedMail && selectedMail.id === id) {
+          setSelectedMail((prev) => (prev ? { ...prev, bookmarked: bookmark } : null));
+        }
+
       } catch (error) {
         setBookmarkError(
           error instanceof Error ? error.message : "Unknown error"
         );
       }
     },
-    [api]
+    [api, selectedMail]
   );
 
   const summarize = useCallback(
