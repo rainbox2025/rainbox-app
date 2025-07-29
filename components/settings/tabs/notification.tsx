@@ -45,7 +45,7 @@ export default function NotificationTab() {
             <div key={sender.id} className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
                 <SenderIcon sender={sender} />
-                <span className="text-sm">{sender.name}</span>
+                <span className="text-sm max-w-[150px] truncate block">{sender.name}</span>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input

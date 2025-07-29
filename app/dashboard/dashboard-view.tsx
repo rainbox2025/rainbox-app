@@ -7,6 +7,7 @@ import { SenderHeader } from "@/components/sender/sender-header";
 import { MailItem } from "@/components/mails/mail-item";
 import MailReader from "@/components/mails/mail-reader";
 import { InboxIcon } from "@heroicons/react/24/outline";
+import { cn } from "@/lib/utils";
 
 const Page = () => {
   const [filter, setFilter] = useState("all");
@@ -58,11 +59,15 @@ const Page = () => {
   const unreadCount = mails.filter((mail) => !mail.read).length;
 
   return (
-    <div className="flex min-w-fit h-screen overflow-x-auto" ref={containerRef}>
+    <div className="flex w-full h-screen overflow-x-auto" ref={containerRef}>
       <div
-        className={`flex flex-col h-full transition-all duration-300 ease-in-out ${mailListVisible ? "block" : "hidden md:block"} ${selectedMail ? "md:w-[50%]" : "w-full"}`}
+        className={cn(
+          "flex flex-col h-full transition-all duration-300 ease-in-out",
+          mailListVisible ? "block" : "hidden",
+          selectedMail ? "md:hidden lg:block lg:w-[50%]" : "w-full",
+        )}
         style={{
-          width: selectedMail && window.innerWidth >= 768 ? `${100 - mailReaderWidth}%` : "100%",
+          width: selectedMail && window.innerWidth >= 1024 ? `${100 - mailReaderWidth}%` : (mailListVisible && !selectedMail ? '100%' : undefined),
         }}
       >
         <SenderHeader

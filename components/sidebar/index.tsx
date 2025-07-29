@@ -10,14 +10,31 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false); // To manage dragging state reliably inside event listeners
   const MIN_WIDTH = 240;
-  const MAX_WIDTH = 480;
+  const MAX_WIDTH = 380;
   const LEFT_PANEL_WIDTH = 48; // Assuming LeftPanel is 48px (3rem). Adjust if different.
 
+  // New state to track if the view is mobile
+  const [isMobileView, setIsMobileView] = useState(false);
 
+  // Effect to check and update the mobile view state
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
 
+    // Check on initial component mount
+    checkIsMobile();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIsMobile);
+
+    // Cleanup listener when the component unmounts
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []); // Empty dependency array ensures this runs only once on mount and unmount
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) return; // No resize on mobile
+    // Use the new state for the check
+    if (isMobileView) return; // No resize on mobile
 
     e.preventDefault();
     isDraggingRef.current = true;
@@ -67,18 +84,19 @@ const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: (
     <div
       ref={sidebarRef}
       className="h-screen bg-sidebar flex flex-col shadow-sm relative"
-      style={{ width: `${width}px` }}
+      // Conditionally set the width style based on the view
+      style={isMobileView ? { width: '80%' } : { width: `${width}px` }}
     >
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-[2px] pb-[130px]">
         {children}
       </div>
       <div
-        className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${window.innerWidth < 768 ? 'hidden' : ''}`}
+        // Use the new state to conditionally hide the resizer handle
+        className={`absolute top-0 right-[-2px] w-[2px] h-full bg-border/80 hover:bg-primary/30 cursor-col-resize transform translate-x-0 ${isMobileView ? 'hidden' : ''}`}
         onMouseDown={handleMouseDown}
         title="Drag to resize"
       />
-
 
     </div>
   );

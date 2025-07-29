@@ -3,20 +3,16 @@ import { Mail } from "@/types/data";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
 import React from "react";
-import { EnvelopeIcon, EnvelopeOpenIcon } from "@heroicons/react/24/outline";
-
-import { Bookmark, CheckIcon, MoreHorizontal } from "lucide-react";
+import { Bookmark, CheckIcon } from "lucide-react";
 import moment from "moment";
 
 export const MailItem = ({ mail }: { mail: Mail }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const { selectedSender, senders } = useSenders();
 
-  // Find sender associated with this mail (for cases when no sender is selected)
   const mailSender = selectedSender ||
     senders.find(sender => sender.id === mail.sender_id) ||
     { name: "Unknown Sender", domain: "unknown.com" };
-
 
   return (
     <div
@@ -36,7 +32,6 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         className={`absolute bottom-2 right-4 flex z-5 transition-opacity group-hover:opacity-100 ${mail.bookmarked ? '' : 'opacity-0'
           }`}
       >
-        {/* Read icon: only on hover */}
         <button
           className="p-xs rounded-full hover:bg-content/80 transition-colors opacity-0 group-hover:opacity-100"
           onClick={(e) => {
@@ -48,7 +43,6 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
         </button>
 
-        {/* Bookmark icon: always if true, else only on hover */}
         {(mail.bookmarked) ? (
           <button
             className="p-xs rounded-full hover:bg-content/80 transition-colors"
@@ -80,7 +74,6 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         )}
       </div>
 
-
       <div className="pr-12">
         <h2
           className={cn(
@@ -90,25 +83,27 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         >
           {mail.subject}
         </h2>
-        <div
-          className={cn(
-            "flex flex-row items-center text-sm",
-            mail.read && "text-muted-foreground"
-          )}
-        >
-          <img
-            src={
-              mailSender?.domain === "gmail.com"
-                ? "/gmail.webp"
-                : `https://www.google.com/s2/favicons?domain=${mailSender?.domain}&sz=128`
-            }
-            alt={mail.subject}
-            className="w-4 h-4 object-cover mr-2"
-          />
-          <span className="mr-2">{mailSender?.name}</span>
-          <span className="text-xs text-muted-foreground">
+        <div className={cn(
+          "flex w-full items-baseline justify-start gap-x-2 text-sm",
+          mail.read && "text-muted-foreground"
+        )}>
+          <div className="flex min-w-0 items gap-x-2">
+            <img
+              src={
+                mailSender?.domain === "gmail.com"
+                  ? "/gmail.webp"
+                  : `https://www.google.com/s2/favicons?domain=${mailSender?.domain}&sz=128`
+              }
+              alt={mail.subject}
+              className="h-4 w-4 flex-shrink-0 object-cover"
+            />
+            <p className="truncate">
+              {mailSender?.name}
+            </p>
+          </div>
+          <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground mx-2">
             {moment(mail.created_at).fromNow()}
-          </span>
+          </p>
         </div>
       </div>
     </div>

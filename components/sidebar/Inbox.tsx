@@ -24,6 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { FolderType, SenderType } from "@/types/data";
 import { isEqual } from 'lodash';
+import { useSidebar } from "@/context/sidebarContext";
 
 type SidebarItem =
   | { type: 'folder', id: string; data: FolderType }
@@ -56,6 +57,8 @@ export default function Inbox() {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
+  const { closeSidebar } = useSidebar();
+
 
   const openFolderCreationModal = () => setIsFolderModalOpen(true);
 
@@ -372,7 +375,12 @@ export default function Inbox() {
         <div
           className={`px-md py-sm flex items-center justify-between rounded-md cursor-pointer ${!selectedSender ? 'bg-accent' : 'hover:bg-accent'
             }`}
-          onClick={() => setSelectedSender(null)}
+          onClick={() => {
+            setSelectedSender(null);
+            if (window.innerWidth < 768) {
+              closeSidebar();
+            }
+          }}
         >
           <div className="flex items-center space-x-md">
             <FolderIcon className="w-5 h-5 text-muted-foreground" />

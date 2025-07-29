@@ -65,7 +65,7 @@ const BookmarkLayoutContent = ({ children }: { children: React.ReactNode }) => {
           <>
             <div
               ref={sidebarContainerRef}
-              className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-[105%] md:translate-x-0"} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
+              className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-[105%] md:translate-x-0"} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-sidebar`}
             >
               <LeftPanel />
               <Sidebar onClose={isSidebarOpen ? closeSidebar : undefined}>

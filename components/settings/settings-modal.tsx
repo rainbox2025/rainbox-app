@@ -108,15 +108,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
-            <div className="w-14 md:w-56 border-r border-border overflow-y-auto custom-scrollbar bg-sidebar">
-              <div className="p-sm">
+            <div className="w-12 md:w-56 border-r border-border overflow-y-auto custom-scrollbar bg-sidebar">
+              <div className="md:p-sm">
                 {/* Main sections */}
                 <div className="mb-2">
                   <ul className="">
                     <li>
                       <button
                         onClick={() => setActiveTab("account")}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === "account" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "account" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -127,7 +127,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("mailbox")}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === "mailbox" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "mailbox" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
                       >
                         <EnvelopeIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -138,7 +138,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("preferences")}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === "preferences" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "preferences" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
                       >
                         <Cog6ToothIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -149,7 +149,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("notification")}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === "notification" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "notification" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
                       >
                         <BellIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -160,7 +160,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("billing")}
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors ${activeTab === "billing" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "billing" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
                       >
                         <BillingIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -184,7 +184,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             redirectDestinations.reportIssues
                           )
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ExclamationTriangleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -199,7 +199,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             redirectDestinations.suggestFeature
                           )
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <LightBulbIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -212,7 +212,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.helpDoc)
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <DocumentTextIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -227,7 +227,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             redirectDestinations.contactSupport
                           )
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -249,7 +249,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.roadmap)
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <MapIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -262,7 +262,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.changelog)
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <ClockIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -275,7 +275,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.plans)
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <CreditCardIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -299,7 +299,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             redirectDestinations.visitWebsite
                           )
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -312,7 +312,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.followX)
                         }
-                        className={`flex items-center gap-2 w-full p-sm rounded-md transition-colors hover:bg-hovered`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
                       >
                         <svg
                           className="h-5 w-5"
