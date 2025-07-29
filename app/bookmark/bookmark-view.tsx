@@ -20,39 +20,7 @@ const BookmarkPage = () => {
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
   const [isFetchingMail, setIsFetchingMail] = useState(false);
   const [readerWidth, setReaderWidth] = useState(50);
-  const [listVisible, setListVisible] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const showReader = mailFromContext || isFetchingMail;
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const mobile = width < 768;
-      const tablet = width >= 768 && width < 1024;
-      setIsMobile(mobile);
-      setIsTablet(tablet);
-      if (mobile) {
-        setListVisible(!showReader);
-      } else {
-        setListVisible(true);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [mailFromContext, isFetchingMail]);
-
-  useEffect(() => {
-    const showReader = mailFromContext || isFetchingMail;
-    if (!showReader) {
-      setListVisible(true);
-    } else if (isMobile) {
-      setListVisible(false);
-    }
-  }, [mailFromContext, isMobile, isFetchingMail]);
-
 
   const bookmarksToDisplay = allBookmarksFromContext;
 
@@ -101,11 +69,12 @@ const BookmarkPage = () => {
       <div
         className={cn(
           "flex flex-col h-full transition-all duration-300 ease-in-out",
-          listVisible ? "block" : "hidden",
-          showReader ? "md:hidden lg:block lg:w-[50%]" : "w-full",
+          showReader
+            ? "hidden lg:block lg:w-[50%]"
+            : "w-full",
         )}
         style={{
-          width: showReader && window.innerWidth >= 1024 ? `${100 - readerWidth}%` : (listVisible && !showReader ? '100%' : undefined),
+          width: showReader && window.innerWidth >= 1024 ? `${100 - readerWidth}%` : undefined,
         }}
       >
         <div className="flex items-center flex-1 min-w-0 h-header p-2 border-b border-border">
@@ -144,7 +113,7 @@ const BookmarkPage = () => {
 
       {showReader && (
         isFetchingMail ? (
-          <div className="flex-grow flex justify-center items-center" style={{ width: isMobile || isTablet ? '100%' : `${readerWidth}%` }}>
+          <div className="flex-1 w-full flex justify-center items-center">
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
           </div>
         ) : mailFromContext && (
