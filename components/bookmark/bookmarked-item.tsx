@@ -22,7 +22,6 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
   const { showCommentModal, showTagModal, removeBookmark } = useBookmarks();
 
   const mailObject = bookmark.mailId ? mails.find(m => m.id === bookmark.mailId) : null;
-  console.log("mailObject: ", mailObject)
   let resolvedSender: SenderType | null | undefined = null;
   if (mailObject) {
     resolvedSender = senders.find(s => s.id === mailObject.sender_id);
@@ -49,8 +48,6 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
     removeBookmark(bookmark.id);
   };
 
-  console.log("bookmark: ", bookmark)
-
   return (
     <div
       key={bookmark.id}
@@ -61,24 +58,6 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
       )}
     >
       <div className="absolute bottom-2 right-4 flex items-center z-10 space-x-1 opacity-100 transition-opacity">
-        {/* {bookmark.comment && (
-          <button
-            className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
-            onClick={handleCommentClick}
-            title="View/Edit Comment"
-          >
-            <ChatBubbleBottomCenterIcon className="w-4 h-4" />
-          </button>
-        )}
-        {(bookmark.tags && bookmark.tags.length > 0) && (
-          <button
-            className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
-            onClick={handleTagsClick}
-            title="View/Edit Tags"
-          >
-            <TagIcon className="w-4 h-4" />
-          </button>
-        )} */}
         <button
           className="p-xs rounded-full hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
           onClick={handleRemoveBookmarkClick}
@@ -88,7 +67,7 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
         </button>
       </div>
 
-      <div className="pr-16">
+      <div className="pr-12">
         <h2
           className={cn(
             "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold",
@@ -97,30 +76,32 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
         >
           {title}
         </h2>
-        <div
-          className={cn(
-            "flex flex-row items-center text-sm",
-            !isSelected && "text-muted-foreground"
-          )}
-        >
-          {mailSenderDomain ? (
-            <img
-              src={
-                mailSenderDomain === "gmail.com"
-                  ? "/gmail.webp"
-                  : `https://www.google.com/s2/favicons?domain=${mailSenderDomain}&sz=128`
-              }
-              alt={mailSenderName}
-              className="w-4 h-4 object-cover mr-2"
-            />
-          ) : !mailObject && bookmark.text ? (
-            <BookmarkIconLucide className="w-4 h-4 object-cover mr-2 text-muted-foreground" />
-          ) : null
-          }
-          <span className="mr-2">{mailSenderName}</span>
-          <span className="text-xs text-muted-foreground">
+        <div className={cn(
+          "flex w-full items-baseline justify-start gap-x-2 text-sm",
+          !isSelected && "text-muted-foreground"
+        )}>
+          <div className="flex min-w-0 items-center gap-x-2">
+            {mailSenderDomain ? (
+              <img
+                src={
+                  mailSenderDomain === "gmail.com"
+                    ? "/gmail.webp"
+                    : `https://www.google.com/s2/favicons?domain=${mailSenderDomain}&sz=128`
+                }
+                alt={mailSenderName}
+                className="h-4 w-4 flex-shrink-0 object-cover"
+              />
+            ) : !mailObject && bookmark.text ? (
+              <BookmarkIconLucide className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            ) : null
+            }
+            <p className="truncate">
+              {mailSenderName}
+            </p>
+          </div>
+          <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
             {moment(bookmark.createdAt).fromNow()}
-          </span>
+          </p>
         </div>
       </div>
     </div>

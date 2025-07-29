@@ -9,6 +9,7 @@ import { useAxios } from "@/hooks/useAxios";
 import { Loader2, Menu, X } from "lucide-react";
 import { BookOpenIcon as OutlineBookOpenIcon } from "@heroicons/react/24/outline";
 import { useSidebar } from "@/context/sidebarContext";
+import { cn } from "@/lib/utils";
 
 const BookmarkPage = () => {
   const { bookmarks: allBookmarksFromContext, isLoading: isLoadingBookmarks } = useBookmarks();
@@ -21,13 +22,17 @@ const BookmarkPage = () => {
   const [readerWidth, setReaderWidth] = useState(50);
   const [listVisible, setListVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const showReader = mailFromContext || isFetchingMail;
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+      const width = window.innerWidth;
+      const mobile = width < 768;
+      const tablet = width >= 768 && width < 1024;
       setIsMobile(mobile);
+      setIsTablet(tablet);
       if (mobile) {
         setListVisible(!showReader);
       } else {
@@ -53,10 +58,9 @@ const BookmarkPage = () => {
 
   const handleSelectBookmark = async (bookmarkToOpen: BookmarkType) => {
     setSelectedBookmarkInList(bookmarkToOpen);
-    setSelectedMail(null); // Clear previous mail to trigger loading state
+    setSelectedMail(null);
 
     if (!bookmarkToOpen.mailId) {
-      console.warn(`Bookmark ${bookmarkToOpen.id} has no mailId.`);
       return;
     }
 
@@ -65,14 +69,12 @@ const BookmarkPage = () => {
     if (mailToDisplay) {
       setSelectedMail(mailToDisplay);
     } else {
-      // If mail is not in context, fetch it individually
       setIsFetchingMail(true);
       try {
         const response = await api.get<Mail>(`/mails/${bookmarkToOpen.mailId}`);
         setSelectedMail(response.data);
       } catch (error) {
-        console.error(`Failed to fetch mail details for ${bookmarkToOpen.mailId}:`, error);
-        setSelectedMail(null); // Ensure mail is null on error
+        setSelectedMail(null);
       } finally {
         setIsFetchingMail(false);
       }
@@ -95,12 +97,16 @@ const BookmarkPage = () => {
   const showReader = selectedBookmarkInList && (mailFromContext || isFetchingMail);
 
   return (
-    <div className="flex min-w-fit h-screen overflow-x-auto" ref={containerRef}>
+    <div className="flex w-full h-screen overflow-x-auto" ref={containerRef}>
       <div
-        className={`flex flex-col h-full transition-all duration-300 ease-in-out
-          ${listVisible ? 'block' : 'hidden md:block'}
-          ${showReader ? 'md:w-[50%]' : 'w-full md:w-[calc(100%-1px)]'}`}
-        style={{ width: showReader && !isMobile ? `${100 - readerWidth}%` : '100%' }}
+        className={cn(
+          "flex flex-col h-full transition-all duration-300 ease-in-out",
+          listVisible ? "block" : "hidden",
+          showReader ? "md:hidden lg:block lg:w-[50%]" : "w-full",
+        )}
+        style={{
+          width: showReader && window.innerWidth >= 1024 ? `${100 - readerWidth}%` : (listVisible && !showReader ? '100%' : undefined),
+        }}
       >
         <div className="flex items-center flex-1 min-w-0 h-header p-2 border-b border-border">
           <button
@@ -138,7 +144,7 @@ const BookmarkPage = () => {
 
       {showReader && (
         isFetchingMail ? (
-          <div className="flex-grow flex justify-center items-center" style={{ width: !isMobile ? `${readerWidth}%` : '100%' }}>
+          <div className="flex-grow flex justify-center items-center" style={{ width: isMobile || isTablet ? '100%' : `${readerWidth}%` }}>
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
           </div>
         ) : mailFromContext && (

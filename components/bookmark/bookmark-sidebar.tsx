@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Added useEffect
 import { useBookmarks } from "@/context/bookmarkContext";
 import { Edit3, Trash2 } from "lucide-react";
 import {
@@ -13,9 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // Assuming your new/modified components are in a common UI directory
 // Adjust these paths according to your project structure
-import { BasicModal } from "@/components/modals/basic-modal"; // Or your actual path e.g. '@/components/ui/BasicModal'
-import { DeleteConfirmationModal } from "@/components/modals/delete-modal"; // Or e.g. '@/components/ui/DeleteConfirmationModal'
-import { DropdownMenu, DropdownItem } from "@/components/modals/dropdown-menu"; // Or e.g. '@/components/ui/DropdownMenu'
+import { BasicModal } from "@/components/modals/basic-modal";
+import { DeleteConfirmationModal } from "@/components/modals/delete-modal";
+import { DropdownMenu, DropdownItem } from "@/components/modals/dropdown-menu";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 
 const BookmarkSidebarContent = () => {
@@ -36,6 +36,22 @@ const BookmarkSidebarContent = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
+  // --- START: New code for responsive width ---
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // On mobile, set width to 80%. On desktop, set to 100% to fill the parent container.
+  const containerStyle = isMobileView ? { width: '100%' } : { width: '100%' };
+  // --- END: New code for responsive width ---
+
   const allBookmarksCount = bookmarks.length;
   const highlightsCount = bookmarks.filter((b) => b.text).length;
   const notesCount = bookmarks.filter(
@@ -52,11 +68,10 @@ const BookmarkSidebarContent = () => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // --- Handlers for Rename ---
   const openRenameModal = (tag: string) => {
     setTagToRename(tag);
     setIsRenameModalOpen(true);
-    setActiveTagMenu(null); // Close dropdown
+    setActiveTagMenu(null);
   };
 
   const handleRenameTag = async (newTagName: string) => {
@@ -67,25 +82,19 @@ const BookmarkSidebarContent = () => {
     ) {
       await renameTagGlobally(tagToRename, newTagName.trim());
     }
-    // BasicModal's onSave will call this, BasicModal's onClose will handle closing.
-    // We just need to reset our state if BasicModal doesn't do it via its own onClose.
-    // setIsRenameModalOpen(false); // BasicModal should handle its own closing via its onClose prop
     setTagToRename(null);
   };
 
-  // --- Handlers for Delete ---
   const openDeleteModal = (tag: string) => {
     setTagToDelete(tag);
     setIsDeleteModalOpen(true);
-    setActiveTagMenu(null); // Close dropdown
+    setActiveTagMenu(null);
   };
 
   const handleDeleteTag = async () => {
     if (tagToDelete) {
       await deleteTagGlobally(tagToDelete);
     }
-    // DeleteConfirmationModal's onConfirm will call this.
-    // setIsDeleteModalOpen(false); // Modal handles its own closing
     setTagToDelete(null);
   };
 
@@ -97,14 +106,15 @@ const BookmarkSidebarContent = () => {
     },
     {
       label: "Delete",
-      icon: <Trash2 size={14} />, // text-destructive class below will color it
+      icon: <Trash2 size={14} />,
       onClick: () => openDeleteModal(tag),
       className: "text-destructive",
     },
   ];
 
   return (
-    <>
+    // Replaced fragment with a div and applied the new style
+    <div style={containerStyle}>
       <div className="space-y-md h-full flex flex-col text-sm">
         <div className="px-4 h-header w-[99%] p-xs pr-2 flex items-center justify-between sticky top-0 z-10">
           <h3 className="font-medium text-sm text-muted-foreground">
@@ -125,22 +135,6 @@ const BookmarkSidebarContent = () => {
               {allBookmarksCount}
             </span>
           </a>
-
-          {/* <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
-            <PencilSquareIcon className="w-5 h-5 text-muted-foreground" />
-            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
-              Highlights
-            </span>
-            <span className="text-xs text-muted-foreground font-medium">{highlightsCount}</span>
-          </a>
-
-          <a href="#" className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-muted-foreground">
-            <DocumentTextIcon className="w-5 h-5 text-muted-foreground" />
-            <span className='text-sm font-medium truncate overflow-hidden overflow-ellipsis w-0 flex-1 mr-2 text-muted-foreground'>
-              Notes
-            </span>
-            <span className="text-xs text-muted-foreground font-medium">{notesCount}</span>
-          </a> */}
 
           <div className="pt-md">
             <button
@@ -221,7 +215,6 @@ const BookmarkSidebarContent = () => {
         </nav>
       </div>
 
-      {/* Rename Tag Modal */}
       {isRenameModalOpen && tagToRename && (
         <BasicModal
           isOpen={isRenameModalOpen}
@@ -230,13 +223,12 @@ const BookmarkSidebarContent = () => {
             setTagToRename(null);
           }}
           isLoading={isTagRenameLoading}
-          onSave={handleRenameTag} // BasicModal will provide the new value to this function
+          onSave={handleRenameTag}
           initialValue={tagToRename}
           title="Rename Tag"
         />
       )}
 
-      {/* Delete Tag Modal */}
       {isDeleteModalOpen && tagToDelete && (
         <DeleteConfirmationModal
           isOpen={isDeleteModalOpen}
@@ -250,7 +242,7 @@ const BookmarkSidebarContent = () => {
           itemType="tag"
         />
       )}
-    </>
+    </div>
   );
 };
 

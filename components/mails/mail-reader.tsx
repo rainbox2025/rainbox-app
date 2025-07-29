@@ -48,6 +48,7 @@ export const MailReader = ({
   const { bookmarks, deserializeRange } = useBookmarks();
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const isTablet = typeof window !== "undefined" && window.innerWidth >= 768 && window.innerWidth < 1024;
   const mailSender = mail ? (senders.find(sender => sender.id === mail.sender_id) || { name: "Unknown Sender", domain: "unknown.com" }) : null;
 
   useEffect(() => {
@@ -145,11 +146,11 @@ export const MailReader = ({
 
   return (
     <>
-      <div ref={resizeRef} className="w-[2px] relative h-screen cursor-col-resize hidden md:flex items-center justify-center bg-border hover:bg-dragger z-10" onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}>
+      <div ref={resizeRef} className="w-[2px] relative h-screen cursor-col-resize hidden lg:flex items-center justify-center bg-border hover:bg-dragger z-10" onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}>
         <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
       </div>
       <div ref={mailReaderRef} className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
-        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : isMobile ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
+        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : (isMobile || isTablet) ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
         <MailReaderHeader
           setSummaryDialogOpen={setSummaryDialogOpen}
           setTextToAudioOpen={setTextToAudioOpen}

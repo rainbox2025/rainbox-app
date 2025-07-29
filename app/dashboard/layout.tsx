@@ -8,11 +8,12 @@ import { Loader2 } from "lucide-react";
 import LeftPanel from "@/components/left-panel";
 import Inbox from "@/components/sidebar/Inbox";
 import { useSidebar } from "@/context/sidebarContext";
-import { OnboardingFlow } from "@/components/onboarding/flow"; // <-- IMPORT THE FLOW
-import { AuthProvider, useAuth } from "@/context/authContext";
+import { OnboardingFlow } from "@/components/onboarding/flow";
+import { useAuth } from "@/context/authContext";
 import { useSenders } from "@/context/sendersContext";
 import { useFolders } from "@/context/foldersContext";
 import { useMails } from "@/context/mailsContext";
+import { cn } from "@/lib/utils";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -34,7 +35,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           redirect("/auth");
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
         redirect("/auth");
       } finally {
         setLoading(false);
@@ -73,7 +73,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <>
           <div
             ref={sidebarContainerRef}
-            className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-[115%] md:translate-x-0"} transition-transform duration-300 ease-in-out w-[80%] md:w-auto h-full bg-background md:bg-transparent`}
+            className={`absolute md:relative flex z-40 ${isSidebarOpen ? "translate-x-0" : "-translate-x-[115%] md:translate-x-0"} transition-transform duration-300 ease-in-out w-[85%] md:w-auto h-full md:bg-transparent bg-sidebar`}
           >
             <LeftPanel />
             <Sidebar onClose={isSidebarOpen ? closeSidebar : undefined}>
@@ -92,8 +92,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             {children}
           </div>
 
-          {/* RENDER THE ONBOARDING FLOW HERE */}
-          {/* It's a sibling to the main content, allowing it to render on top as a modal */}
           <OnboardingFlow />
         </>
       )}
