@@ -1,21 +1,30 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useAuth } from "@/context/authContext";
 import {
   XMarkIcon,
   UserCircleIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 
-
 export default function AccountTab() {
-  const { user, updateAvatar, deleteAccount } = useAuth();
+  const { user, updateAvatar, deleteAccount, updateFullName } = useAuth();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [feedback, setFeedback] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [isNameSaving, setIsNameSaving] = useState(false);
+
+  useEffect(() => {
+    if (user?.full_name) {
+      setFullName(user.full_name);
+    }
+  }, [user?.full_name]);
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -35,6 +44,19 @@ export default function AccountTab() {
     }
   };
 
+  const handleSaveName = async () => {
+    if (fullName.trim() === user?.full_name || !fullName.trim()) return;
+    setIsNameSaving(true);
+    try {
+      await updateFullName(fullName.trim());
+    } catch (error) {
+      console.error("Failed to save name:", error);
+      alert("Failed to update name. Please try again.");
+      setFullName(user?.full_name || '');
+    } finally {
+      setIsNameSaving(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -47,6 +69,7 @@ export default function AccountTab() {
     }
   };
 
+  const nameHasChanged = fullName.trim() !== "" && fullName.trim() !== user?.full_name;
 
   return (
     <>
@@ -104,13 +127,29 @@ export default function AccountTab() {
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                id="name"
-                defaultValue={user?.full_name}
-                disabled
-                className="w-full p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  id="name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={isNameSaving}
+                  className="w-full p-sm border border-border rounded-md bg-content focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                />
+                {nameHasChanged && (
+                  <button
+                    onClick={handleSaveName}
+                    disabled={isNameSaving}
+                    className="p-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {isNameSaving ? (
+                      <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <CheckIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>

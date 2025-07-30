@@ -17,6 +17,7 @@ interface AuthContextType {
   secondaryEmails: string[];
   setSecondaryEmails: (secondaryEmails: string[]) => void;
   updateAvatar: (file: File) => Promise<void>;
+  updateFullName: (fullName: string) => Promise<void>;
   deleteAccount: (feedback: string) => Promise<void>;
   deleteSecondaryEmail: (email: string, userId: string) => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -26,7 +27,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [secondaryEmails, setSecondaryEmails] = useState<string[]>([]);
@@ -87,30 +87,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error fetching user:", error);
     }
   };
+
   useEffect(() => {
     fetchUser();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event) => {
       if (_event === "SIGNED_OUT") {
-        setUser(null);
-        setAccessToken(null);
-        router.push("/auth");
-      } else if (session) {
-        fetchUser();
+        window.location.href = '/auth';
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, []);
 
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-      window.location.reload();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/auth';
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -137,18 +136,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateFullName = async (fullName: string) => {
+    if (!user) throw new Error("User not authenticated");
+
+    try {
+      await authApi.patch("/account/profile", { fullName });
+      setUser((currentUser) =>
+        currentUser ? { ...currentUser, full_name: fullName } : null
+      );
+    } catch (error) {
+      console.error("Axios update full name error:", error);
+      throw new Error("Failed to update full name.");
+    }
+  };
+
   const deleteAccount = async (feedback: string) => {
     try {
       await authApi.delete("/account/delete", {
         data: { feedback },
       });
-
       await logout();
     } catch (error) {
       console.error("Axios delete account error:", error);
       throw new Error("Failed to delete account.");
     }
   };
+
   const deleteSecondaryEmail = async (email: string, userId: string) => {
     try {
       await authApi.delete(
@@ -172,6 +185,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         secondaryEmails,
         setSecondaryEmails,
         updateAvatar,
+        updateFullName,
         deleteAccount,
         deleteSecondaryEmail,
         fetchUser
