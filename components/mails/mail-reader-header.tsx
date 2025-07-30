@@ -107,29 +107,26 @@ const MailReaderHeader = ({
           </button>
 
           <button
-            className="p-xs rounded-full hover:bg-content/80 transition-colors"
+            className="p-xs rounded-full hover:bg-muted transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               markAsRead(selectedMail.id, !selectedMail.read);
             }}
             title={selectedMail.read ? "Mark as unread" : "Mark as read"}
           >
-            {!selectedMail.read ? (
-              <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+            {selectedMail.read ? (
+              <CheckIcon className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <CheckIcon className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground" />
+              <CheckIcon className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
 
           <button
-            className="p-xs rounded-full hover:bg-content/80 transition-colors"
+            className="p-xs rounded-full hover:bg-muted transition-colors" // MODIFIED: Simplified hover effect
             onClick={(e) => {
               e.stopPropagation();
+              // The context now handles the setSelectedMail update, so we just call bookmark
               bookmark(selectedMail.id, !selectedMail.bookmarked);
-              setSelectedMail({
-                ...selectedMail,
-                bookmarked: !selectedMail.bookmarked,
-              });
             }}
             title={
               selectedMail.bookmarked ? "Remove Bookmark" : "Add Bookmark"
@@ -137,7 +134,7 @@ const MailReaderHeader = ({
           >
             <Bookmark
               fill={selectedMail?.bookmarked ? "currentColor" : "none"}
-              className="w-4 h-4 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="w-4 h-4 text-muted-foreground" // MODIFIED: Simplified hover effect
             />
           </button>
 

@@ -20,16 +20,6 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop to capture outside clicks */}
-          <motion.div
-            className="fixed inset-0 z-[100] bg-transparent"
-            onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
-
-          {/* The Sidebar itself */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}

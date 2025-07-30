@@ -26,6 +26,15 @@ export const OnboardingFlow = () => {
   const [serviceForSelection, setServiceForSelection] = useState<'Gmail' | 'Outlook' | null>(null);
 
   useEffect(() => {
+    // For testing purpose: skip TopicsStep (2) and GetAppStep (4)
+    if (currentStep === 2) {
+      goToStep(3);
+    } else if (currentStep === 4) {
+      goToStep(5);
+    }
+  }, [currentStep, goToStep]);
+
+  useEffect(() => {
     const checkStatus = async () => {
       try {
         const isComplete = await isOnboardingComplete();
