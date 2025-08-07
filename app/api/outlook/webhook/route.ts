@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { simpleParser } from "mailparser";
 
 interface ChangeNotification {
   subscriptionId: string;
@@ -15,20 +16,13 @@ interface ChangeNotification {
 
 export async function POST(request: Request) {
   try {
-    // Add debug logging for request
-    console.log("Webhook request received:", {
-      contentType: request.headers.get("content-type"),
-      hasValidationToken: request.headers.has("validationToken"),
-      url: request.url,
-    });
+    console.log("Webhook request received");
 
-    // Handle subscription validation
     const validationToken =
       request.headers.get("validationToken") ||
       new URL(request.url).searchParams.get("validationToken");
 
     if (validationToken) {
-      console.log("Handling validation request with token:", validationToken);
       return new Response(validationToken, {
         status: 200,
         headers: {
@@ -38,22 +32,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // Only proceed with notification processing for non-validation requests
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
-      console.log("Skipping non-JSON request:", contentType);
       return new Response("Invalid content type", { status: 400 });
     }
 
     const data = await request.json();
-
-    // Add notification debug logging
-    console.log("Processing notifications:", {
-      notificationType: data.value?.[0]?.changeType,
-      subscriptionId: data.value?.[0]?.subscriptionId,
-      timestamp: new Date().toISOString(),
-    });
-
     const supabase = await createClient();
 
     const notifications: ChangeNotification[] = Array.isArray(data.value)
@@ -61,57 +45,30 @@ export async function POST(request: Request) {
       : [data.value];
 
     for (const notification of notifications) {
-      // Skip if not a 'created' event
-      if (notification.changeType !== "created") {
-        console.log(
-          `Skipping notification of type: ${notification.changeType}`
-        );
-        continue;
-      }
+      if (notification.changeType !== "created") continue;
 
-      // Verify subscription exists and get user info
-      const { data: watchData, error: watchError } = await supabase
+      const { data: watchData } = await supabase
         .from("outlook_watch")
         .select("user_email, subscription_id, email")
         .eq("subscription_id", notification.subscriptionId)
         .single();
 
-      if (watchError || !watchData) {
-        console.error(
-          "No watch record found for subscription:",
-          notification.subscriptionId
-        );
-        continue;
-      }
+      if (!watchData) continue;
 
-      // Get tokens for the user
-      const { data: tokenData, error: tokenError } = await supabase
+      const { data: tokenData } = await supabase
         .from("outlook_tokens")
         .select("tokens, updated_at")
         .eq("user_email", watchData.user_email)
         .single();
 
-      if (tokenError || !tokenData) {
-        console.error("No tokens found for user:", watchData.user_email);
-        continue;
-      }
+      if (!tokenData) continue;
 
-      // --- Token expiry check and refresh ---
       let { tokens } = tokenData;
       const tokenCreatedAt = new Date(tokenData.updated_at).getTime();
-      const tokenExpiresIn = tokens.expires_in
-        ? Number(tokens.expires_in) * 1000
-        : 0;
-      const tokenExpiry = tokenCreatedAt + tokenExpiresIn;
+      const tokenExpiry = tokenCreatedAt + Number(tokens.expires_in) * 1000;
       let accessToken = tokens.access_token;
 
       if (Date.now() > tokenExpiry) {
-        console.log(Date.now(), tokenExpiry);
-
-        // Refresh token
-        console.log(
-          `Refreshing expired token for user: ${watchData.user_email}`
-        );
         const refreshResponse = await fetch(
           "https://login.microsoftonline.com/common/oauth2/v2.0/token",
           {
@@ -125,107 +82,72 @@ export async function POST(request: Request) {
             }),
           }
         );
-        if (!refreshResponse.ok) {
-          console.error(
-            "Failed to refresh token for user:",
-            watchData.user_email
-          );
-          continue;
-        }
         const newTokens = await refreshResponse.json();
         await supabase
           .from("outlook_tokens")
-          .update({
-            tokens: newTokens,
-            updated_at: new Date().toISOString(),
-          })
+          .update({ tokens: newTokens, updated_at: new Date().toISOString() })
           .eq("user_email", watchData.user_email);
         accessToken = newTokens.access_token;
-      } else {
-        accessToken = tokens.access_token;
       }
 
-      // --- Use accessToken for all Graph API calls below ---
-      const messageResponse = await fetch(
-        `https://graph.microsoft.com/v1.0/me/messages/${notification.resourceData.id}?$select=id,subject,bodyPreview,receivedDateTime,from`,
+      // 📨 Step: Fetch full MIME content of the email
+      const mimeResponse = await fetch(
+        `https://graph.microsoft.com/v1.0/me/messages/${notification.resourceData.id}/$value`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
+            Prefer: 'outlook.body-content-type="text"',
           },
         }
       );
 
-      if (!messageResponse.ok) {
-        console.error("Failed to fetch message:", await messageResponse.text());
+      if (!mimeResponse.ok) {
+        console.error(
+          "Failed to fetch MIME message:",
+          await mimeResponse.text()
+        );
         continue;
       }
 
-      const message = await messageResponse.json();
+      const mimeBuffer = await mimeResponse.arrayBuffer();
 
-      // Get user_id from auth.users table
-      const { data: userData, error: userError } = await supabase
+      // 📬 Step: Parse the full email using mailparser
+      const parsed = await simpleParser(Buffer.from(mimeBuffer));
+
+      const { data: userData } = await supabase
         .from("users")
         .select("id")
         .eq("email", watchData.user_email)
         .single();
 
-      if (userError || !userData) {
-        console.error("No user found for email:", watchData.user_email);
-        continue;
-      }
+      if (!userData) continue;
 
-      // Check if sender is being tracked
-      const { data: userSenders, error: sendersError } = await supabase
+      const { data: userSenders } = await supabase
         .from("senders")
         .select("id, email")
         .eq("mail_service", "outlook")
         .eq("user_id", userData.id);
 
-      if (sendersError || !userSenders) {
-        console.error("Error fetching senders:", sendersError);
-        continue;
-      }
+      const senderEmail = parsed.from?.value?.[0]?.address || "";
+      const sender = userSenders?.find((s) => s.email === senderEmail);
 
-      const senderEmail = message.from.emailAddress.address;
-      const sender = userSenders.find((s) => s.email === senderEmail);
+      if (!sender) continue;
 
-      // Skip if sender is not tracked
-      if (!sender) {
-        console.log(`Skipping email: Sender ${senderEmail} not tracked`);
-        continue;
-      }
-
-      // Log mail details before saving
-      console.log("Attempting to save mail:", {
-        user_id: userData.id, // Use fetched user_id
+      await supabase.from("mails").insert({
+        user_id: userData.id,
         sender_id: sender.id,
-        sender_email: senderEmail,
-        subject: message.subject,
-        preview: message.bodyPreview?.substring(0, 50) + "...",
-        received: message.receivedDateTime,
-      });
-
-      // Save the email
-      const { error: mailError } = await supabase.from("mails").insert({
-        user_id: userData.id, // Use fetched user_id
-        sender_id: sender.id,
-        subject: message.subject || null,
-        body: message.bodyPreview || null,
+        subject: parsed.subject || null,
+        body: parsed.html || parsed.text || null,
         read: false,
-        created_at: message.receivedDateTime,
+        created_at: parsed.date || new Date().toISOString(),
       });
 
-      if (mailError) {
-        console.error("Error saving mail:", mailError);
-      } else {
-        console.log("Successfully saved mail from:", senderEmail);
-      }
+      console.log("Saved email from:", senderEmail);
     }
 
     return NextResponse.json({
       success: true,
-      message: "Notifications processed successfully",
+      message: "Notifications processed with MIME parsing",
     });
   } catch (error: any) {
     console.error("Webhook error:", error);
