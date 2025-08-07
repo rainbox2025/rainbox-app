@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { simpleParser } from "mailparser";
 import { createClient } from "@/utils/supabase/server";
 
 function chunkArray<T>(array: T[], size: number): T[][] {
@@ -69,9 +70,9 @@ export async function POST(request: Request) {
       let apiUrl = new URL("https://graph.microsoft.com/v1.0/me/messages");
       apiUrl.searchParams.set(
         "$select",
-        "from,subject,bodyPreview,isRead,receivedDateTime"
+        "id,from,subject,isRead,receivedDateTime"
       );
-      apiUrl.searchParams.set("$top", "100");
+      apiUrl.searchParams.set("$top", "50");
       apiUrl.searchParams.set("$filter", `(${senderFilter})`);
 
       if (skipToken) {
@@ -92,34 +93,55 @@ export async function POST(request: Request) {
       const data = await response.json();
       if (!data.value) break;
 
-      const emailsToInsert = data.value.map((message: any) => {
+      for (const message of data.value) {
         const sender = senders.find(
           (s) => s.email === message.from.emailAddress.address
         );
-        if (!sender) return null;
+        if (!sender) continue;
 
         // Track count per sender
         senderEmailCount[sender.id] = (senderEmailCount[sender.id] || 0) + 1;
 
-        return {
+        // Fetch full MIME content
+        const mimeResponse = await fetch(
+          `https://graph.microsoft.com/v1.0/me/messages/${message.id}/$value`,
+          {
+            headers: {
+              Authorization: `Bearer ${tokens.access_token}`,
+              Prefer: 'outlook.body-content-type="text"',
+            },
+          }
+        );
+
+        if (!mimeResponse.ok) {
+          console.error(
+            `Failed to fetch MIME for message ${message.id}:`,
+            await mimeResponse.text()
+          );
+          continue;
+        }
+
+        const mimeBuffer = await mimeResponse.arrayBuffer();
+        const parsed = await simpleParser(Buffer.from(mimeBuffer));
+
+        processedEmails.push({
           user_id: user.id,
           sender_id: sender.id,
-          subject: message.subject || null,
-          body: message.bodyPreview || null,
+          subject: parsed.subject || message.subject || null,
+          body: parsed.html || parsed.text || null,
           read: message.isRead,
-          created_at: message.receivedDateTime,
-        };
-      });
+          created_at: parsed.date?.toISOString() || message.receivedDateTime,
+        });
 
-      const validEmails = emailsToInsert.filter(Boolean);
-      processedEmails = [...processedEmails, ...validEmails];
+        await new Promise((resolve) => setTimeout(resolve, 150)); // Throttle
+      }
 
       const nextSkip = data["@odata.nextLink"]
         ? new URL(data["@odata.nextLink"]).searchParams.get("$skip")
         : undefined;
       skipToken = nextSkip !== null ? nextSkip : undefined;
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Page throttle
     } while (skipToken);
 
     if (processedEmails.length > 0) {
@@ -174,7 +196,7 @@ export async function POST(request: Request) {
       success: true,
       processed: processedEmails.length,
       sendersOnboarded: senders.length,
-      message: "Successfully processed all emails",
+      message: "Successfully processed all emails (with MIME parsing)",
       pagesProcessed: skipToken ? undefined : "all",
     });
   } catch (error: any) {
