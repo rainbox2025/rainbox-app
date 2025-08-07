@@ -119,14 +119,15 @@ export async function POST(request: Request) {
 
           if (!msg.data.raw) return null;
 
-          const parsed = await simpleParser(
-            Buffer.from(msg.data.raw, "base64")
+          const rawMime = Buffer.from(msg.data.raw!, "base64url").toString(
+            "utf-8"
           );
+          const parsed = await simpleParser(rawMime);
 
           const fromHeader = parsed.from?.value?.[0]?.address || null;
           const subject = parsed.subject || null;
           const date = parsed.date?.toISOString() || new Date().toISOString();
-          const body = parsed.text || "";
+          const body = parsed.html || parsed.text || null;
 
           if (!fromHeader) return null;
 
@@ -192,7 +193,10 @@ export async function POST(request: Request) {
         );
 
       if (updateError) {
-        console.error("Error updating sender onboarding status:", updateError.message);
+        console.error(
+          "Error updating sender onboarding status:",
+          updateError.message
+        );
       }
     }
 
