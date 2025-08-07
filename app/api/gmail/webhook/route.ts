@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { initOauthCLient } from "@/lib/oauth";
 import { createClient } from "@/utils/supabase/server";
 import { extractEmail } from "@/lib/gmail";
+import { simpleParser } from "mailparser";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -12,7 +13,6 @@ export async function POST(request: Request) {
 
     console.log("Received webhook message:", message);
 
-    // Decode the message data from Pub/Sub
     const decodedData = JSON.parse(
       Buffer.from(message.data, "base64").toString()
     );
@@ -20,7 +20,6 @@ export async function POST(request: Request) {
 
     const { emailAddress, historyId } = decodedData;
 
-    // Get all watch records for this email
     const { data: watchRecords, error: watchError } = await supabase
       .from("gmail_watch")
       .select("history_id, user_id")
@@ -34,11 +33,11 @@ export async function POST(request: Request) {
       );
       throw new Error("No watch records found for this email");
     }
+
     console.log(
       `Found ${watchRecords.length} watch records for email: ${emailAddress}`
     );
 
-    // Then get the tokens for this email
     const { data: tokenRows, error: tokenError } = await supabase
       .from("gmail_tokens")
       .select("tokens")
@@ -53,7 +52,6 @@ export async function POST(request: Request) {
       throw new Error("No tokens found for this email");
     }
 
-    // Pick the token with the longest expiry_date
     const tokenData = tokenRows.reduce((latest, row) => {
       if (
         row.tokens.expiry_date &&
@@ -69,6 +67,7 @@ export async function POST(request: Request) {
       console.error("No valid tokens found for this email:", emailAddress);
       throw new Error("No valid tokens found for this email");
     }
+
     console.log("Using token with expiry:", tokenData.tokens.expiry_date);
 
     const oauth2Client = initOauthCLient(
@@ -80,7 +79,6 @@ export async function POST(request: Request) {
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-    // Process for each watch record
     const results = await Promise.all(
       watchRecords.map(async (watchRecord) => {
         try {
@@ -128,16 +126,25 @@ export async function POST(request: Request) {
               const msg = await gmail.users.messages.get({
                 userId: "me",
                 id: message.message.id,
-                format: "full",
+                format: "raw",
               });
 
-              const headers = msg.data.payload?.headers || [];
-              const from = headers.find((h) => h.name === "From")?.value || "";
-              const subject = headers.find((h) => h.name === "Subject")?.value;
-              const date = headers.find((h) => h.name === "Date")?.value;
+              const rawMime = Buffer.from(
+                msg.data.raw!,
+                "base64url"
+              ).toString("utf-8");
 
-              const senderEmail = extractEmail(from);
-              const sender = userSenders?.find((s) => s.email === senderEmail);
+              const parsed = await simpleParser(rawMime);
+
+              const subject = parsed.subject || null;
+              const date =
+                parsed.date?.toISOString() || new Date().toISOString();
+              const body = parsed.html || parsed.text || null;
+
+              const senderEmail = extractEmail(parsed.from?.text || "");
+              const sender = userSenders?.find(
+                (s) => s.email === senderEmail
+              );
 
               if (!sender) {
                 console.log(
@@ -146,32 +153,13 @@ export async function POST(request: Request) {
                 continue;
               }
 
-              // Extract body
-              let body = "";
-              if (msg.data.payload?.parts) {
-                const textPart = msg.data.payload.parts.find(
-                  (part) => part.mimeType === "text/plain"
-                );
-                if (textPart?.body?.data) {
-                  body = Buffer.from(textPart.body.data, "base64").toString();
-                }
-              } else if (msg.data.payload?.body?.data) {
-                body = Buffer.from(
-                  msg.data.payload.body.data,
-                  "base64"
-                ).toString();
-              }
-
-              // Save the email for this specific user
               const { error: mailError } = await supabase.from("mails").insert({
                 user_id: watchRecord.user_id,
                 sender_id: sender.id,
-                subject: subject || null,
-                body: body || null,
+                subject,
+                body,
                 read: false,
-                created_at: date
-                  ? new Date(date).toISOString()
-                  : new Date().toISOString(),
+                created_at: date,
               });
 
               if (mailError) {
@@ -185,7 +173,7 @@ export async function POST(request: Request) {
               console.log(`Saved mail for user ${watchRecord.user_id}:`, {
                 id: msg.data.id,
                 threadId: msg.data.threadId,
-                from,
+                from: parsed.from?.text,
                 subject,
                 date,
                 sender_id: sender.id,
@@ -194,7 +182,7 @@ export async function POST(request: Request) {
               newMessages.push({
                 id: msg.data.id,
                 threadId: msg.data.threadId,
-                from,
+                from: parsed.from?.text,
                 subject,
                 date,
                 sender_id: sender.id,
@@ -202,7 +190,6 @@ export async function POST(request: Request) {
             }
           }
 
-          // Update history ID for this watch record
           if (history.data.historyId) {
             await supabase
               .from("gmail_watch")
