@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { initOauthCLient } from "@/lib/oauth";
-import { extractEmail } from "@/lib/gmail";
+import { simpleParser } from "mailparser";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +15,26 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
+
   try {
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (authError) {
+      console.error("Supabase auth error:", authError.message);
+      return NextResponse.json(
+        { error: "Authentication failed", details: authError.message },
+        { status: 401 }
+      );
+    }
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "No authenticated user found" },
+        { status: 401 }
+      );
     }
 
     const { data: senders, error: sendersError } = await supabase
@@ -33,6 +45,7 @@ export async function POST(request: Request) {
       .eq("is_onboarded", false);
 
     if (sendersError) {
+      console.error("Error fetching senders:", sendersError.message);
       return NextResponse.json(
         { error: "Failed to fetch senders" },
         { status: 500 }
@@ -61,7 +74,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const tokens = JSON.parse(tokensCookie.value);
+    let tokens;
+    try {
+      tokens = JSON.parse(tokensCookie.value);
+    } catch (err) {
+      console.error("Invalid token cookie:", err);
+      return NextResponse.json(
+        { error: "Invalid token format" },
+        { status: 400 }
+      );
+    }
+
     const oauth2Client = initOauthCLient(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
@@ -74,7 +97,6 @@ export async function POST(request: Request) {
     let pageToken: string | undefined = undefined;
 
     const senderQuery = senders.map((s) => `from:${s.email}`).join(" OR ");
-
     const senderEmailCount: Record<string, number> = {};
 
     do {
@@ -92,44 +114,34 @@ export async function POST(request: Request) {
           const msg = await gmail.users.messages.get({
             userId: "me",
             id: message.id!,
-            format: "full",
+            format: "raw", // required for mailparser
           });
 
-          const headers = msg.data.payload?.headers || [];
-          const from = headers.find((h) => h.name === "From")?.value || "";
-          const subject = headers.find((h) => h.name === "Subject")?.value;
-          const date = headers.find((h) => h.name === "Date")?.value;
+          if (!msg.data.raw) return null;
 
-          const senderEmail = extractEmail(from);
-          if (!senderEmail) return null;
+          const parsed = await simpleParser(
+            Buffer.from(msg.data.raw, "base64")
+          );
 
-          const sender = senders.find((s) => s.email === senderEmail);
+          const fromHeader = parsed.from?.value?.[0]?.address || null;
+          const subject = parsed.subject || null;
+          const date = parsed.date?.toISOString() || new Date().toISOString();
+          const body = parsed.text || "";
+
+          if (!fromHeader) return null;
+
+          const sender = senders.find((s) => s.email === fromHeader);
           if (!sender) return null;
 
-          // Track email count per sender
           senderEmailCount[sender.id] = (senderEmailCount[sender.id] || 0) + 1;
-
-          let body = "";
-          if (msg.data.payload?.parts) {
-            const textPart = msg.data.payload.parts.find(
-              (part) => part.mimeType === "text/plain"
-            );
-            if (textPart?.body?.data) {
-              body = Buffer.from(textPart.body.data, "base64").toString();
-            }
-          } else if (msg.data.payload?.body?.data) {
-            body = Buffer.from(msg.data.payload.body.data, "base64").toString();
-          }
 
           return {
             user_id: user.id,
             sender_id: sender.id,
-            subject: subject || null,
-            body: body || null,
+            subject,
+            body,
             read: !msg.data.labelIds?.includes("UNREAD"),
-            created_at: date
-              ? new Date(date).toISOString()
-              : new Date().toISOString(),
+            created_at: date,
           };
         })
       );
@@ -150,7 +162,7 @@ export async function POST(request: Request) {
           .upsert(batch);
 
         if (insertError) {
-          console.error("Error inserting email batch:", insertError);
+          console.error("Error inserting email batch:", insertError.message);
           return NextResponse.json(
             { error: "Failed to save emails" },
             { status: 500 }
@@ -160,7 +172,6 @@ export async function POST(request: Request) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      // Update sender email_count values
       for (const [senderId, count] of Object.entries(senderEmailCount)) {
         const { error: countError } = await supabase
           .from("senders")
@@ -168,11 +179,10 @@ export async function POST(request: Request) {
           .eq("id", senderId);
 
         if (countError) {
-          console.error("Error updating email count:", countError);
+          console.error("Error updating email count:", countError.message);
         }
       }
 
-      // Mark all senders as onboarded
       const { error: updateError } = await supabase
         .from("senders")
         .update({ is_onboarded: true })
@@ -182,7 +192,7 @@ export async function POST(request: Request) {
         );
 
       if (updateError) {
-        console.error("Error updating sender onboarding status:", updateError);
+        console.error("Error updating sender onboarding status:", updateError.message);
       }
     }
 
@@ -194,7 +204,7 @@ export async function POST(request: Request) {
       pagesProcessed: pageToken ? undefined : "all",
     });
   } catch (error: any) {
-    console.error("Error processing emails:", error);
+    console.error("Unhandled error in POST /route:", error);
     return NextResponse.json(
       { error: "Failed to process emails", details: error.message },
       { status: 500 }
