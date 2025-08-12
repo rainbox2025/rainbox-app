@@ -13,6 +13,13 @@ function chunkArray<T>(array: T[], size: number): T[][] {
   );
 }
 
+function generateMailImageUrl(domain: string): string {
+  if (domain === "gmail.com") {
+    return "/gmail.webp";
+  }
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
 
@@ -174,13 +181,30 @@ export async function POST(request: Request) {
       }
 
       for (const [senderId, count] of Object.entries(senderEmailCount)) {
-        const { error: countError } = await supabase
+        // Get the sender to check if it already has an image_url
+        const { data: sender, error: senderError } = await supabase
           .from("senders")
-          .update({ count: count })
-          .eq("id", senderId);
-
-        if (countError) {
-          console.error("Error updating email count:", countError.message);
+          .select("image_url, domain")
+          .eq("id", senderId)
+          .single();
+    
+        if (senderError) {
+          console.error(`Error fetching sender ${senderId}:`, senderError.message);
+          continue;
+        }
+    
+        // Only update image_url if it doesn't exist
+        if (!sender.image_url && sender.domain) {
+          const mailImageUrl = generateMailImageUrl(sender.domain);
+          
+          const { error: imageUpdateError } = await supabase
+            .from("senders")
+            .update({ image_url: mailImageUrl })
+            .eq("id", senderId);
+    
+          if (imageUpdateError) {
+            console.error(`Error updating image_url for sender ${senderId}:`, imageUpdateError.message);
+          }
         }
       }
 
