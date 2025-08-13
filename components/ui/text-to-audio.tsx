@@ -22,7 +22,7 @@ const TextToAudio = ({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }) => {
   const { selectedMail, summarize } = useMails();
   const { senders } = useSenders();
