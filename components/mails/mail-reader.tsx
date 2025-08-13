@@ -1,22 +1,21 @@
 "use client";
 
-import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
-import { GripVertical, Loader2 } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import TextToAudio from "../ui/text-to-audio";
-import SummaryDialog from "../summary-dialog";
 import moment from "moment";
-import MailReaderHeader from "./mail-reader-header";
-import SenderAvatar from "../sender-avatar";
 import { useBookmarks } from "@/context/bookmarkContext";
 import MailBodyViewer from "../bookmark/mail-body-viewer";
 import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
 import TagModal from "@/components/bookmark/tag-modal";
-import { Mail } from "@/types/data";
+import { Mail, SenderType } from "@/types/data";
 import NotesSidebar from "../notes/NotesSidebar";
 import { AnimatePresence } from "framer-motion";
+import MailReaderHeader from "./mail-reader-header";
+import TextToAudio from "../ui/text-to-audio";
+import SummaryDialog from "../summary-dialog";
+import { SenderIcon } from '@/components/sidebar/sender-icon'; 
 
 interface MailReaderProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -49,7 +48,12 @@ export const MailReader = ({
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const isTablet = typeof window !== "undefined" && window.innerWidth >= 768 && window.innerWidth < 1024;
-  const mailSender = mail ? (senders.find(sender => sender.id === mail.sender_id) || { name: "Unknown Sender", domain: "unknown.com" }) : null;
+  
+  // Ensure mailSender has an 'id' for the SenderIcon to work correctly
+  const mailSender: any = mail 
+    ? (senders.find(sender => sender.id === mail.sender_id) || 
+      { id: "unknown", name: "Unknown Sender", domain: "unknown.com", image_url: null }) 
+    : null;
 
   useEffect(() => {
     return () => {
@@ -108,9 +112,7 @@ export const MailReader = ({
     }
 
     const range = deserializeRange(bookmark.serializedRange, rootElement);
-    if (!range) {
-      return;
-    }
+    if (!range) return;
 
     const elementToScrollTo = range.startContainer.nodeType === Node.ELEMENT_NODE
       ? range.startContainer as HTMLElement
@@ -166,7 +168,9 @@ export const MailReader = ({
             </h1>
             {mailSender &&
               <div className="flex items-center mb-2 text-sm">
-                <SenderAvatar domain={mailSender.domain || "unknown.com"} alt={mail.subject} />
+                <div className="mr-3 flex-shrink-0">
+                  <SenderIcon sender={mailSender} />
+                </div>
                 <div>
                   <div className="font-medium">{mailSender.name}</div>
                   <div className="text-muted-foreground text-xs">

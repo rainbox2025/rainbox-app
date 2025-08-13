@@ -1,7 +1,7 @@
 import React from 'react';
 import { SenderType } from "@/types/data";
 
-export const SenderIcon: React.FC<{ sender: SenderType }> = ({ sender }) => {
+export const SenderIcon: React.FC<{ sender: any }> = ({ sender }) => {
   // Function to generate a consistent color based on the sender's ID.
   // This ensures the color is the same every time for the same sender.
   const generateColor = (id: string) => {
@@ -28,6 +28,7 @@ export const SenderIcon: React.FC<{ sender: SenderType }> = ({ sender }) => {
   };
 
   // Conditionally render the image if an image_url exists
+
   if (sender.image_url) {
     return (
       <img

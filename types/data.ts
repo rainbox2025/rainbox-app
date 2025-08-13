@@ -21,7 +21,7 @@ export interface SenderType {
   folder?: string;
   order?: number;
   isRead?: boolean;
-  image_url?: string;
+  image_url?: string | null;
   notification?: boolean;
 }
 

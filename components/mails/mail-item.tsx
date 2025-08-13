@@ -5,14 +5,17 @@ import { useSenders } from "@/context/sendersContext";
 import React from "react";
 import { Bookmark, CheckIcon } from "lucide-react";
 import moment from "moment";
+import { SenderIcon } from "@/components/sidebar/sender-icon"; // Import the SenderIcon component
 
 export const MailItem = ({ mail }: { mail: Mail }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const { selectedSender, senders } = useSenders();
 
+  // Find the sender for the mail, with a fallback for unknown senders.
+  // Added a fallback 'id' to ensure the SenderIcon component works correctly.
   const mailSender = selectedSender ||
     senders.find(sender => sender.id === mail.sender_id) ||
-    { name: "Unknown Sender", domain: "unknown.com" };
+    { id: "unknown", name: "Unknown Sender", domain: "unknown.com" };
 
   return (
     <div
@@ -87,16 +90,9 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
           "flex w-full items-baseline justify-start gap-x-2 text-sm",
           mail.read && "text-muted-foreground"
         )}>
-          <div className="flex min-w-0 items gap-x-2">
-            <img
-              src={
-                mailSender?.domain === "gmail.com"
-                  ? "/gmail.webp"
-                  : `https://www.google.com/s2/favicons?domain=${mailSender?.domain}&sz=128`
-              }
-              alt={mail.subject}
-              className="h-4 w-4 flex-shrink-0 object-cover"
-            />
+          {/* Using SenderIcon to display the sender's avatar */}
+          <div className="flex min-w-0 items-center gap-x-2">
+            <SenderIcon sender={mailSender} />
             <p className="truncate">
               {mailSender?.name}
             </p>

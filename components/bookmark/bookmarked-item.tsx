@@ -8,7 +8,7 @@ import { useMails } from '@/context/mailsContext';
 import { useSenders } from '@/context/sendersContext';
 import { SenderType } from '@/types/data';
 import { Bookmark as BookmarkIconLucide } from 'lucide-react';
-import { ChatBubbleBottomCenterIcon, TagIcon } from '@heroicons/react/24/outline';
+import { SenderIcon } from '@/components/sidebar/sender-icon'; 
 
 interface Props {
   bookmark: BookmarkType;
@@ -19,29 +19,14 @@ interface Props {
 export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect }) => {
   const { mails } = useMails();
   const { senders } = useSenders();
-  const { showCommentModal, showTagModal, removeBookmark } = useBookmarks();
+  const { removeBookmark } = useBookmarks();
 
+  // Find the associated mail and sender
   const mailObject = bookmark.mailId ? mails.find(m => m.id === bookmark.mailId) : null;
-  let resolvedSender: SenderType | null | undefined = null;
-  if (mailObject) {
-    resolvedSender = senders.find(s => s.id === mailObject.sender_id);
-  }
+  const resolvedSender = mailObject ? senders.find(s => s.id === mailObject.sender_id) : null;
 
   const title = mailObject?.subject || bookmark.text.substring(0, 70) + (bookmark.text.length > 70 ? '...' : '');
   const mailSenderName = bookmark.sender_name || resolvedSender?.name || "Web Highlight";
-  const mailSenderDomain = resolvedSender?.domain;
-
-  const handleCommentClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    const buttonRect = event.currentTarget.getBoundingClientRect();
-    showCommentModal(bookmark.id, buttonRect);
-  };
-
-  const handleTagsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    const buttonRect = event.currentTarget.getBoundingClientRect();
-    showTagModal(bookmark.id, buttonRect);
-  };
 
   const handleRemoveBookmarkClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -81,20 +66,11 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
           !isSelected && "text-muted-foreground"
         )}>
           <div className="flex min-w-0 items-center gap-x-2">
-            {mailSenderDomain ? (
-              <img
-                src={
-                  mailSenderDomain === "gmail.com"
-                    ? "/gmail.webp"
-                    : `https://www.google.com/s2/favicons?domain=${mailSenderDomain}&sz=128`
-                }
-                alt={mailSenderName}
-                className="h-4 w-4 flex-shrink-0 object-cover"
-              />
-            ) : !mailObject && bookmark.text ? (
+            {resolvedSender ? (
+              <SenderIcon sender={resolvedSender} />
+            ) : (
               <BookmarkIconLucide className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-            ) : null
-            }
+            )}
             <p className="truncate">
               {mailSenderName}
             </p>
