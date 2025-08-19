@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import {
   XMarkIcon,
   UserCircleIcon,
@@ -16,23 +15,13 @@ import {
   EnvelopeIcon,
   CreditCardIcon as BillingIcon,
   DocumentTextIcon,
-  ArrowPathIcon,
-  SpeakerWaveIcon,
-  SparklesIcon,
 } from "@heroicons/react/24/outline";
-import { useSenders } from "@/context/sendersContext";
-import { SenderIcon } from "../sidebar/sender-icon";
-import ConnectionCard from "./ConnectionCard";
-import AddMailBox from "./add-mail-box";
-import DisconnectBox from "./disconnect-box";
-import { GmailConnectionFlow } from "../connect-gmail/flow";
-import { config } from "@/config";
-import { redirectDestinations } from "@/constants";
 import AccountTab from "./tabs/account";
 import MailboxTab from "./tabs/mailbox";
 import PreferencesTab from "./tabs/preferences";
 import NotificationTab from "./tabs/notification";
 import BillingTab from "./tabs/billing";
+import { FeedbackModal } from "../feedback-modal";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -57,6 +46,7 @@ type TabType =
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<TabType>("account");
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // Define redirect destinations
   const redirectDestinations = {
@@ -66,9 +56,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     contactSupport: "team@rainbox.ai",
     roadmap: "https://rainbox.featurebase.app/roadmap",
     changelog: "https://rainbox.featurebase.app/changelog",
-    plans: "https://plans.example.com",
-    visitWebsite: "https://www.example.com",
-    followX: "https://twitter.com/example",
+    plans: "https://rainbox.ai/plans",
+    visitWebsite: "https://rainbox.ai",
+    followX: "https://x.com/rainbox_ai",
   };
 
   useEffect(() => {
@@ -177,7 +167,42 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 {/* Help & Support */}
                 <div className="mb-2">
                   <ul className="space-y-1">
+                     <li>
+  <button
+    onClick={() => setIsFeedbackOpen(true)}
+    className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
+  >
+    <ExclamationTriangleIcon className="h-5 w-5" />
+    <span className="text-sm hidden md:inline">Feedback 🡥</span>
+  </button>
+</li>
                     <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(redirectDestinations.roadmap)
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <MapIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Roadmap 🡥
+                        </span>
+                      </button>
+                    </li>
+                     <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(redirectDestinations.changelog)
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <ClockIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Changelog 🡥
+                        </span>
+                      </button>
+                    </li>
+                    {/* <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(
@@ -191,8 +216,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           Report Issues 🡥
                         </span>
                       </button>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(
@@ -206,8 +231,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           Suggest Feature 🡥
                         </span>
                       </button>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.helpDoc)
@@ -219,7 +244,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           Help Docs 🡥
                         </span>
                       </button>
-                    </li>
+                    </li> */}
                     <li>
                       <button
                         onClick={() =>
@@ -232,7 +257,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
-                          Contact Support 🡥
+                          Contact Us 🡥
                         </span>
                       </button>
                     </li>
@@ -248,32 +273,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() =>
-                          redirectToExternalLink(redirectDestinations.roadmap)
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
-                      >
-                        <MapIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Roadmap 🡥
-                        </span>
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() =>
-                          redirectToExternalLink(redirectDestinations.changelog)
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
-                      >
-                        <ClockIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Changelog 🡥
-                        </span>
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() =>
                           redirectToExternalLink(redirectDestinations.plans)
                         }
                         className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
@@ -284,16 +283,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </button>
                     </li>
-                  </ul>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-border my-1"></div>
-
-                {/* External Links */}
-                <div>
-                  <ul className="space-y-1">
-                    <li>
+                     <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(
@@ -304,11 +294,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
-                          Visit Website 🡥
+                          Website 🡥
                         </span>
                       </button>
                     </li>
-                    <li>
+  <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.followX)
@@ -330,12 +320,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           />
                         </svg>
                         <span className="text-sm hidden md:inline">
-                          Follow us on X 🡥
+                          Follow up on X 🡥
                         </span>
                       </button>
                     </li>
+
                   </ul>
                 </div>
+
+               
               </div>
             </div>
 
@@ -352,6 +345,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </div>
         </motion.div>
       </AnimatePresence>
+      <FeedbackModal
+  isOpen={isFeedbackOpen}
+  onClose={() => setIsFeedbackOpen(false)}
+/>
     </div>
   );
 };

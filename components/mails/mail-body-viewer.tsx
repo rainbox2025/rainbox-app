@@ -227,15 +227,17 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     }
   }, [handleMouseUp]);
 
-  useEffect(() => {
-  const links = document.querySelectorAll("a");
+ useEffect(() => {
+  if (!contentRef.current) return;
+
+  const links = contentRef.current.querySelectorAll("a");
   links.forEach(link => {
     if (!link.hasAttribute("target")) {
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
     }
   });
-}, []);
+}, [htmlContent])
 
 
   return (
