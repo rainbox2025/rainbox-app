@@ -30,7 +30,7 @@ export const PATCH = async (
   }
 
   
-  const senderName = mail.senders?.name || "Unknown Sender";
+  const senderName = mail.senders?.name;
 
   if (shouldBeBookmarked) {
     

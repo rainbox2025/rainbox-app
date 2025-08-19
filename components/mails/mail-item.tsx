@@ -28,7 +28,7 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
 
   const mailSender = selectedSender ||
     senders.find(sender => sender.id === mail.sender_id) ||
-    { id: "unknown", name: "Unknown Sender", domain: "unknown.com" };
+    { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url };
 
   return (
     <div

@@ -176,9 +176,13 @@ export default function FolderComponent({
                 )}
               </AnimatePresence>
             </div>
-            <span className="text-xs text-muted-foreground font-medium">
-              {folder.count}
-            </span>
+         {folder.count > 0 && (
+  <span className="text-xs text-muted-foreground font-medium">
+    {folder.count >= 1000
+      ? `${Math.floor(folder.count / 1000)}K+`
+      : folder.count}
+  </span>
+)}
           </div>
         </motion.div>
 

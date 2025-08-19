@@ -56,7 +56,7 @@ export const MailReader = ({
 
   const mailSender: any = mail
     ? (senders.find(sender => sender.id === mail.sender_id) ||
-      { id: "unknown", name: "Unknown Sender", domain: "unknown.com", image_url: null })
+      { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url })
     : null;
 
   useEffect(() => {
@@ -183,10 +183,11 @@ export const MailReader = ({
       <div
         ref={mailReaderRef}
         className={cn(
-          "h-screen custom-scrollbar bg-content border-border overflow-y-auto animate-in slide-in-from-right w-full md:w-auto relative",
+          "h-screen bg-content border-border animate-in slide-in-from-right w-full md:w-auto relative",
           !isResizing && "transition-all duration-300"
         )}
-        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : (isMobile || isTablet) ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
+        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : (isMobile || isTablet) ? { width: "100%" } : { width: `${mailReaderWidth}%` }}
+      >
         <MailReaderHeader
           setSummaryDialogOpen={setSummaryDialogOpen}
           setTextToAudioOpen={setTextToAudioOpen}
@@ -195,12 +196,15 @@ export const MailReader = ({
           toggleFullScreen={toggleFullScreen}
           onOpenNotes={handleOpenNotes}
         />
-        <div className="p-md pb-64">
+        <div
+          className="h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar p-md pb-64"
+          ref={mailBodyRef}
+        >
           <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
               {mail.subject}
             </h1>
-        {mailSender &&
+            {mailSender &&
               <div className="flex items-center mb-2 text-sm">
                 <div className="mr-3 flex-shrink-0">
                   <SenderIcon sender={mailSender} width={28} height={28} />
@@ -213,14 +217,13 @@ export const MailReader = ({
                 </div>
               </div>
             }
-            <div ref={mailBodyRef}>
-              <MailBodyViewer htmlContent={mail.body} mailId={mail.id} />
-            </div>
+            <div ref={mailBodyRef}> <MailBodyViewer htmlContent={mail.body} mailId={mail.id} /></div>
             <SelectionPopup />
             <CommentModal />
             <TagModal />
           </div>
         </div>
+
         {textToAudioOpen && <TextToAudio open={textToAudioOpen} onOpenChange={setTextToAudioOpen} containerRef={mailReaderRef} />}
         {summaryDialogOpen && <SummaryDialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen} containerRef={mailReaderRef} />}
       </div>

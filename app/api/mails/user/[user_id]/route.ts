@@ -1,5 +1,3 @@
-// /api/mails/user/[user_id]/route.ts
-
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -57,10 +55,26 @@ export const GET = async (
     );
   }
 
-  // Get the paginated mails for the user
+  // Get the paginated mails with sender details
   const { data, error } = await supabase
     .from("mails")
-    .select("*")
+    .select(
+      `
+        id,
+        created_at,
+        subject,
+        body,
+        read,
+        bookmarked,
+        is_public,
+        sender_id,
+        senders (
+          name,
+          domain,
+          image_url
+        )
+      `
+    )
     .eq("user_id", user_id)
     .order("created_at", { ascending: false })
     .range(start, end);

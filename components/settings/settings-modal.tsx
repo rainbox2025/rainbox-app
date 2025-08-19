@@ -63,9 +63,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     reportIssues: "https://feedback.example.com/issues",
     suggestFeature: "https://feedback.example.com/suggestions",
     helpDoc: "https://help.example.com",
-    contactSupport: "https://support.example.com",
-    roadmap: "https://roadmap.example.com",
-    changelog: "https://changelog.example.com",
+    contactSupport: "team@rainbox.ai",
+    roadmap: "https://rainbox.featurebase.app/roadmap",
+    changelog: "https://rainbox.featurebase.app/changelog",
     plans: "https://plans.example.com",
     visitWebsite: "https://www.example.com",
     followX: "https://twitter.com/example",
@@ -223,11 +223,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() =>
-                          redirectToExternalLink(
-                            redirectDestinations.contactSupport
+                          window.open(
+                            `mailto:${redirectDestinations.contactSupport}`,
+                            "_blank"
                           )
                         }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                        className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
                       >
                         <QuestionMarkCircleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">

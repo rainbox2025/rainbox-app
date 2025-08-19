@@ -483,7 +483,11 @@ export default function Inbox() {
             <FolderIcon className="w-5 h-5 text-muted-foreground" />
             <span className="text-sm font-medium">All</span>
           </div>
-          <span className="text-xs text-muted-foreground">{totalCount}</span>
+          {totalCount > 0 && (
+  <span className="text-xs text-muted-foreground">
+    {totalCount >= 1000 ? `${Math.floor(totalCount / 1000)}K+` : totalCount}
+  </span>
+)}
         </div>
 
         <div className="px-0 py-0 space-y-1">
