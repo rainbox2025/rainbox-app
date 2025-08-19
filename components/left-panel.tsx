@@ -151,25 +151,24 @@ export default function LeftPanel() {
         </Link>
 
         {/* Discover Button - Assuming it navigates somewhere or sets a mode */}
-        {/* <Link href="/discover" passHref> */}
+        {/* <Link href="/discover" passHref>
         <button
-          // onClick={() => setIsAddNewsletterFlowOpen(true)}
+          onClick={() => setIsAddNewsletterFlowOpen(true)}
           className={cn(
             "p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
-            // pathname.startsWith("/discover") && activeClass // Example if /discover is a page
           )}
           title="Discover"
         >
           <SquaresPlusIcon className="w-5 h-5" />
         </button>
-        {/* </Link> */}
+        </Link> */}
 
-        <button
+        {/* <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
           title="Search"
         >
           <MagnifyingGlassIcon className="w-5 h-5" />
-        </button>
+        </button> */}
 
         <button
           className="p-xs rounded-lg hover:bg-hover transition-colors text-muted-foreground hover:text-foreground"
