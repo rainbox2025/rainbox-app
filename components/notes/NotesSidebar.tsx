@@ -25,7 +25,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-[35px] right-0 h-[calc(100%-3rem)] w-[80vw] md:w-[320px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
+            className="fixed top-[35px] right-5 h-[calc(100%-3rem)] w-[80vw] md:w-[320px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
             onClick={(e) => e.stopPropagation()} // Prevents clicks inside the sidebar from closing it
           >
             <div className="flex items-center justify-between p-sm border-b border-border flex-shrink-0">

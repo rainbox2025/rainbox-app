@@ -5,7 +5,7 @@ import { GripVertical } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import moment from "moment";
 import { useBookmarks } from "@/context/bookmarkContext";
-import MailBodyViewer from "../bookmark/mail-body-viewer";
+import MailBodyViewer from "./mail-body-viewer";
 import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
 import TagModal from "@/components/bookmark/tag-modal";
@@ -15,7 +15,8 @@ import { AnimatePresence } from "framer-motion";
 import MailReaderHeader from "./mail-reader-header";
 import TextToAudio from "../ui/text-to-audio";
 import SummaryDialog from "../summary-dialog";
-import { SenderIcon } from '@/components/sidebar/sender-icon'; 
+import { SenderIcon } from '@/components/sidebar/sender-icon';
+import { cn } from "@/lib/utils";
 
 interface MailReaderProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -23,6 +24,8 @@ interface MailReaderProps {
   setMailReaderWidth: (width: number) => void;
   onBack: () => void;
   mail: Mail | null;
+  isResizing: boolean;
+  setIsResizing: (isResizing: boolean) => void;
 }
 
 export const MailReader = ({
@@ -30,14 +33,16 @@ export const MailReader = ({
   mailReaderWidth,
   setMailReaderWidth,
   onBack,
-  mail
+  mail,
+  isResizing,
+  setIsResizing,
 }: MailReaderProps) => {
   const resizeRef = useRef<HTMLDivElement>(null);
   const mailBodyRef = useRef<HTMLDivElement>(null);
   const mailReaderRef = useRef<HTMLDivElement>(null);
   const previousWidthRef = useRef(mailReaderWidth);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const [isResizing, setIsResizing] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [textToAudioOpen, setTextToAudioOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -48,11 +53,10 @@ export const MailReader = ({
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const isTablet = typeof window !== "undefined" && window.innerWidth >= 768 && window.innerWidth < 1024;
-  
-  // Ensure mailSender has an 'id' for the SenderIcon to work correctly
-  const mailSender: any = mail 
-    ? (senders.find(sender => sender.id === mail.sender_id) || 
-      { id: "unknown", name: "Unknown Sender", domain: "unknown.com", image_url: null }) 
+
+  const mailSender: any = mail
+    ? (senders.find(sender => sender.id === mail.sender_id) ||
+      { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url })
     : null;
 
   useEffect(() => {
@@ -66,24 +70,45 @@ export const MailReader = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing || !containerRef?.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const mousePosition = e.clientX - containerRect.left;
-      const mailListWidthPercent = (mousePosition / containerRect.width) * 100;
-      const readerWidthPercent = 100 - mailListWidthPercent;
-      setMailReaderWidth(Math.max(50, Math.min(60, readerWidthPercent)));
-      setIsFullScreen(false);
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const mousePosition = e.clientX - containerRect.left;
+        const mailListWidthPercent = (mousePosition / containerRect.width) * 100;
+        const readerWidthPercent = 100 - mailListWidthPercent;
+
+        setMailReaderWidth(Math.max(50, Math.min(60, readerWidthPercent)));
+        setIsFullScreen(false);
+      });
     };
-    const handleMouseUp = () => { setIsResizing(false); document.body.style.cursor = "default"; };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = "default";
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+
     if (isResizing) {
       document.body.style.cursor = "col-resize";
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [isResizing, containerRef, setMailReaderWidth]);
+  }, [isResizing, containerRef, setMailReaderWidth, setIsResizing]);
 
   const toggleFullScreen = () => {
     if (isFullScreen) {
@@ -148,11 +173,21 @@ export const MailReader = ({
 
   return (
     <>
-      <div ref={resizeRef} className="w-[2px] relative h-screen cursor-col-resize hidden lg:flex items-center justify-center bg-border hover:bg-dragger z-10" onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}>
+      <div
+        ref={resizeRef}
+        className="w-[2px] relative h-screen cursor-col-resize hidden lg:flex items-center justify-center bg-border hover:bg-dragger z-10"
+        onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+      >
         <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-100 text-muted-foreground" />
       </div>
-      <div ref={mailReaderRef} className="h-screen custom-scrollbar bg-content border-border overflow-y-auto transition-all duration-300 animate-in slide-in-from-right w-full md:w-auto relative"
-        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : (isMobile || isTablet) ? { width: "100%" } : { width: `${mailReaderWidth}%` }}>
+      <div
+        ref={mailReaderRef}
+        className={cn(
+          "h-screen bg-content border-border animate-in slide-in-from-right w-full md:w-auto relative",
+          !isResizing && "transition-all duration-300"
+        )}
+        style={isFullScreen && !isMobile ? { width: "96%", position: 'absolute', left: '3rem', zIndex: 100 } : (isMobile || isTablet) ? { width: "100%" } : { width: `${mailReaderWidth}%` }}
+      >
         <MailReaderHeader
           setSummaryDialogOpen={setSummaryDialogOpen}
           setTextToAudioOpen={setTextToAudioOpen}
@@ -161,7 +196,10 @@ export const MailReader = ({
           toggleFullScreen={toggleFullScreen}
           onOpenNotes={handleOpenNotes}
         />
-        <div className="p-md pb-64">
+        <div
+          className="h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar p-md pb-64"
+          ref={mailBodyRef}
+        >
           <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
               {mail.subject}
@@ -169,24 +207,23 @@ export const MailReader = ({
             {mailSender &&
               <div className="flex items-center mb-2 text-sm">
                 <div className="mr-3 flex-shrink-0">
-                  <SenderIcon sender={mailSender} />
+                  <SenderIcon sender={mailSender} width={28} height={28} />
                 </div>
                 <div>
-                  <div className="font-medium">{mailSender.name}</div>
+                  <div className="font-medium">{mailSender.name} <span className="text-muted-foreground">&lt;{mailSender.email}&gt;</span></div>
                   <div className="text-muted-foreground text-xs">
                     {moment(mail.created_at).format("MMM D, YYYY [at] h:mm A")}
                   </div>
                 </div>
               </div>
             }
-            <div ref={mailBodyRef}>
-              <MailBodyViewer htmlContent={mail.body} mailId={mail.id} />
-            </div>
+            <div ref={mailBodyRef}> <MailBodyViewer htmlContent={mail.body} mailId={mail.id} /></div>
             <SelectionPopup />
             <CommentModal />
             <TagModal />
           </div>
         </div>
+
         {textToAudioOpen && <TextToAudio open={textToAudioOpen} onOpenChange={setTextToAudioOpen} containerRef={mailReaderRef} />}
         {summaryDialogOpen && <SummaryDialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen} containerRef={mailReaderRef} />}
       </div>

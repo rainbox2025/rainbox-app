@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useBookmarks, Bookmark as BookmarkType } from "@/context/bookmarkContext";
 import { BookmarkedItemsList } from "@/components/bookmark/bookmarked-item-list";
 import { MailReader } from "@/components/mails/mail-reader";
@@ -20,6 +20,7 @@ const BookmarkPage = () => {
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
   const [isFetchingMail, setIsFetchingMail] = useState(false);
   const [readerWidth, setReaderWidth] = useState(50);
+  const [isResizing, setIsResizing] = useState(false); // ✅ added
   const containerRef = useRef<HTMLDivElement>(null);
 
   const bookmarksToDisplay = allBookmarksFromContext;
@@ -28,9 +29,7 @@ const BookmarkPage = () => {
     setSelectedBookmarkInList(bookmarkToOpen);
     setSelectedMail(null);
 
-    if (!bookmarkToOpen.mailId) {
-      return;
-    }
+    if (!bookmarkToOpen.mailId) return;
 
     let mailToDisplay = mails.find(mail => mail.id === bookmarkToOpen.mailId);
 
@@ -66,6 +65,7 @@ const BookmarkPage = () => {
 
   return (
     <div className="flex w-full h-screen overflow-x-auto" ref={containerRef}>
+      {/* Left panel */}
       <div
         className={cn(
           "flex flex-col h-full transition-all duration-300 ease-in-out",
@@ -111,6 +111,7 @@ const BookmarkPage = () => {
         </div>
       </div>
 
+      {/* Right panel (Mail Reader) */}
       {showReader && (
         isFetchingMail ? (
           <div className="flex-1 w-full flex justify-center items-center">
@@ -123,6 +124,8 @@ const BookmarkPage = () => {
             setMailReaderWidth={setReaderWidth}
             onBack={handleBack}
             mail={mailFromContext}
+            isResizing={isResizing}          
+            setIsResizing={setIsResizing}    
           />
         )
       )}

@@ -40,9 +40,9 @@ const TextToAudio = ({
   const mailSender: any = selectedMail
     ? senders.find(s => s.id === selectedMail.sender_id) || {
       id: selectedMail.sender_id || 'unknown',
-      name: selectedMail.sender || 'Unknown Sender',
-      image_url: null,
-      domain: '' // Add other required fields with defaults
+      name: selectedMail.senders.name,
+      image_url: selectedMail.senders.image_url || null,
+      domain: selectedMail.senders.domain || ''
     }
     : null;
 
@@ -80,7 +80,7 @@ const TextToAudio = ({
         for await (const chunk of audioStream) {
           chunks.push(chunk);
         }
-        const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
+        const audioBlob = new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(audioBlob);
 
         // 4. Create, configure, and play the audio element
