@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ExclamationTriangleIcon,
@@ -114,10 +115,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 w-screen z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 w-screen z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -301,4 +302,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };

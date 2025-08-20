@@ -67,7 +67,7 @@ export const AddNewsletterModal: React.FC<AddNewsletterModalProps> = ({
       onClose={onClose}
       title="Add a Newsletter to Rainbox"
     >
-      <div className="flex flex-col max-h-[75vh]">
+      <div className="flex flex-col max-h-[75vh] ">
         <div className="flex-grow overflow-y-auto pr-2 space-y-6 custom-scrollbar">
           <Image
             src="/newsletter-placeholder.png"

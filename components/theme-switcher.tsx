@@ -28,7 +28,7 @@ const ThemeSwitcher = () => {
   const ICON_SIZE = 16;
 
   return (
-    <div className="z-[100]">
+    <div className="z-[10000]">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size={"sm"}>
@@ -53,7 +53,7 @@ const ThemeSwitcher = () => {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-content bg-content" align="start">
+        <DropdownMenuContent className="w-content bg-content z-[10000]" align="start">
           <DropdownMenuRadioGroup
             value={theme}
             onValueChange={(e) => setTheme(e)}

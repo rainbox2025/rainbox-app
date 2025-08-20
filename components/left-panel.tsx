@@ -30,6 +30,7 @@ import { AddNewsletterFlow } from "./newsletter/flow";
 import { cn } from "@/lib/utils"; // Ensure you have cn utility
 import { GmailConnection } from "./GmailConnection";
 import { GmailOnboarding } from "./GmailOnboarding";
+import ReactDOM from "react-dom";
 
 // Define an active class name or use Tailwind's group/peer for active state
 const activeClass = "bg-hovered  "; // Example active style
@@ -54,6 +55,7 @@ export default function LeftPanel() {
   const userModalRef = useRef<HTMLDivElement>(null);
   const emailModalRef = useRef<HTMLDivElement>(null);
   const themeModalRef = useRef<HTMLDivElement>(null);
+  const themeModalPortalRef = useRef<HTMLDivElement>(null); // <-- add this
 
   // Reset states when changing main sections
   const handleSectionChange = () => {
@@ -92,8 +94,8 @@ export default function LeftPanel() {
       }
       if (
         showThemeModal &&
-        themeModalRef.current &&
-        !themeModalRef.current.contains(event.target as Node)
+        themeModalPortalRef.current && // <-- use the portal ref here
+        !themeModalPortalRef.current.contains(event.target as Node)
       ) {
         setShowThemeModal(false);
       }
@@ -107,6 +109,54 @@ export default function LeftPanel() {
   const toggleUserModal = () => setShowUserModal((prev) => !prev);
   const toggleEmailModal = () => setShowEmailModal((prev) => !prev);
   const toggleThemeModal = () => setShowThemeModal((prev) => !prev);
+
+  const themeModalContent = showThemeModal ? (
+    <div ref={themeModalPortalRef} className="fixed left-16 bottom-24 z-[10000]">
+      <div className="bg-content rounded-lg shadow-md p-xs">
+        <div className="flex flex-col gap-xs w-32">
+          <button
+            onClick={() => {
+              setTheme("light");
+              setShowThemeModal(false);
+            }}
+            className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "light"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground"
+              }`}
+          >
+            <SunIcon className="w-4 h-4" />
+            <span className="text-xs">Light</span>
+          </button>
+          <button
+            onClick={() => {
+              setTheme("dark");
+              setShowThemeModal(false);
+            }}
+            className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "dark"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground"
+              }`}
+          >
+            <MoonIcon className="w-4 h-4" />
+            <span className="text-xs">Dark</span>
+          </button>
+          <button
+            onClick={() => {
+              setTheme("system");
+              setShowThemeModal(false);
+            }}
+            className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "system"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground"
+              }`}
+          >
+            <ComputerDesktopIcon className="w-4 h-4" />
+            <span className="text-xs">System</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -194,55 +244,6 @@ export default function LeftPanel() {
               <ComputerDesktopIcon className="w-5 h-5" />
             )}
           </button>
-          {showThemeModal && (
-            <div className="absolute left-14 bottom-0 z-40">
-              <div className="bg-content rounded-lg shadow-md p-xs">
-                <div className="flex flex-col gap-xs w-32">
-                  <button
-                    onClick={() => {
-                      setTheme("light");
-                      setShowThemeModal(false);
-                    }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "light"
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                      }`}
-                  >
-                    <SunIcon className="w-4 h-4" />
-                    <span className="text-xs">Light</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setTheme("dark");
-                      setShowThemeModal(false);
-                    }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "dark"
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                      }`}
-                  >
-                    <MoonIcon className="w-4 h-4" />
-                    <span className="text-xs">Dark</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setTheme("system");
-                      setShowThemeModal(false);
-                    }}
-                    className={`flex items-center gap-md p-xs rounded hover:bg-hover ${theme === "system"
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                      }`}
-                  >
-                    <ComputerDesktopIcon className="w-4 h-4" />
-                    <span className="text-xs">System</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <button
@@ -330,6 +331,7 @@ export default function LeftPanel() {
         onClose={() => setIsAddNewsletterFlowOpen(false)}
       />
       {/* <GmailConnection /> */}
+      {ReactDOM.createPortal(themeModalContent, document.body)}
     </>
   );
 }

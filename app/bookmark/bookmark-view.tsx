@@ -10,6 +10,7 @@ import { Loader2, Menu, X } from "lucide-react";
 import { BookOpenIcon as OutlineBookOpenIcon } from "@heroicons/react/24/outline";
 import { useSidebar } from "@/context/sidebarContext";
 import { cn } from "@/lib/utils";
+import { MailItemSkeleton } from "@/components/mails-loader";
 
 const BookmarkPage = () => {
   const { bookmarks: allBookmarksFromContext, isLoading: isLoadingBookmarks } = useBookmarks();
@@ -19,7 +20,7 @@ const BookmarkPage = () => {
 
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
   const [isFetchingMail, setIsFetchingMail] = useState(false);
-  const [readerWidth, setReaderWidth] = useState(50);
+  const [readerWidth, setReaderWidth] = useState(60);
   const [isResizing, setIsResizing] = useState(false); // ✅ added
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,13 +54,18 @@ const BookmarkPage = () => {
     setSelectedMail(null);
   };
 
+
+  
+
   if (isLoadingBookmarks || isMailsLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen w-full">
-        <Loader2 className="animate-spin w-8 h-8 text-primary" />
-      </div>
-    );
-  }
+  return (
+    <div className="flex flex-col">
+      {Array(8).fill(0).map((_, i) => (
+        <MailItemSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
 
   const showReader = selectedBookmarkInList && (mailFromContext || isFetchingMail);
 

@@ -53,7 +53,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
   };
 
   return (
-    <div>
+    <div >
       <AddNewsletterModal
         isOpen={activeModal === 'addNewsletter'}
         onClose={closeModal}

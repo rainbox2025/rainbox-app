@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   XMarkIcon,
@@ -87,14 +88,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     // All other tabs will redirect to external links
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+  const modalContent = (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw] z-[10000]"
+      style={{ zIndex: 10000 }}
+    >
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-[90vw] md:w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
+          className="bg-card text-card-foreground rounded-lg shadow-xl w-[90vw] md:w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col relative z-[10000]"
+          style={{ zIndex: "10000 !important" }}
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
@@ -106,29 +111,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("account")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "account" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "account"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Account
-                        </span>
+                        <span className="text-sm hidden md:inline">Account</span>
                       </button>
                     </li>
                     <li>
                       <button
                         onClick={() => setActiveTab("mailbox")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "mailbox" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "mailbox"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <EnvelopeIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Mailbox
-                        </span>
+                        <span className="text-sm hidden md:inline">Mailbox</span>
                       </button>
                     </li>
                     <li>
                       <button
                         onClick={() => setActiveTab("preferences")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "preferences" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "preferences"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <Cog6ToothIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -139,7 +152,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("notification")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "notification" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "notification"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <BellIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -150,12 +167,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("billing")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "billing" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "billing"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <BillingIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Billing
-                        </span>
+                        <span className="text-sm hidden md:inline">Billing</span>
                       </button>
                     </li>
                   </ul>
@@ -167,15 +186,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 {/* Help & Support */}
                 <div className="mb-2">
                   <ul className="space-y-1">
-                     <li>
-  <button
-    onClick={() => setIsFeedbackOpen(true)}
-    className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
-  >
-    <ExclamationTriangleIcon className="h-5 w-5" />
-    <span className="text-sm hidden md:inline">Feedback 🡥</span>
-  </button>
-</li>
+                    <li>
+                      <button
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
+                      >
+                        <ExclamationTriangleIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Feedback 🡥
+                        </span>
+                      </button>
+                    </li>
                     <li>
                       <button
                         onClick={() =>
@@ -189,7 +210,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </button>
                     </li>
-                     <li>
+                    <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.changelog)
@@ -270,7 +291,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 {/* Product Info */}
                 <div className="mb-2">
                   <ul className="space-y-1">
-                    <li>
+                    {/* <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.plans)
@@ -282,8 +303,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           Plans 🡥
                         </span>
                       </button>
-                    </li>
-                     <li>
+                    </li> */}
+                    <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(
@@ -298,7 +319,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </button>
                     </li>
-  <li>
+                    <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.followX)
@@ -324,11 +345,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </button>
                     </li>
-
                   </ul>
                 </div>
-
-               
               </div>
             </div>
 
@@ -346,11 +364,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
         </motion.div>
       </AnimatePresence>
       <FeedbackModal
-  isOpen={isFeedbackOpen}
-  onClose={() => setIsFeedbackOpen(false)}
-/>
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+      />
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default SettingsModal;

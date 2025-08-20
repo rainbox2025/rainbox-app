@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CloseIcon } from './icons';
+import ReactDOM from 'react-dom';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -24,8 +24,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     return null;
   }
 
-  return (
-    <div className="fixed w-screen inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2">
+  const modalContent = (
+    <div className="fixed w-screen inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -63,4 +63,6 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       </AnimatePresence>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };

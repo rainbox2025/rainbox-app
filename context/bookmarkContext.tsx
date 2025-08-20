@@ -130,6 +130,7 @@ interface BookmarkContextType {
   activeTagModal: ActiveTagModalData | null;
   showTagModal: (bookmarkId: string, rect: DOMRect) => void;
   hideTagModal: () => void;
+  fetchAllData: () => Promise<void>;
   getSerializedRange: (
     range: Range,
     rootElement: HTMLElement
@@ -192,6 +193,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAllData = useCallback(async () => {
     try {
+      setIsLoading(true);
       const [bookmarksResponse, tagsResponse] = await Promise.all([
         api.get<ApiBookmark[]>("/bookmarks"),
         api.get<TagWithCount[]>("/bookmarks/tags"),
@@ -588,6 +590,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         hideTagModal,
         updateBookmarkTags,
         renameTagGlobally,
+        fetchAllData,
         deleteTagGlobally,
       }}
     >
