@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react"; // Added useEffect
 import { useBookmarks } from "@/context/bookmarkContext";
-import { Edit3, Trash2 } from "lucide-react";
+import { Edit3, RefreshCcw, Trash2 } from "lucide-react";
 import {
   BookOpenIcon,
   PencilSquareIcon,
@@ -17,9 +17,10 @@ import { BasicModal } from "@/components/modals/basic-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-modal";
 import { DropdownMenu, DropdownItem } from "@/components/modals/dropdown-menu";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
+import { Skeleton } from "../ui/skeleton";
 
 const BookmarkSidebarContent = () => {
-  const { bookmarks, allTags, renameTagGlobally, deleteTagGlobally, isTagRenameLoading, isTagDeleteLoading } = useBookmarks();
+  const { bookmarks, allTags, renameTagGlobally,isLoading, deleteTagGlobally, isTagRenameLoading, isTagDeleteLoading, fetchAllData } = useBookmarks();
 
   const [activeTagMenu, setActiveTagMenu] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<{
@@ -112,6 +113,22 @@ const BookmarkSidebarContent = () => {
     },
   ];
 
+    if (isLoading) {
+      return (
+        <div className="flex-1 text-foreground rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-6 w-6 rounded-full" />
+          </div>
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="mb-3">
+              <Skeleton className="h-6 w-full" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
   return (
     // Replaced fragment with a div and applied the new style
     <div style={containerStyle}>
@@ -120,6 +137,19 @@ const BookmarkSidebarContent = () => {
           <h3 className="font-medium text-sm text-muted-foreground">
             Bookmarks
           </h3>
+           <button
+                      className="p-xs rounded-full hover:bg-muted transition-colors"
+                      onClick={async () => {
+                        await fetchAllData();
+                      }}
+                      title="Refresh"
+                    >
+                      {isLoading ? (
+                        <RefreshCcw className="w-4 h-4 text-muted-foreground animate-spin" />
+                      ) : (
+                        <RefreshCcw className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
         </div>
 
         <nav className="space-y-sm p-sm pt-0 flex-grow overflow-y-auto custom-scrollbar">
