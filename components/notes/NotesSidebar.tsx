@@ -40,7 +40,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <div className="p-md space-y-md">
+              <div className="p-sm space-y-sm pr-0">
                 {notesForMail.length > 0 ? (
                   notesForMail.map((note, index) => (
                     <React.Fragment key={note.id}>
@@ -49,7 +49,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
                         onClick={() => onNoteClick(note.id)}
                         title="Click to scroll to highlight"
                       >
-                        <blockquote className="border-l-4 border-yellow-400 pl-4 py-2 bg-yellow-400/10 rounded-r-md mb-2">
+                        <blockquote className="border-l-4 border-yellow-400 p-2 bg-yellow-400/10 rounded-r-md mb-2">
                           <p className="text-sm text-foreground break-words" style={{ whiteSpace: 'pre-wrap' }}>
                             {note.text}
                           </p>
