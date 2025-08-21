@@ -1,36 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ExclamationTriangleIcon,
   LightBulbIcon,
   ChatBubbleOvalLeftIcon,
   XMarkIcon,
   ArrowPathIcon,
-} from '@heroicons/react/24/outline';
-import { useSettings } from '@/context/settingsContext'; // Import the context hook
+} from "@heroicons/react/24/outline";
+import { useSettings } from "@/context/settingsContext"; // Import the context hook
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const feedbackCategories = [
-  { name: 'Issues', icon: ExclamationTriangleIcon },
-  { name: 'Suggestions', icon: LightBulbIcon },
-  { name: 'Other', icon: ChatBubbleOvalLeftIcon },
+export const feedbackCategories = [
+  { name: "Issues", icon: ExclamationTriangleIcon },
+  { name: "Suggestions", icon: LightBulbIcon },
+  { name: "Other", icon: ChatBubbleOvalLeftIcon },
 ];
 
-export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
+export const FeedbackModal: React.FC<FeedbackModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { submitFeedback } = useSettings(); // Use the context function
-  const [selectedCategory, setSelectedCategory] = useState<string>(feedbackCategories[0].name);
-  const [message, setMessage] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    feedbackCategories[0].name
+  );
+  const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setSelectedCategory(feedbackCategories[0].name);
-      setMessage('');
+      setMessage("");
       setIsLoading(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
@@ -43,10 +48,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     const fullFeedback = `${selectedCategory}: ${message}`;
 
     try {
-      await submitFeedback(fullFeedback);
+      await submitFeedback(message, selectedCategory);
       onClose();
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      console.error("Error submitting feedback:", error);
       // Optionally, show an error message to the user here
     } finally {
       setIsLoading(false);
@@ -86,12 +91,15 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                   return (
                     <button
                       key={category.name}
-                      onClick={() => !isLoading && setSelectedCategory(category.name)}
+                      onClick={() =>
+                        !isLoading && setSelectedCategory(category.name)
+                      }
                       disabled={isLoading}
-                      className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-colors ${isSelected
-                        ? 'bg-secondary border-ring text-secondary-foreground'
-                        : 'bg-content border-border text-muted-foreground hover:bg-hovered'
-                        } ${isLoading ? 'cursor-not-allowed opacity-70' : ''}`}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-colors ${
+                        isSelected
+                          ? "bg-secondary border-ring text-secondary-foreground"
+                          : "bg-content border-border text-muted-foreground hover:bg-hovered"
+                      } ${isLoading ? "cursor-not-allowed opacity-70" : ""}`}
                     >
                       <IconComponent className="h-6 w-6 mb-1.5" />
                       <span className="text-xs font-medium">
@@ -130,7 +138,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                   {isLoading ? (
                     <ArrowPathIcon className="animate-spin h-5 w-5" />
                   ) : (
-                    'Submit Feedback'
+                    "Submit Feedback"
                   )}
                 </button>
               </div>
