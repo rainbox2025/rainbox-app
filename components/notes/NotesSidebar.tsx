@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useBookmarks } from '@/context/bookmarkContext';
+import { useMails } from '@/context/mailsContext'; // Import useMails
 
 interface NotesSidebarProps {
   isOpen: boolean;
@@ -14,9 +15,17 @@ interface NotesSidebarProps {
 
 const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, onNoteClick }) => {
   const { bookmarks } = useBookmarks();
+  const { mails } = useMails(); // Get all mails
 
   const sortedNotesForMail = useMemo(() => {
-    const notes = bookmarks.filter(b => b.mailId === mailId && b.isConfirmed);
+    // Find the mail object to get its subject
+    const currentMail = mails.find(m => m.id === mailId);
+    const mailSubject = currentMail?.subject.trim();
+
+    const notes = bookmarks
+      .filter(b => b.mailId === mailId && b.isConfirmed)
+      // FIX: Filter out any bookmarks where the text is identical to the mail subject
+      .filter(b => b.text.trim() !== mailSubject);
 
     const comparePaths = (pathA: number[], pathB: number[]): number => {
       const len = Math.min(pathA.length, pathB.length);
@@ -36,7 +45,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
       }
       return a.serializedRange.start.offset - b.serializedRange.start.offset;
     });
-  }, [bookmarks, mailId]);
+  }, [bookmarks, mailId, mails]);
 
 
   return (

@@ -25,7 +25,7 @@ const formatRelativeTime = (date: string | number): string => {
 };
 
 interface Props {
-  bookmark: BookmarkType; // This is now a representative bookmark for a mail
+  bookmark: BookmarkType; 
   isSelected: boolean;
   onSelect: () => void;
 }
@@ -35,17 +35,17 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
   const { senders } = useSenders();
   const { removeBookmark } = useBookmarks();
 
-  // Find the mail and sender info using the representative bookmark's mailId
+  
   const mailObject = bookmark.mailId ? mails.find(m => m.id === bookmark.mailId) : null;
   const resolvedSender = mailObject ? senders.find(s => s.id === mailObject.sender_id) : null;
 
-  // FIX: The title is now always the mail's subject.
+  
   const title = mailObject?.subject || "Bookmarked Email";
   const mailSenderName = resolvedSender?.name || "Unknown Sender";
 
-  // When removing, we still use the representative bookmark's ID,
-  // but the context logic should handle removing all related items if needed.
-  // For now, it will just remove this one highlight.
+  
+  
+  
   const handleRemoveBookmarkClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     removeBookmark(bookmark.id);

@@ -37,7 +37,7 @@ const getNodeFromPath = (path: number[], root: Node): Node | null => {
   return node;
 };
 
-// --- INTERFACES (UNCHANGED) ---
+// --- INTERFACES ---
 type ActiveAction = {
   id: string;
   type: 'confirm' | 'comment_open' | 'tag_open' | 'comment_save' | 'tag_update' | 'remove';
@@ -186,7 +186,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const api = useAxios();
   const { accessToken } = useAuth();
   const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
-  const { bookmark: bookmarkMail } = useMails();
+  const { bookmark: bookmarkMail, refreshMails } = useMails();
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -311,24 +311,26 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     [getSerializedRange]
   );
 
-  const removeBookmark = useCallback(
+ const removeBookmark = useCallback(
     async (bookmarkId: string) => {
       const originalBookmarks = bookmarks;
       setActiveAction({ id: bookmarkId, type: 'remove' });
+      // Optimistically remove the bookmark from the local state
       setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
       hidePopup();
 
       try {
         await api.delete("/bookmarks/remove", { data: { bookmarkId } });
-        await fetchAllData();
+        // After successful deletion, refresh the main mail list to sync state (e.g., the bookmark icon)
+        await refreshMails();
       } catch (error) {
         console.error("Failed to remove bookmark:", error);
-        setBookmarks(originalBookmarks);
+        setBookmarks(originalBookmarks); // Rollback on error
       } finally {
         setActiveAction(null);
       }
     },
-    [api, bookmarks, fetchAllData]
+    [api, bookmarks, refreshMails]
   );
 
   const getBookmarkById = useCallback(
@@ -342,12 +344,14 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       const originalBookmarks = bookmarks;
       const normalizedComment = commentText.trim() || undefined;
 
+      // Optimistically update the comment in the local state
       setBookmarks((prev) =>
         prev.map((b) => (b.id === bookmarkId ? { ...b, comment: normalizedComment } : b))
       );
       try {
         await api.put("/bookmarks/comment", { bookmarkId, commentText: normalizedComment || null });
-        await fetchAllData(); // Refresh data to get latest state
+        // After updating, refetch all bookmarks to ensure the local state is in sync with the database
+        await fetchAllData();
       } catch (error) {
         console.error("Failed to update comment:", error);
         setBookmarks(originalBookmarks);
@@ -364,11 +368,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       const originalBookmarks = bookmarks;
       const cleanedTags = Array.from(new Set(newTags.map(t => t.toLowerCase().trim()).filter(Boolean))).sort();
 
+      // Optimistically update tags in the local state
       setBookmarks(prev => prev.map(b => (b.id === bookmarkId ? { ...b, tags: cleanedTags } : b)));
 
       try {
         await api.put("/bookmarks/tags", { bookmarkId, newTags: cleanedTags });
-        await fetchAllData(); // Refresh data to get latest state
+        // After updating, refetch all bookmarks to ensure the local state is in sync
+        await fetchAllData();
       } catch (error) {
         console.error("Failed to update tags:", error);
         setBookmarks(originalBookmarks);
@@ -399,6 +405,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       
       const originalBookmarks = bookmarks;
       try {
+        // Optimistic update
         setBookmarks((prev) =>
           prev.map((bm) => ({
             ...bm,
@@ -439,6 +446,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       }
       const originalBookmarks = bookmarks;
       try {
+        // Optimistic update
         setBookmarks((prev) =>
           prev.map((bm) => ({
             ...bm,
@@ -491,14 +499,11 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         await bookmarkMail(bookmarkToSave.mailId, true);
       }
       
-      // Replace the temporary bookmark with the final one from the server
       setBookmarks((prev) =>
         prev.map((b) =>
           b.id === bookmarkToSave.id ? mapApiBookmarkToLocal(serverBookmark) : b
         )
       );
-
-      // Return the final server-persisted bookmark ID
       return serverBookmark.id;
     },
     [api, bookmarkMail]

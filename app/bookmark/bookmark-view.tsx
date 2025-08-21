@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useBookmarks, Bookmark as BookmarkType } from "@/context/bookmarkContext";
 import { BookmarkedItemsList } from "@/components/bookmark/bookmarked-item-list";
 import { MailReader } from "@/components/mails/mail-reader";
@@ -24,11 +24,31 @@ const BookmarkPage = () => {
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // FIX: Group bookmarks by mailId to show one entry per mail.
-  // The representative bookmark for each mail will be the most recently created one.
+  const handleBack = () => {
+    setSelectedBookmarkInList(null);
+    setSelectedMail(null);
+  };
+
+  useEffect(() => {
+    // FIX: On initial mount or when navigating to this page, ensure the reader is closed.
+    handleBack();
+  }, []);
+
+  useEffect(() => {
+    // FIX: If the currently viewed mail no longer has any bookmarks, close the reader.
+    if (mailFromContext) {
+      const hasBookmarksForCurrentMail = allBookmarksFromContext.some(
+        (b) => b.mailId === mailFromContext.id
+      );
+      if (!hasBookmarksForCurrentMail) {
+        handleBack();
+      }
+    }
+  }, [allBookmarksFromContext, mailFromContext]);
+
   const bookmarksToDisplay = useMemo(() => {
     const sortedBookmarks = [...allBookmarksFromContext]
-      .filter(b => b.mailId) // Only include bookmarks associated with a mail
+      .filter(b => b.mailId)
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
     const mailBookmarksMap = new Map<string, BookmarkType>();
@@ -62,11 +82,6 @@ const BookmarkPage = () => {
         setIsFetchingMail(false);
       }
     }
-  };
-
-  const handleBack = () => {
-    setSelectedBookmarkInList(null);
-    setSelectedMail(null);
   };
 
   if (isLoadingBookmarks || isMailsLoading) {
