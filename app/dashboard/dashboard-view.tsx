@@ -11,13 +11,18 @@ import { cn } from "@/lib/utils";
 
 const Page = () => {
   const [filter, setFilter] = useState("all");
-  const { mails, selectedMail, isMailsLoading, isFetchingMore, loadMoreMails } = useMails();
+  const { mails, selectedMail, setSelectedMail, isMailsLoading, isFetchingMore, loadMoreMails } = useMails();
   const [filteredMails, setFilteredMails] = useState<Mail[]>(mails);
   const [mailReaderWidth, setMailReaderWidth] = useState(60);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mailListVisible, setMailListVisible] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    // FIX: Ensure the mail reader is closed when the page loads or is refreshed.
+    setSelectedMail(null);
+  }, [setSelectedMail]);
 
   useEffect(() => {
     const handleResize = () => {

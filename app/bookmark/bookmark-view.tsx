@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useBookmarks, Bookmark as BookmarkType } from "@/context/bookmarkContext";
 import { BookmarkedItemsList } from "@/components/bookmark/bookmarked-item-list";
 import { MailReader } from "@/components/mails/mail-reader";
@@ -21,10 +21,45 @@ const BookmarkPage = () => {
   const [selectedBookmarkInList, setSelectedBookmarkInList] = useState<BookmarkType | null>(null);
   const [isFetchingMail, setIsFetchingMail] = useState(false);
   const [readerWidth, setReaderWidth] = useState(60);
-  const [isResizing, setIsResizing] = useState(false); // ✅ added
+  const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const bookmarksToDisplay = allBookmarksFromContext;
+  const handleBack = () => {
+    setSelectedBookmarkInList(null);
+    setSelectedMail(null);
+  };
+
+  useEffect(() => {
+    // FIX: On initial mount or when navigating to this page, ensure the reader is closed.
+    handleBack();
+  }, []);
+
+  useEffect(() => {
+    // FIX: If the currently viewed mail no longer has any bookmarks, close the reader.
+    if (mailFromContext) {
+      const hasBookmarksForCurrentMail = allBookmarksFromContext.some(
+        (b) => b.mailId === mailFromContext.id
+      );
+      if (!hasBookmarksForCurrentMail) {
+        handleBack();
+      }
+    }
+  }, [allBookmarksFromContext, mailFromContext]);
+
+  const bookmarksToDisplay = useMemo(() => {
+    const sortedBookmarks = [...allBookmarksFromContext]
+      .filter(b => b.mailId)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    const mailBookmarksMap = new Map<string, BookmarkType>();
+    sortedBookmarks.forEach(bookmark => {
+      if (bookmark.mailId && !mailBookmarksMap.has(bookmark.mailId)) {
+        mailBookmarksMap.set(bookmark.mailId, bookmark);
+      }
+    });
+
+    return Array.from(mailBookmarksMap.values());
+  }, [allBookmarksFromContext]);
 
   const handleSelectBookmark = async (bookmarkToOpen: BookmarkType) => {
     setSelectedBookmarkInList(bookmarkToOpen);
@@ -49,35 +84,24 @@ const BookmarkPage = () => {
     }
   };
 
-  const handleBack = () => {
-    setSelectedBookmarkInList(null);
-    setSelectedMail(null);
-  };
-
-
-  
-
   if (isLoadingBookmarks || isMailsLoading) {
-  return (
-    <div className="flex flex-col">
-      {Array(8).fill(0).map((_, i) => (
-        <MailItemSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
+    return (
+      <div className="flex flex-col">
+        {Array(8).fill(0).map((_, i) => (
+          <MailItemSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
 
   const showReader = selectedBookmarkInList && (mailFromContext || isFetchingMail);
 
   return (
     <div className="flex w-full h-screen overflow-x-auto" ref={containerRef}>
-      {/* Left panel */}
       <div
         className={cn(
           "flex flex-col h-full transition-all duration-300 ease-in-out",
-          showReader
-            ? "hidden lg:block lg:w-[50%]"
-            : "w-full",
+          showReader ? "hidden lg:block lg:w-[50%]" : "w-full",
         )}
         style={{
           width: showReader && window.innerWidth >= 1024 ? `${100 - readerWidth}%` : undefined,
@@ -89,11 +113,7 @@ const BookmarkPage = () => {
             className="p-1 rounded-full mr-2 md:hidden"
             aria-label="Toggle sidebar"
           >
-            {isSidebarOpen ? (
-              <X className="w-5 h-5 text-muted-foreground" />
-            ) : (
-              <Menu className="w-5 h-5 text-muted-foreground" />
-            )}
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <h1 className="font-semibold text-md truncate text-muted-foreground ml-2">
             Bookmarks
@@ -117,7 +137,6 @@ const BookmarkPage = () => {
         </div>
       </div>
 
-      {/* Right panel (Mail Reader) */}
       {showReader && (
         isFetchingMail ? (
           <div className="flex-1 w-full flex justify-center items-center">
@@ -130,8 +149,8 @@ const BookmarkPage = () => {
             setMailReaderWidth={setReaderWidth}
             onBack={handleBack}
             mail={mailFromContext}
-            isResizing={isResizing}          
-            setIsResizing={setIsResizing}    
+            isResizing={isResizing}
+            setIsResizing={setIsResizing}
           />
         )
       )}

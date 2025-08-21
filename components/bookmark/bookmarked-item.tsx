@@ -6,11 +6,9 @@ import { cn } from '@/lib/utils';
 import { Bookmark as BookmarkType, useBookmarks } from '@/context/bookmarkContext';
 import { useMails } from '@/context/mailsContext';
 import { useSenders } from '@/context/sendersContext';
-import { SenderType } from '@/types/data';
 import { Bookmark as BookmarkIconLucide } from 'lucide-react';
 import { SenderIcon } from '@/components/sidebar/sender-icon';
 
-// Copied from MailItem for consistent date formatting
 const formatRelativeTime = (date: string | number): string => {
   const dateMoment = moment(date);
   const now = moment();
@@ -26,9 +24,8 @@ const formatRelativeTime = (date: string | number): string => {
   return `${weeks}w`;
 };
 
-
 interface Props {
-  bookmark: BookmarkType;
+  bookmark: BookmarkType; 
   isSelected: boolean;
   onSelect: () => void;
 }
@@ -38,12 +35,17 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
   const { senders } = useSenders();
   const { removeBookmark } = useBookmarks();
 
+  
   const mailObject = bookmark.mailId ? mails.find(m => m.id === bookmark.mailId) : null;
   const resolvedSender = mailObject ? senders.find(s => s.id === mailObject.sender_id) : null;
 
-  const title = mailObject?.subject || bookmark.text.substring(0, 70) + (bookmark.text.length > 70 ? '...' : '');
-  const mailSenderName = bookmark.sender_name || resolvedSender?.name || "Web Highlight";
+  
+  const title = mailObject?.subject || "Bookmarked Email";
+  const mailSenderName = resolvedSender?.name || "Unknown Sender";
 
+  
+  
+  
   const handleRemoveBookmarkClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     removeBookmark(bookmark.id);
@@ -94,11 +96,11 @@ export const BookmarkedItem: React.FC<Props> = ({ bookmark, isSelected, onSelect
               {mailSenderName}
             </p>
           </div>
-           {bookmark.createdAt !== undefined && (
-  <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
-    {formatRelativeTime(bookmark.createdAt)}
-  </p>
-)}
+          {bookmark.createdAt !== undefined && (
+            <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+              {formatRelativeTime(bookmark.createdAt)}
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import MailBodyViewer from "./mail-body-viewer";
 import SelectionPopup from "@/components/bookmark/selection-modal";
 import CommentModal from "../bookmark/comment-modal";
 import TagModal from "@/components/bookmark/tag-modal";
-import { Mail, SenderType } from "@/types/data";
+import { Mail } from "@/types/data";
 import NotesSidebar from "../notes/NotesSidebar";
 import { AnimatePresence } from "framer-motion";
 import MailReaderHeader from "./mail-reader-header";
@@ -56,7 +56,7 @@ export const MailReader = ({
 
   const mailSender: any = mail
     ? (senders.find(sender => sender.id === mail.sender_id) ||
-      { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url })
+      { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url, email: mail.sender })
     : null;
 
   useEffect(() => {
@@ -152,13 +152,16 @@ export const MailReader = ({
         top: scrollTop - 100,
         behavior: 'smooth',
       });
-
-      elementToScrollTo.style.transition = 'background-color 0.5s ease-in-out';
-      elementToScrollTo.style.backgroundColor = 'rgba(255, 235, 59, 0.3)';
+      
+      const highlights = rootElement.querySelectorAll(`[data-bookmark-id="${bookmarkId}"]`);
+      highlights.forEach((el: any) => {
+        el.style.transition = 'background-color 0.5s ease-in-out';
+        el.style.backgroundColor = 'rgba(255, 235, 59, 0.3)';
+      });
       setTimeout(() => {
-        if (elementToScrollTo) {
-          elementToScrollTo.style.backgroundColor = '';
-        }
+        highlights.forEach((el: any) => {
+          el.style.backgroundColor = '';
+        });
       }, 1500);
     }
   };
@@ -197,10 +200,12 @@ export const MailReader = ({
           onOpenNotes={handleOpenNotes}
         />
         <div
-          className="h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar p-md pb-64"
-          ref={mailBodyRef}
+          className="h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar"
         >
-          <div className={`${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}>
+          <div
+            ref={mailBodyRef}
+            className={`p-md pb-64 ${isFullScreen ? 'max-w-xl mx-auto' : 'w-full'}`}
+          >
             <h1 className="text-lg font-semibold text-left w-full p-sm pl-0">
               {mail.subject}
             </h1>
@@ -217,7 +222,7 @@ export const MailReader = ({
                 </div>
               </div>
             }
-            <div ref={mailBodyRef}> <MailBodyViewer htmlContent={mail.body} mailId={mail.id} /></div>
+            <MailBodyViewer key={mail.id} htmlContent={mail.body} mailId={mail.id} />
             <SelectionPopup />
             <CommentModal />
             <TagModal />
