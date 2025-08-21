@@ -13,7 +13,7 @@ import { useAxios } from "@/hooks/useAxios";
 import { useAuth } from "./authContext";
 import { useMails } from "./mailsContext";
 
-// --- HELPERS (UNCHANGED) ---
+
 const getNodePath = (node: Node, root: Node): number[] => {
   const path: number[] = [];
   let currentNode: Node | null = node;
@@ -37,7 +37,7 @@ const getNodeFromPath = (path: number[], root: Node): Node | null => {
   return node;
 };
 
-// --- INTERFACES ---
+
 type ActiveAction = {
   id: string;
   type: 'confirm' | 'comment_open' | 'tag_open' | 'comment_save' | 'tag_update' | 'remove';
@@ -226,19 +226,87 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     setAllTags(derivedTags);
   }, [bookmarks]);
 
+
+  const getRangeFromOffsets = (root: Node, startOffset: number, endOffset: number): Range | null => {
+    const range = document.createRange();
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let charCount = 0;
+    let startNode: Node | null = null;
+    let endNode: Node | null = null;
+    let foundStart = false;
+
+    let currentNode: Node | null;
+    while ((currentNode = walker.nextNode())) {
+        const nodeLength = currentNode.textContent?.length || 0;
+        
+        if (!foundStart && startOffset <= charCount + nodeLength) {
+            startNode = currentNode;
+            range.setStart(startNode, startOffset - charCount);
+            foundStart = true;
+        }
+
+        if (foundStart && endOffset <= charCount + nodeLength) {
+            endNode = currentNode;
+            range.setEnd(endNode, endOffset - charCount);
+            break;
+        }
+
+        charCount += nodeLength;
+    }
+    
+    if (startNode && !endNode) {
+        
+        range.setEnd(startNode, startNode.textContent?.length || 0);
+    }
+
+    if (startNode && endNode) {
+        return range;
+    }
+    return null;
+}
+
   const getSerializedRange = useCallback(
     (range: Range, rootElement: HTMLElement): SerializedRange | null => {
       try {
+        
+
+        
+        const preRange = document.createRange();
+        preRange.selectNodeContents(rootElement);
+        preRange.setEnd(range.startContainer, range.startOffset);
+        const startCharOffset = preRange.toString().length;
+        const endCharOffset = startCharOffset + range.toString().length;
+
+        
+        
+        const cleanRoot = rootElement.cloneNode(true) as HTMLElement;
+        cleanRoot.querySelectorAll('.bookmark-highlight').forEach(span => {
+            
+            span.replaceWith(...Array.from(span.childNodes));
+        });
+        
+        cleanRoot.normalize();
+
+        
+        const cleanRange = getRangeFromOffsets(cleanRoot, startCharOffset, endCharOffset);
+
+        if (!cleanRange) {
+            console.error("Could not reconstruct range in the clean DOM clone.");
+            return null;
+        }
+        
+        
         return {
           start: {
-            path: getNodePath(range.startContainer, rootElement),
-            offset: range.startOffset,
+            path: getNodePath(cleanRange.startContainer, cleanRoot),
+            offset: cleanRange.startOffset,
           },
           end: {
-            path: getNodePath(range.endContainer, rootElement),
-            offset: range.endOffset,
+            path: getNodePath(cleanRange.endContainer, cleanRoot),
+            offset: cleanRange.endOffset,
           },
         };
+        
       } catch (error) {
         console.error("Error serializing range:", error);
         return null;
@@ -246,6 +314,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     },
     []
   );
+
 
   const deserializeRange = useCallback(
     (
@@ -315,17 +384,17 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
     async (bookmarkId: string) => {
       const originalBookmarks = bookmarks;
       setActiveAction({ id: bookmarkId, type: 'remove' });
-      // Optimistically remove the bookmark from the local state
+      
       setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
       hidePopup();
 
       try {
         await api.delete("/bookmarks/remove", { data: { bookmarkId } });
-        // After successful deletion, refresh the main mail list to sync state (e.g., the bookmark icon)
+        
         await refreshMails();
       } catch (error) {
         console.error("Failed to remove bookmark:", error);
-        setBookmarks(originalBookmarks); // Rollback on error
+        setBookmarks(originalBookmarks); 
       } finally {
         setActiveAction(null);
       }
@@ -344,13 +413,13 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       const originalBookmarks = bookmarks;
       const normalizedComment = commentText.trim() || undefined;
 
-      // Optimistically update the comment in the local state
+      
       setBookmarks((prev) =>
         prev.map((b) => (b.id === bookmarkId ? { ...b, comment: normalizedComment } : b))
       );
       try {
         await api.put("/bookmarks/comment", { bookmarkId, commentText: normalizedComment || null });
-        // After updating, refetch all bookmarks to ensure the local state is in sync with the database
+        
         await fetchAllData();
       } catch (error) {
         console.error("Failed to update comment:", error);
@@ -368,12 +437,12 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       const originalBookmarks = bookmarks;
       const cleanedTags = Array.from(new Set(newTags.map(t => t.toLowerCase().trim()).filter(Boolean))).sort();
 
-      // Optimistically update tags in the local state
+      
       setBookmarks(prev => prev.map(b => (b.id === bookmarkId ? { ...b, tags: cleanedTags } : b)));
 
       try {
         await api.put("/bookmarks/tags", { bookmarkId, newTags: cleanedTags });
-        // After updating, refetch all bookmarks to ensure the local state is in sync
+        
         await fetchAllData();
       } catch (error) {
         console.error("Failed to update tags:", error);
@@ -405,7 +474,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       
       const originalBookmarks = bookmarks;
       try {
-        // Optimistic update
+        
         setBookmarks((prev) =>
           prev.map((bm) => ({
             ...bm,
@@ -446,7 +515,7 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
       }
       const originalBookmarks = bookmarks;
       try {
-        // Optimistic update
+        
         setBookmarks((prev) =>
           prev.map((bm) => ({
             ...bm,
