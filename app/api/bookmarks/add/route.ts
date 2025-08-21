@@ -1,5 +1,3 @@
-// /api/bookmarks/add/route.ts
-
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -17,29 +15,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Prepare data for insertion (maps frontend camelCase to DB snake_case)
+    const serializedRangeString = JSON.stringify(newBookmark.serializedRange);
+
+    // First, check if an identical bookmark already exists to prevent duplicates.
+    const { data: existingBookmark, error: checkError } = await supabase
+      .from("bookmarks")
+      .select(`*, bookmark_tags(tags(*))`)
+      .eq("user_id", user.id)
+      .eq("mail_id", newBookmark.mailId)
+      .eq("serialized_range", serializedRangeString)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("Error checking for existing bookmark:", checkError.message);
+      // We can still proceed, but this indicates a potential issue.
+    }
+
+    if (existingBookmark) {
+      // If a duplicate is found, return the existing one.
+      return NextResponse.json(existingBookmark);
+    }
+    
+    // If no duplicate exists, insert the new bookmark.
     const dataToInsert = {
       text: newBookmark.text,
       mail_id: newBookmark.mailId,
-      serialized_range: JSON.stringify(newBookmark.serializedRange), // Stringify the object
+      serialized_range: serializedRangeString,
+      user_id: user.id,
     };
 
     const { data, error } = await supabase
       .from("bookmarks")
-      .insert({
-        ...dataToInsert,
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-      })
-      // Select all raw data, including the joined tags, to match the GET route's structure
+      .insert(dataToInsert)
       .select(`*, bookmark_tags(tags(*))`)
       .single();
 
     if (error) throw error;
     
-    // --- FIX: Return the raw database object directly ---
-    // The frontend's mapApiBookmarkToLocal will handle all transformations.
-    // This ensures consistency with the GET /api/bookmarks route.
+    // Return the newly created bookmark data.
     return NextResponse.json(data);
 
   } catch (error: any) {

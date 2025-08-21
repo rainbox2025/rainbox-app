@@ -28,10 +28,7 @@ const TagModal: React.FC = () => {
     if (bookmark) {
       setSelectedTags(bookmark.tags || []);
       setInputValue('');
-      setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      setSelectedTags([]);
-      setInputValue('');
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [bookmark]);
 
@@ -42,10 +39,8 @@ const TagModal: React.FC = () => {
       const offsetParentEl = popupElement.offsetParent as HTMLElement | null;
 
       const modalWidth = Math.min(300, window.innerWidth - 32);
-      let modalHeight = popupElement.offsetHeight;
-      // A more dynamic initial estimate, can be refined
-      if (!modalHeight || modalHeight < 100) modalHeight = 150;
-
+      let modalHeight = popupElement.offsetHeight || 150;
+      const margin = 8;
       let top, left;
 
       if (offsetParentEl) {
@@ -53,31 +48,17 @@ const TagModal: React.FC = () => {
         top = (selectionViewportRect.bottom - offsetParentRect.top) + offsetParentEl.scrollTop + 10;
         left = (selectionViewportRect.left - offsetParentRect.top) + offsetParentEl.scrollLeft + (selectionViewportRect.width / 2) - (modalWidth / 2);
 
-        const margin = 8;
-        left = Math.max(offsetParentEl.scrollLeft + margin, left);
+        if (left < offsetParentEl.scrollLeft + margin) left = offsetParentEl.scrollLeft + margin;
         if (left + modalWidth > offsetParentEl.scrollLeft + offsetParentEl.clientWidth - margin) {
           left = offsetParentEl.scrollLeft + offsetParentEl.clientWidth - modalWidth - margin;
         }
         if (top + modalHeight > offsetParentEl.scrollTop + offsetParentEl.clientHeight - margin) {
           top = (selectionViewportRect.top - offsetParentRect.top) + offsetParentEl.scrollTop - modalHeight - 10;
         }
-        top = Math.max(offsetParentEl.scrollTop + margin, top);
-
+        if (top < offsetParentEl.scrollTop + margin) top = offsetParentEl.scrollTop + margin;
       } else {
-        const scrollY = window.scrollY;
-        const scrollX = window.scrollX;
-        top = scrollY + selectionViewportRect.bottom + 10;
-        left = scrollX + selectionViewportRect.left + (selectionViewportRect.width / 2) - (modalWidth / 2);
-
-        const margin = 8;
-        left = Math.max(scrollX + margin, left);
-        if (left + modalWidth > scrollX + window.innerWidth - margin) {
-          left = scrollX + window.innerWidth - modalWidth - margin;
-        }
-        if (top + modalHeight > scrollY + window.innerHeight - margin) {
-          top = scrollY + selectionViewportRect.top - modalHeight - 10;
-        }
-        top = Math.max(scrollY + margin, top);
+        top = window.scrollY + selectionViewportRect.bottom + 10;
+        left = window.scrollX + selectionViewportRect.left + (selectionViewportRect.width / 2) - (modalWidth / 2);
       }
 
       setModalStyle({
@@ -88,17 +69,11 @@ const TagModal: React.FC = () => {
         zIndex: 1001,
       });
     }
-    // Re-calculate on content change which might affect height.
-    // Also activeTagModal to reposition when it appears.
-  }, [activeTagModal, inputValue, selectedTags, allTags]);
+  }, [activeTagModal, inputValue, selectedTags]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        // Before hiding, save current tags if any changes were made implicitly
-        if (bookmark && (selectedTags.join(',') !== (bookmark.tags || []).join(','))) {
-          updateBookmarkTags(bookmark.id, selectedTags);
-        }
+      if (modalRef.current && !modalRef.current.contains(event.target as Node) && !isLoading) {
         hideTagModal();
       }
     };
@@ -108,29 +83,25 @@ const TagModal: React.FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeTagModal, hideTagModal, bookmark, selectedTags, updateBookmarkTags]);
+  }, [activeTagModal, hideTagModal, isLoading]);
 
-  const handleAddTag = useCallback(async (tag: string) => {
-    const normalizedTag = tag.toLowerCase().trim();
-    if (normalizedTag && bookmark && !selectedTags.includes(normalizedTag) && !isLoading) {
-      const newTags = [...selectedTags, normalizedTag];
+  const handleUpdateTags = async (newTags: string[]) => {
+    if (bookmark && !isLoading) {
       setSelectedTags(newTags);
-      await updateBookmarkTags(bookmark.id, newTags); // Await the API call
+      await updateBookmarkTags(bookmark.id, newTags);
+    }
+  };
+
+  const handleAddTag = (tag: string) => {
+    const normalizedTag = tag.toLowerCase().trim();
+    if (normalizedTag && !selectedTags.includes(normalizedTag)) {
+      handleUpdateTags([...selectedTags, normalizedTag]);
     }
     setInputValue('');
-    // No need to focus here, as the loading state handles user interaction
-  }, [bookmark, selectedTags, updateBookmarkTags, isLoading]);
+  };
 
-  const handleRemoveTag = useCallback(async (tagToRemove: string) => {
-    if (bookmark && !isLoading) {
-      const newTags = selectedTags.filter(t => t !== tagToRemove);
-      setSelectedTags(newTags);
-      await updateBookmarkTags(bookmark.id, newTags); // Await the API call
-    }
-  }, [bookmark, selectedTags, updateBookmarkTags, isLoading]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+  const handleRemoveTag = (tagToRemove: string) => {
+    handleUpdateTags(selectedTags.filter(t => t !== tagToRemove));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -143,29 +114,14 @@ const TagModal: React.FC = () => {
     }
   };
 
-  if (!activeTagModal || !bookmark) {
-    return null;
-  }
+  if (!activeTagModal || !bookmark) return null;
 
   const normalizedInputValue = inputValue.toLowerCase().trim();
-
-  const getSuggestions = () => {
-    const availableGlobalTags = allTags.filter(
-      (tag) => !selectedTags.includes(tag.toLowerCase())
-    );
-
-    if (normalizedInputValue) {
-      return availableGlobalTags
-        .filter((tag) => tag.toLowerCase().includes(normalizedInputValue))
-        .slice(0, 5); // Limit suggestions
-    }
-    return availableGlobalTags.slice(0, 5);
-  };
-  const filteredSuggestions = getSuggestions();
-
-  const canCreateTag = normalizedInputValue &&
-    !allTags.some(t => t.toLowerCase() === normalizedInputValue) &&
-    !selectedTags.includes(normalizedInputValue);
+  const availableGlobalTags = allTags.filter(tag => !selectedTags.includes(tag.toLowerCase()));
+  const filteredSuggestions = normalizedInputValue
+    ? availableGlobalTags.filter(tag => tag.toLowerCase().includes(normalizedInputValue)).slice(0, 5)
+    : availableGlobalTags.slice(0, 5);
+  const canCreateTag = normalizedInputValue && !allTags.some(t => t.toLowerCase() === normalizedInputValue) && !selectedTags.includes(normalizedInputValue);
 
   return (
     <div
@@ -174,24 +130,21 @@ const TagModal: React.FC = () => {
       className="bg-sidebar shadow-xl rounded-lg p-1 border border-hovered flex flex-col text-sm tag-modal-root-class relative"
       onClick={(e) => e.stopPropagation()}
     >
-
-      {/* Input Area: Selected Tags + Input Field */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-sidebar/60 flex items-center justify-center z-20 rounded-lg">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <div
-        className="flex flex-wrap items-center  gap-x-1.5 gap-y-1 p-2 rounded-md mb-2 cursor-text min-h-[38px] focus-within:border-primary"
-        onClick={() => inputRef.current?.focus()} // Focus input on click
+        className="flex flex-wrap items-center gap-1.5 p-2 rounded-md cursor-text min-h-[38px] focus-within:ring-1 focus-within:ring-primary"
+        onClick={() => inputRef.current?.focus()}
       >
         {selectedTags.map(tag => (
-          <span
-            key={tag}
-            className="bg-primary/20 text-xs  px-2 py-1 rounded-md flex items-center gap-1 whitespace-nowrap"
-          >
+          <span key={tag} className="bg-primary/20 text-xs px-2 py-1 rounded-md flex items-center gap-1 whitespace-nowrap">
             {tag}
             <XMarkIcon
-              className="h-3 w-3 cursor-pointer text-muted-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveTag(tag);
-              }}
+              className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); handleRemoveTag(tag); }}
             />
           </span>
         ))}
@@ -199,22 +152,15 @@ const TagModal: React.FC = () => {
           ref={inputRef}
           type="text"
           value={inputValue}
-          onChange={handleInputChange}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedTags.length > 0 ? "typing here..." : "Find or create highlight tag..."}
-          className="flex-grow bg-transparent outline-none text-xs p-0.5 min-w-[120px] placeholder-muted-foreground"
+          placeholder={selectedTags.length > 0 ? "" : "Find or create tag..."}
+          className="flex-grow bg-transparent outline-none text-xs p-0.5 min-w-[120px]"
           disabled={isLoading}
         />
-        {/* {isLoading && (
-          <div className=" inset-0 bg-sidebar/60 flex items-center justify-center z-10 rounded-lg">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        )} */}
       </div>
 
-      {/* Suggestions Area */}
       <div className="max-h-32 border-t border-hovered overflow-y-auto text-xs mt-1 custom-scrollbar">
-        {/* Existing Tag Suggestions */}
         {filteredSuggestions.map(tag => (
           <div
             key={tag}
@@ -224,32 +170,15 @@ const TagModal: React.FC = () => {
             {tag}
           </div>
         ))}
-
-        {/* Create Tag Suggestion */}
         {canCreateTag && (
           <div
             className="flex items-center justify-start gap-2 p-1.5 hover:bg-hovered rounded-md cursor-pointer"
             onClick={() => handleAddTag(inputValue.trim())}
           >
             <span className="text-muted-foreground">Create tag</span>
-            <span className="bg-primary/20  text-xs px-2 py-0.5 rounded-sm">
+            <span className="bg-primary/20 text-xs px-2 py-0.5 rounded-sm">
               {inputValue.trim()}
             </span>
-          </div>
-        )}
-
-        {/* Informational messages */}
-        {inputValue && filteredSuggestions.length === 0 && !canCreateTag && (
-          <div className="p-1.5 text-muted-foreground italic text-xs">
-            {selectedTags.includes(normalizedInputValue)
-              ? "Tag already added."
-              : (allTags.some(t => t.toLowerCase() === normalizedInputValue) ? "No other suggestions for this input." : "No matching tags found.")}
-          </div>
-        )}
-        {!inputValue && filteredSuggestions.length === 0 && !canCreateTag && (
-          <div className="p-1.5 text-muted-foreground italic text-xs">
-            {allTags.length === 0 ? "No tags yet. Type to create one." :
-              (allTags.every(t => selectedTags.includes(t.toLowerCase())) && allTags.length > 0 ? "All available tags selected." : "Type to find or create tags.")}
           </div>
         )}
       </div>

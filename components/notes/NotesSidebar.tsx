@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useBookmarks } from '@/context/bookmarkContext';
@@ -14,7 +14,30 @@ interface NotesSidebarProps {
 
 const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, onNoteClick }) => {
   const { bookmarks } = useBookmarks();
-  const notesForMail = bookmarks.filter(b => b.mailId === mailId && b.isConfirmed);
+
+  const sortedNotesForMail = useMemo(() => {
+    const notes = bookmarks.filter(b => b.mailId === mailId && b.isConfirmed);
+
+    const comparePaths = (pathA: number[], pathB: number[]): number => {
+      const len = Math.min(pathA.length, pathB.length);
+      for (let i = 0; i < len; i++) {
+        if (pathA[i] !== pathB[i]) {
+          return pathA[i] - pathB[i];
+        }
+      }
+      return pathA.length - pathB.length;
+    };
+
+    return notes.sort((a, b) => {
+      if (!a.serializedRange || !b.serializedRange) return 0;
+      const pathComparison = comparePaths(a.serializedRange.start.path, b.serializedRange.start.path);
+      if (pathComparison !== 0) {
+        return pathComparison;
+      }
+      return a.serializedRange.start.offset - b.serializedRange.start.offset;
+    });
+  }, [bookmarks, mailId]);
+
 
   return (
     <AnimatePresence>
@@ -26,7 +49,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="fixed top-[35px] right-5 h-[calc(100%-3rem)] w-[80vw] md:w-[320px] max-w-full bg-content border-l border-border z-[110] shadow-lg flex flex-col"
-            onClick={(e) => e.stopPropagation()} // Prevents clicks inside the sidebar from closing it
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-sm border-b border-border flex-shrink-0">
               <h2 className="font-semibold text-base truncate">Notes</h2>
@@ -41,8 +64,8 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               <div className="p-sm space-y-sm pr-0">
-                {notesForMail.length > 0 ? (
-                  notesForMail.map((note, index) => (
+                {sortedNotesForMail.length > 0 ? (
+                  sortedNotesForMail.map((note, index) => (
                     <React.Fragment key={note.id}>
                       <div
                         className="cursor-pointer hover:bg-muted/50 p-sm rounded-lg transition-colors"
@@ -69,7 +92,7 @@ const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, mailId, on
                           </div>
                         )}
                       </div>
-                      {index < notesForMail.length - 1 &&
+                      {index < sortedNotesForMail.length - 1 &&
                         <div className='border-b border-border my-1'></div>
                       }
                     </React.Fragment>
