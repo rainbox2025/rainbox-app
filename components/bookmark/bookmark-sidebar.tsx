@@ -152,7 +152,8 @@ const BookmarkSidebarContent = () => {
                     </button>
         </div>
 
-        <nav className="space-y-sm p-sm pt-0 flex-grow overflow-y-auto custom-scrollbar">
+          <nav style={{minHeight: '50vh'}} className="space-y-sm p-sm pt-0 flex-grow overflow-y-auto custom-scrollbar">
+
           <a
             href="#"
             className="flex items-center space-x-md p-xs rounded-md hover:bg-hover text-foreground"
