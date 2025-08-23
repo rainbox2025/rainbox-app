@@ -20,7 +20,7 @@ import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "../ui/skeleton";
 
 const BookmarkSidebarContent = () => {
-  const { bookmarks, allTags, renameTagGlobally,isLoading, deleteTagGlobally, isTagRenameLoading, isTagDeleteLoading, fetchAllData } = useBookmarks();
+  const { bookmarks, bookmarkCount, allTags, renameTagGlobally,isLoading, deleteTagGlobally, isTagRenameLoading, isTagDeleteLoading, fetchAllData } = useBookmarks();
 
   const [activeTagMenu, setActiveTagMenu] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<{
@@ -163,7 +163,7 @@ const BookmarkSidebarContent = () => {
               All Bookmarks
             </span>
             <span className="text-xs text-muted-foreground font-medium">
-              {allBookmarksCount}
+              {bookmarkCount}
             </span>
           </a>
 

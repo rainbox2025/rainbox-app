@@ -5,6 +5,7 @@ import { BaseModal } from './base-modal';
 import { CheckCircleIcon, SearchIcon, ArrowLeftIcon, ArrowRightIcon } from './icons';
 import { Button } from '../ui/button';
 import { CircleIcon, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useGmail, Sender } from '@/context/gmailContext';
 import { useOutlook } from '@/context/outlookContext';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -76,7 +77,6 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
     return senders.filter(s => !selectedSenderEmails.has(s.email));
   }, [senders, selectedSenderEmails]);
 
-  // --- THIS IS THE FIX ---
   // The state updates are no longer nested, preventing race conditions.
   const toggleSenderSelection = (sender: Sender) => {
     const email = sender.email;
@@ -94,26 +94,33 @@ export const SelectNewslettersModal: React.FC<SelectNewslettersModalProps> = ({
   };
 
   const handleAddSelected = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const sendersToAdd = allSelectedObjects;
-      await Promise.all(
-        sendersToAdd.map(s => addSender({ name: s.name, email: s.email }))
-      );
-      const result = await onboardSavedSenders();
-      if (result?.success) {
-        await setupWatch();
-        onAddNewsletters(sendersToAdd);
-      } else {
-        console.error("Onboarding failed:", result?.message);
-      }
-    } catch (error) {
-      console.error("An error occurred while adding newsletters:", error);
-    } finally {
-      setIsSubmitting(false);
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+
+  // Immediately close modal and toast info
+  onClose();
+  toast.loading("We’ll add these newsletters in ~2 minutes…", { duration: 3000 });
+
+  try {
+    const sendersToAdd = allSelectedObjects;
+    await Promise.all(
+      sendersToAdd.map(s => addSender({ name: s.name, email: s.email }))
+    );
+    const result = await onboardSavedSenders();
+    if (result?.success) {
+      await setupWatch();
+      onAddNewsletters(sendersToAdd);
+      toast.success("Newsletters successfully added 🎉");
+    } else {
+      toast.error(result?.message || "Onboarding failed. Try again.");
     }
-  };
+  } catch (error) {
+    console.error("Error while adding newsletters:", error);
+    toast.error("Something went wrong while adding newsletters.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleScroll = useCallback(() => {
     const container = listContainerRef.current;
