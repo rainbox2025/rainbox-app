@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { MailItemSkeleton } from "@/components/mails-loader";
 
 const BookmarkPage = () => {
-  const { bookmarks: allBookmarksFromContext, isLoading: isLoadingBookmarks } = useBookmarks();
+  const { bookmarks: allBookmarksFromContext, isLoading: isLoadingBookmarks, setBookmarkCount } = useBookmarks();
   const { mails, setSelectedMail, selectedMail: mailFromContext, isMailsLoading } = useMails();
   const { isSidebarOpen, toggleSidebar } = useSidebar();
   const api = useAxios();
@@ -58,6 +58,7 @@ const BookmarkPage = () => {
       }
     });
 
+    setBookmarkCount(mailBookmarksMap.size);
     return Array.from(mailBookmarksMap.values());
   }, [allBookmarksFromContext]);
 

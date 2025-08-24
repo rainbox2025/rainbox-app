@@ -1,17 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { AddNewsletterModal } from './add-newsletter-modal';
-import { SelectNewslettersModal } from './select-newsletters-modal';
-import { SuccessModal } from '../modals/succeed-modal';
-import { ErrorModal } from '../modals/error-modal';
-import { Sender } from '@/context/gmailContext';
-import { useSenders } from '@/context/sendersContext';
+import React, { useState, useEffect } from "react";
+import { AddNewsletterModal } from "./add-newsletter-modal";
+import { SelectNewslettersModal } from "./select-newsletters-modal";
+import { SuccessModal } from "../modals/succeed-modal";
+import { ErrorModal } from "../modals/error-modal";
+import { Sender } from "@/context/gmailContext";
+import { useSenders } from "@/context/sendersContext";
+import { Toaster } from "react-hot-toast";
 
-export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
-  type ModalType = 'addNewsletter' | 'selectNewsletters' | 'success' | 'error' | null;
+export const AddNewsletterFlow = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  type ModalType =
+    | "addNewsletter"
+    | "selectNewsletters"
+    | "success"
+    | "error"
+    | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{ email: string, name: string } | null>(null);
+  const [currentConnectedAccount, setCurrentConnectedAccount] = useState<{
+    email: string;
+    name: string;
+  } | null>(null);
   const { fetchSenders } = useSenders();
 
   useEffect(() => {
@@ -22,7 +37,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
     }
   }, [isOpen]);
 
-  const openFlow = () => setActiveModal('addNewsletter');
+  const openFlow = () => setActiveModal("addNewsletter");
   const closeModal = () => {
     setActiveModal(null);
     onClose();
@@ -30,43 +45,43 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
 
   const handleSelectSender = (email: string, accountName: string) => {
     setCurrentConnectedAccount({ email, name: accountName });
-    setActiveModal('selectNewsletters');
+    setActiveModal("selectNewsletters");
   };
 
   const handleBackToConnections = () => {
     setCurrentConnectedAccount(null);
-    setActiveModal('addNewsletter');
+    setActiveModal("addNewsletter");
   };
 
   const handleAddNewsletters = async (selected: Sender[]) => {
-    setActiveModal('success');
+    setActiveModal("success");
     await fetchSenders();
     console.log(`${selected.length} newsletters successfully onboarded.`);
   };
 
   const handleTryAgainError = () => {
     if (currentConnectedAccount) {
-      setActiveModal('selectNewsletters');
+      setActiveModal("selectNewsletters");
     } else {
-      setActiveModal('addNewsletter');
+      setActiveModal("addNewsletter");
     }
   };
 
   return (
-    <div >
+    <div>
       <AddNewsletterModal
-        isOpen={activeModal === 'addNewsletter'}
+        isOpen={activeModal === "addNewsletter"}
         onClose={closeModal}
         onSelectSender={handleSelectSender}
       />
       <SelectNewslettersModal
-        isOpen={activeModal === 'selectNewsletters'}
+        isOpen={activeModal === "selectNewsletters"}
         onClose={closeModal}
         onBack={handleBackToConnections}
         onAddNewsletters={handleAddNewsletters}
         connectedAccountName={currentConnectedAccount?.name}
       />
-      <SuccessModal
+      {/* <SuccessModal
         isOpen={activeModal === 'success'}
         onClose={closeModal}
         mainText='Woohoo! Selected Newsletters are successfully added to your feed.'
@@ -77,7 +92,7 @@ export const AddNewsletterFlow = ({ isOpen, onClose }: { isOpen: boolean, onClos
         onClose={closeModal}
         onTryAgain={handleTryAgainError}
         mainText='Oops! There was an error. Please try again, or re-sync your email account. If nothing works, contact support.'
-      />
+      /> */}
     </div>
   );
 };

@@ -140,6 +140,8 @@ interface BookmarkContextType {
   activeAction: ActiveAction | null;
   isTagRenameLoading: boolean;
   isTagDeleteLoading: boolean;
+  setBookmarkCount: (count: number) => void;
+  bookmarkCount: number;
 }
 
 const BookmarkContext = createContext<BookmarkContextType | undefined>(
@@ -173,6 +175,7 @@ const mapApiBookmarkToLocal = (apiBookmark: ApiBookmark): Bookmark => {
 
 export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allApiTags, setAllApiTags] = useState<TagWithCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -663,6 +666,8 @@ export const BookmarkProvider = ({ children }: { children: ReactNode }) => {
         showPopup,
         hidePopup,
         getSerializedRange,
+        setBookmarkCount,
+        bookmarkCount,
         deserializeRange,
         activeCommentModal,
         showCommentModal,

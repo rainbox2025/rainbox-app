@@ -166,16 +166,18 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
     [api, mails]
   );
 
-  const bookmark = useCallback(async (id: string, bookmarked = true) => {
-    const originalMails = mails;
-    setMails((prev) => prev.map((mail) => mail.id === id ? { ...mail, bookmarked } : mail));
-    try {
-      await api.patch(`/mails/bookmark/${id}`, { bookmark });
-    } catch (error) {
-        setMails(originalMails);
-        console.error("Failed to update bookmark:", error);
-    }
-  }, [api, mails]);
+ const bookmark = useCallback(async (id: string, bookmarked = true) => {
+  const originalMails = mails;
+  setMails((prev) =>
+    prev.map((mail) => (mail.id === id ? { ...mail, bookmarked } : mail))
+  );
+  try {
+    const res = await api.patch(`/mails/bookmark/${id}`, { bookmark: bookmarked });
+  } catch (error) {
+    setMails(originalMails);
+    console.error("Failed to update bookmark:", error);
+  }
+}, [api, mails]);
 
   const summarize = useCallback(
     async (id: string) => {

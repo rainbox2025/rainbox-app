@@ -31,6 +31,7 @@ import { isEqual } from "lodash";
 import { useSidebar } from "@/context/sidebarContext";
 import { useMails } from "@/context/mailsContext";
 import { RefreshCcw } from "lucide-react";
+import NoteThatFits from "./subscription-note";
 
 type SidebarItem =
   | { type: "folder"; id: string; data: FolderType }
@@ -518,7 +519,7 @@ export default function Inbox() {
         </div>
 
         <div className="px-4 py-3 text-center text-xs text-muted-foreground/30">
-          <p>New subscriptions will automatically appear here</p>
+          <NoteThatFits />
           <p className="mt-1">Hold and drag to rearrange feeds</p>
         </div>
 

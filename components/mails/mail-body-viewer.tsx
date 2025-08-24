@@ -196,14 +196,22 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
   }, [handleMouseUp]);
 
   useEffect(() => {
-    if (contentRef.current) {
-      const links = contentRef.current.querySelectorAll("a");
-      links.forEach(link => {
-        link.setAttribute("target", "_blank");
-        link.setAttribute("rel", "noopener noreferrer");
-      });
-    }
-  }, [htmlContent]);
+  if (contentRef.current) {
+    const links = contentRef.current.querySelectorAll("a");
+    links.forEach(link => {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
+    });
+
+    const tables = contentRef.current.querySelectorAll("table");
+    tables.forEach((table) => {
+      table.removeAttribute("width");       
+      table.style.width = "100%";           
+      table.style.tableLayout = "auto";     
+    });
+  }
+}, [htmlContent]);
+
 
   return (
     <div
