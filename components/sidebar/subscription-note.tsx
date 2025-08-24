@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 
 function NoteThatFits() {
-  const containerRef = useRef(null);
-  const measureRef = useRef(null);
+const containerRef = useRef<HTMLDivElement | null>(null);
+const measureRef = useRef<HTMLSpanElement | null>(null);
   const [showFull, setShowFull] = useState(true);
 
   useEffect(() => {
