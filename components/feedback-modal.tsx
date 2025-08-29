@@ -305,3 +305,4 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   return ReactDOM.createPortal(modalContent, document.body);
 };
+
