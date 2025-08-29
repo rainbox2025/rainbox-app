@@ -41,7 +41,6 @@
     --hovered: #ebebeb;
     --error: #ff0000;
 
-    /* --- NEW: Centralized Highlight Colors --- */
     --highlight-selection-bg: #FFF9D9;
     --highlight-confirmed-bg: rgba(255, 229, 100, 0.4);
     --highlight-confirmed-underline: #FFD400;
@@ -75,7 +74,7 @@
     --hovered: #333333;
     
     /* --- NEW: Centralized Highlight Colors (Dark) --- */
-    --highlight-selection-bg: #38381E;
+    --highlight-selection-bg: #e7e75e96;
     --highlight-confirmed-bg: rgba(208, 176, 7, 0.3);
     --highlight-confirmed-underline: #D0B007;
   }
@@ -91,6 +90,7 @@
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

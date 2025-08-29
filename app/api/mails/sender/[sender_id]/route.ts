@@ -70,12 +70,30 @@ export const GET = async (
   }
 
   // Get paginated mails
-  const { data, error } = await supabase
-    .from("mails")
-    .select("*")
-    .eq("sender_id", sender_id)
-    .order("created_at", { ascending: false })
-    .range(start, end);
+ // Get paginated mails with sender details
+const { data, error } = await supabase
+  .from("mails")
+  .select(
+    `
+      id,
+      created_at,
+      subject,
+      body,
+      read,
+      bookmarked,
+      is_public,
+      sender_id,
+      senders (
+        name,
+        domain,
+        image_url
+      )
+    `
+  )
+  .eq("sender_id", sender_id)
+  .order("created_at", { ascending: false })
+  .range(start, end);
+
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

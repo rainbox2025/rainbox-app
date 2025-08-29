@@ -14,6 +14,7 @@ import { useAxios } from "@/hooks/useAxios";
 import { AxiosResponse } from "axios";
 import { useSenders } from "./sendersContext";
 import { useAuth } from "./authContext";
+import { useMails } from "./mailsContext";
 
 interface FoldersContextType {
   folders: FolderType[];
@@ -74,12 +75,14 @@ export const FoldersProvider = ({
   const [isSidebarOrderLoading, setIsSidebarOrderLoading] = useState(true);
   const { accessToken } = useAuth();
   const { fetchSenders } = useSenders();
+  const { setSelectedMail } = useMails();
 
 
   const api = useAxios();
 
   const fetchFolders = useCallback(async () => {
     try {
+      setSelectedMail(null);
       setIsFoldersLoading(true);
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;

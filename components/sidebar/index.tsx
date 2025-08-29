@@ -5,13 +5,13 @@ import { BasicModal } from "../modals/basic-modal";
 import { useFolders } from "@/context/foldersContext";
 
 const Sidebar = ({ children, onClose }: { children: React.ReactNode, onClose?: () => void }) => {
-  const [width, setWidth] = useState(320); // Default width
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false); // To manage dragging state reliably inside event listeners
-  const MIN_WIDTH = 240;
+  const MIN_WIDTH = 250;
   const MAX_WIDTH = 380;
   const LEFT_PANEL_WIDTH = 48; // Assuming LeftPanel is 48px (3rem). Adjust if different.
+  const [width, setWidth] = useState(MIN_WIDTH); // Default width
 
   // New state to track if the view is mobile
   const [isMobileView, setIsMobileView] = useState(false);

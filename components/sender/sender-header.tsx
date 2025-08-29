@@ -26,7 +26,7 @@ export const SenderHeader = ({
   unreadCount: number;
 }) => {
   const { isSidebarOpen, toggleSidebar } = useSidebar();
-  const { refreshMails, markAsReadAllBySenderId } = useMails();
+  const { refreshMails } = useMails();
   const {
     selectedSender,
     unsubcribeSender,

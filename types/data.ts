@@ -52,6 +52,11 @@ export interface Mail {
   sender: SenderType;
   body: string;
   read: boolean;
+  senders: {
+    name: string;
+    domain: string;
+    image_url: string | null;
+  };
   bookmarked: boolean;
   is_confirmed?: boolean;
 }

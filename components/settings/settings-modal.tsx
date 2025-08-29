@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import {
   XMarkIcon,
   UserCircleIcon,
@@ -16,23 +16,13 @@ import {
   EnvelopeIcon,
   CreditCardIcon as BillingIcon,
   DocumentTextIcon,
-  ArrowPathIcon,
-  SpeakerWaveIcon,
-  SparklesIcon,
 } from "@heroicons/react/24/outline";
-import { useSenders } from "@/context/sendersContext";
-import { SenderIcon } from "../sidebar/sender-icon";
-import ConnectionCard from "./ConnectionCard";
-import AddMailBox from "./add-mail-box";
-import DisconnectBox from "./disconnect-box";
-import { GmailConnectionFlow } from "../connect-gmail/flow";
-import { config } from "@/config";
-import { redirectDestinations } from "@/constants";
 import AccountTab from "./tabs/account";
 import MailboxTab from "./tabs/mailbox";
 import PreferencesTab from "./tabs/preferences";
 import NotificationTab from "./tabs/notification";
 import BillingTab from "./tabs/billing";
+import { FeedbackModal } from "../feedback-modal";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -57,18 +47,19 @@ type TabType =
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<TabType>("account");
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // Define redirect destinations
   const redirectDestinations = {
     reportIssues: "https://feedback.example.com/issues",
     suggestFeature: "https://feedback.example.com/suggestions",
     helpDoc: "https://help.example.com",
-    contactSupport: "https://support.example.com",
-    roadmap: "https://roadmap.example.com",
-    changelog: "https://changelog.example.com",
-    plans: "https://plans.example.com",
-    visitWebsite: "https://www.example.com",
-    followX: "https://twitter.com/example",
+    contactSupport: "team@rainbox.ai",
+    roadmap: "https://rainbox.featurebase.app/roadmap",
+    changelog: "https://rainbox.featurebase.app/changelog",
+    plans: "https://rainbox.ai/plans",
+    visitWebsite: "https://rainbox.ai",
+    followX: "https://x.com/rainbox_ai",
   };
 
   useEffect(() => {
@@ -97,14 +88,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     // All other tabs will redirect to external links
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw]">
+  const modalContent = (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm w-[100vw] z-[10000]"
+      style={{ zIndex: 10000 }}
+    >
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-card text-card-foreground dark:bg-card dark:text-card-foreground rounded-lg shadow-xl w-[90vw] md:w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col"
+          className="bg-card text-card-foreground rounded-lg shadow-xl w-[90vw] md:w-full max-w-2xl h-[93vh] mx-4 mb-2 border border-border flex flex-col relative z-[10000]"
+          style={{ zIndex: "10000 !important" }}
         >
           <div className="flex flex-1 overflow-hidden rounded-lg">
             {/* Left sidebar with tabs */}
@@ -116,29 +111,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("account")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "account" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "account"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Account
-                        </span>
+                        <span className="text-sm hidden md:inline">Account</span>
                       </button>
                     </li>
                     <li>
                       <button
                         onClick={() => setActiveTab("mailbox")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "mailbox" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "mailbox"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <EnvelopeIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Mailbox
-                        </span>
+                        <span className="text-sm hidden md:inline">Mailbox</span>
                       </button>
                     </li>
                     <li>
                       <button
                         onClick={() => setActiveTab("preferences")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "preferences" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "preferences"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <Cog6ToothIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -149,7 +152,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("notification")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "notification" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "notification"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <BellIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
@@ -160,12 +167,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <li>
                       <button
                         onClick={() => setActiveTab("billing")}
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${activeTab === "billing" ? "bg-hovered text-accent-foreground" : "hover:bg-hovered"}`}
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors ${
+                          activeTab === "billing"
+                            ? "bg-hovered text-accent-foreground"
+                            : "hover:bg-hovered"
+                        }`}
                       >
                         <BillingIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Billing
-                        </span>
+                        <span className="text-sm hidden md:inline">Billing</span>
                       </button>
                     </li>
                   </ul>
@@ -179,71 +188,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   <ul className="space-y-1">
                     <li>
                       <button
-                        onClick={() =>
-                          redirectToExternalLink(
-                            redirectDestinations.reportIssues
-                          )
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
                       >
                         <ExclamationTriangleIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
-                          Report Issues 🡥
+                          Feedback 🡥
                         </span>
                       </button>
                     </li>
-                    <li>
-                      <button
-                        onClick={() =>
-                          redirectToExternalLink(
-                            redirectDestinations.suggestFeature
-                          )
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
-                      >
-                        <LightBulbIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Suggest Feature 🡥
-                        </span>
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() =>
-                          redirectToExternalLink(redirectDestinations.helpDoc)
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
-                      >
-                        <DocumentTextIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Help Docs 🡥
-                        </span>
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        onClick={() =>
-                          redirectToExternalLink(
-                            redirectDestinations.contactSupport
-                          )
-                        }
-                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
-                      >
-                        <QuestionMarkCircleIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">
-                          Contact Support 🡥
-                        </span>
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-border my-1"></div>
-
-                {/* Product Info */}
-                <div className="mb-2">
-                  <ul className="space-y-1">
                     <li>
                       <button
                         onClick={() =>
@@ -270,7 +223,75 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </button>
                     </li>
+                    {/* <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(
+                            redirectDestinations.reportIssues
+                          )
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <ExclamationTriangleIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Report Issues 🡥
+                        </span>
+                      </button>
+                    </li> */}
+                    {/* <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(
+                            redirectDestinations.suggestFeature
+                          )
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <LightBulbIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Suggest Feature 🡥
+                        </span>
+                      </button>
+                    </li> */}
+                    {/* <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(redirectDestinations.helpDoc)
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <DocumentTextIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Help Docs 🡥
+                        </span>
+                      </button>
+                    </li> */}
                     <li>
+                      <button
+                        onClick={() =>
+                          window.open(
+                            `mailto:${redirectDestinations.contactSupport}`,
+                            "_blank"
+                          )
+                        }
+                        className="flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered"
+                      >
+                        <QuestionMarkCircleIcon className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Contact Us 🡥
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-border my-1"></div>
+
+                {/* Product Info */}
+                <div className="mb-2">
+                  <ul className="space-y-1">
+                    {/* <li>
                       <button
                         onClick={() =>
                           redirectToExternalLink(redirectDestinations.plans)
@@ -282,16 +303,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           Plans 🡥
                         </span>
                       </button>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-border my-1"></div>
-
-                {/* External Links */}
-                <div>
-                  <ul className="space-y-1">
+                    </li> */}
                     <li>
                       <button
                         onClick={() =>
@@ -303,7 +315,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
-                          Visit Website 🡥
+                          Website 🡥
                         </span>
                       </button>
                     </li>
@@ -329,7 +341,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           />
                         </svg>
                         <span className="text-sm hidden md:inline">
-                          Follow us on X 🡥
+                          Follow up on X 🡥
                         </span>
                       </button>
                     </li>
@@ -351,8 +363,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </div>
         </motion.div>
       </AnimatePresence>
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+      />
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default SettingsModal;

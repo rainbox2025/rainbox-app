@@ -18,6 +18,7 @@ import { GmailProvider } from "@/context/gmailContext";
 import { BookmarkProvider } from "@/context/bookmarkContext";
 import { SettingsProvider } from "@/context/settingsContext";
 import { OutlookProvider } from "@/context/outlookContext";
+import { Toaster } from "react-hot-toast";
 
 const defaultUrl = process.env.NEXT_PUBLIC_VERCEL_URL
   ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
@@ -49,6 +50,8 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Notification />
+            <Toaster position="bottom-center" />
+
             <main className="min-h-screen flex flex-col items-center">
               <div className="flex-1 w-full flex flex-col items-center">
                 <SidebarProvider>

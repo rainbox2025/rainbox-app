@@ -11,12 +11,18 @@ import { cn } from "@/lib/utils";
 
 const Page = () => {
   const [filter, setFilter] = useState("all");
-  const { mails, selectedMail, isMailsLoading, isFetchingMore, loadMoreMails } = useMails();
+  const { mails, selectedMail, setSelectedMail, isMailsLoading, isFetchingMore, loadMoreMails } = useMails();
   const [filteredMails, setFilteredMails] = useState<Mail[]>(mails);
-  const [mailReaderWidth, setMailReaderWidth] = useState(50);
+  const [mailReaderWidth, setMailReaderWidth] = useState(60);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mailListVisible, setMailListVisible] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    // FIX: Ensure the mail reader is closed when the page loads or is refreshed.
+    setSelectedMail(null);
+  }, [setSelectedMail]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -62,7 +68,8 @@ const Page = () => {
     <div className="flex w-full h-screen overflow-x-auto" ref={containerRef}>
       <div
         className={cn(
-          "flex flex-col h-full transition-all duration-300 ease-in-out",
+          "flex flex-col h-full",
+          !isResizing && "transition-all duration-300 ease-in-out",
           mailListVisible ? "block" : "hidden",
           selectedMail ? "md:hidden lg:block lg:w-[50%]" : "w-full",
         )}
@@ -106,6 +113,8 @@ const Page = () => {
           setMailReaderWidth={setMailReaderWidth}
           onBack={() => setMailListVisible(true)}
           mail={selectedMail}
+          isResizing={isResizing}
+          setIsResizing={setIsResizing}
         />
       )}
     </div>

@@ -22,7 +22,7 @@ const TextToAudio = ({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }) => {
   const { selectedMail, summarize } = useMails();
   const { senders } = useSenders();
@@ -40,9 +40,9 @@ const TextToAudio = ({
   const mailSender: any = selectedMail
     ? senders.find(s => s.id === selectedMail.sender_id) || {
       id: selectedMail.sender_id || 'unknown',
-      name: selectedMail.sender || 'Unknown Sender',
-      image_url: null,
-      domain: '' // Add other required fields with defaults
+      name: selectedMail.senders.name,
+      image_url: selectedMail.senders.image_url || null,
+      domain: selectedMail.senders.domain || ''
     }
     : null;
 
@@ -80,7 +80,7 @@ const TextToAudio = ({
         for await (const chunk of audioStream) {
           chunks.push(chunk);
         }
-        const audioBlob = new Blob(chunks, { type: "audio/mpeg" });
+        const audioBlob = new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
         const audioUrl = URL.createObjectURL(audioBlob);
 
         // 4. Create, configure, and play the audio element
@@ -204,11 +204,9 @@ const TextToAudio = ({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex-shrink-0 bg-blue-900/10 dark:bg-blue-900/30 p-2 rounded-lg">
-              {mailSender && <SenderIcon sender={mailSender} />}
-            </div>
+              {mailSender && <SenderIcon width={34} height={34} sender={mailSender} />}
             <div className="overflow-hidden">
-              <div className="font-medium truncate w-full">{selectedMail?.subject || "Untitled Email"}</div>
+              <div className="font-semibold text-base truncate w-full">{selectedMail?.subject || "Untitled Email"}</div>
               <div className="text-xs text-muted-foreground truncate">{mailSender?.name}</div>
             </div>
           </div>

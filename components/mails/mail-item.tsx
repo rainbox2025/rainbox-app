@@ -5,17 +5,30 @@ import { useSenders } from "@/context/sendersContext";
 import React from "react";
 import { Bookmark, CheckIcon } from "lucide-react";
 import moment from "moment";
-import { SenderIcon } from "@/components/sidebar/sender-icon"; // Import the SenderIcon component
+import { SenderIcon } from "@/components/sidebar/sender-icon";
+
+const formatRelativeTime = (dateString: string): string => {
+  const date = moment(dateString);
+  const now = moment();
+  const seconds = now.diff(date, 'seconds');
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = now.diff(date, 'minutes');
+  if (minutes < 60) return `${minutes}m`;
+  const hours = now.diff(date, 'hours');
+  if (hours < 24) return `${hours}h`;
+  const days = now.diff(date, 'days');
+  if (days < 7) return `${days}d`;
+  const weeks = now.diff(date, 'weeks');
+  return `${weeks}w`;
+};
 
 export const MailItem = ({ mail }: { mail: Mail }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const { selectedSender, senders } = useSenders();
 
-  // Find the sender for the mail, with a fallback for unknown senders.
-  // Added a fallback 'id' to ensure the SenderIcon component works correctly.
   const mailSender = selectedSender ||
     senders.find(sender => sender.id === mail.sender_id) ||
-    { id: "unknown", name: "Unknown Sender", domain: "unknown.com" };
+    { id: mail.id, name: mail.senders.name, domain: mail.senders.domain, image_url: mail.senders.image_url };
 
   return (
     <div
@@ -32,8 +45,10 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
       )}
     >
       <div
-        className={`absolute bottom-2 right-4 flex z-5 transition-opacity group-hover:opacity-100 ${mail.bookmarked ? '' : 'opacity-0'
-          }`}
+        className={cn(
+          "absolute bottom-2 right-1 flex z-5 transition-opacity group-hover:opacity-100",
+          mail.bookmarked ? '' : 'opacity-0'
+        )}
       >
         <button
           className="p-xs rounded-full hover:bg-content/80 transition-colors opacity-0 group-hover:opacity-100"
@@ -81,24 +96,23 @@ export const MailItem = ({ mail }: { mail: Mail }) => {
         <h2
           className={cn(
             "line-clamp-2 mb-1 text-base min-h-[2.5rem] font-bold",
-            mail.read ? "text-muted-foreground/80" : "text-muted-foreground"
+            mail.read ? "text-muted-foreground/80" : ""
           )}
         >
           {mail.subject}
         </h2>
         <div className={cn(
-          "flex w-full items-baseline justify-start gap-x-2 text-sm",
+          "flex w-full items-center justify-start gap-x-2 text-sm",
           mail.read && "text-muted-foreground"
         )}>
-          {/* Using SenderIcon to display the sender's avatar */}
           <div className="flex min-w-0 items-center gap-x-2">
             <SenderIcon sender={mailSender} />
             <p className="truncate">
               {mailSender?.name}
             </p>
           </div>
-          <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground mx-2">
-            {moment(mail.created_at).fromNow()}
+          <p className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+            {formatRelativeTime(mail.created_at)}
           </p>
         </div>
       </div>

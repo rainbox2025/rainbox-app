@@ -116,9 +116,13 @@ const Sender = forwardRef<HTMLDivElement, SenderProps>(({ sender }, ref) => {
             />
           </div>
 
-          <span className="text-xs text-muted-foreground font-medium">
-            {liveSender.count >= 1000 ? `${Math.floor(liveSender.count / 1000)}K+` : liveSender.count}
-          </span>
+        {liveSender.count > 0 && (
+  <span className="text-xs text-muted-foreground font-medium">
+    {liveSender.count >= 1000
+      ? `${Math.floor(liveSender.count / 1000)}K+`
+      : liveSender.count}
+  </span>
+)}
         </div>
       </div>
 
