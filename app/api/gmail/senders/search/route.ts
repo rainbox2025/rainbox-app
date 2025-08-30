@@ -81,8 +81,7 @@ export async function GET(request: Request) {
       onboardedSenders.map((s) => s.email.toLowerCase())
     );
 
-    const searchQuery = `{from:${sender} OR from:(${sender})}`; // Handles both exact and partial match
-
+    const searchQuery = `{from:${sender} OR from:(${sender})}`;
     const messagesRes = await gmail.users.messages.list({
       userId: "me",
       q: searchQuery,
@@ -114,7 +113,6 @@ export async function GET(request: Request) {
             const name = match[1] || "";
             const email = match[2].toLowerCase();
 
-            // Only include if not onboarded already
             if (!onboardedEmails.has(email)) {
               senderMap.set(email, { name, email, fullName: from });
             }
@@ -122,6 +120,7 @@ export async function GET(request: Request) {
         }
       })
     );
+    console.log(senderMap);
 
     return NextResponse.json({
       senders: Array.from(senderMap.values()),
