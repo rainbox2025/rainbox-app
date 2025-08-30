@@ -93,21 +93,19 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
     setSubmissionStatus("submitting");
 
-    // Use FormData to send text and files
     const formData = new FormData();
-    formData.append("feedback", `${selectedCategory}: ${message}`);
+    formData.append("feedback", message);
+    formData.append("category", selectedCategory);
     screenshots.forEach((file) => {
       formData.append("screenshots", file, file.name);
     });
 
     try {
-      // NOTE: Your submitFeedback function and API must be updated to handle FormData
       await submitFeedback(formData);
       setSubmissionStatus("success");
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      setSubmissionStatus("idle"); // Reset on error
-      // Optionally, show an error message to the user here
+      setSubmissionStatus("idle");
     }
   };
 
@@ -305,4 +303,3 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   return ReactDOM.createPortal(modalContent, document.body);
 };
-

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { Client } from "@notionhq/client";
+import { v4 as uuidv4 } from "uuid";
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -13,15 +14,14 @@ async function createFeedbackEntry({
   email,
   type,
   message,
-  imageURL,
+  fileURLs,
 }: {
   username: string;
   email: string;
   type: string;
   message: string;
-  imageURL?: string;
+  fileURLs?: string[];
 }) {
-  // todo: add files later
   const properties: any = {
     username: {
       title: [{ text: { content: username } }],
@@ -40,14 +40,12 @@ async function createFeedbackEntry({
     },
   };
 
-  if (imageURL) {
+  if (fileURLs?.length) {
     properties.files = {
-      files: [
-        {
-          name: "attachment",
-          external: { url: imageURL },
-        },
-      ],
+      files: fileURLs.map((url, i) => ({
+        name: `attachment-${i + 1}`,
+        external: { url },
+      })),
     };
   }
 
@@ -61,7 +59,10 @@ export async function POST(request: Request) {
   const supabase = await createClient();
 
   try {
-    const { type, message, imageURL } = await request.json();
+    const formData = await request.formData();
+    const message = formData.get("feedback") as string | null;
+    const category = formData.get("category") as string | null;
+    const screenshots = formData.getAll("screenshots") as File[];
 
     if (!message?.trim()) {
       return NextResponse.json(
@@ -86,12 +87,39 @@ export async function POST(request: Request) {
       "Anonymous";
     const email = user.email!;
 
+    // Upload screenshots to Supabase Storage
+    const fileURLs: string[] = [];
+    for (const file of screenshots) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const path = `feedback/${user.id}/${uuidv4()}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("feedback-screenshots")
+        .upload(path, buffer, {
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        console.error("Supabase upload error:", uploadError);
+        continue;
+      }
+
+      const { data: publicUrl } = supabase.storage
+        .from("feedback-screenshots")
+        .getPublicUrl(path);
+
+      if (publicUrl?.publicUrl) {
+        fileURLs.push(publicUrl.publicUrl);
+      }
+    }
+
+    // Store in Notion
     const response = await createFeedbackEntry({
       username,
       email,
-      type: type || "Other",
+      type: category || "Other",
       message,
-      imageURL,
+      fileURLs,
     });
 
     return NextResponse.json({
