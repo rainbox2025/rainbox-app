@@ -9,9 +9,6 @@ export const useAxios = () => {
   const api = useMemo(() => {
     const axiosInstance = axios.create({
       baseURL: config.api.baseURL,
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
     axiosInstance.interceptors.request.use((config) => {
