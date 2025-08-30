@@ -10,16 +10,23 @@ interface OnboardingContextType {
   previousStep: () => void;
   goToStep: (step: number) => void;
   checkUserName: (name: string) => Promise<boolean>;
-  updateUserName: (userId: string, name: string) => Promise<{ error: unknown; data: string; }>;
+  updateUserName: (
+    userId: string,
+    name: string
+  ) => Promise<{ error: unknown; data: string }>;
   isOnboardingComplete: () => Promise<boolean>;
   completeOnboarding: () => Promise<void>;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
 
-const ONBOARDING_STEP_KEY = 'onboarding_step';
+const ONBOARDING_STEP_KEY = "onboarding_step";
 
-export const OnboardingProvider = ({ children }: { children: React.ReactNode }) => {
+export const OnboardingProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const api = useAxios();
 
@@ -36,12 +43,14 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
   };
 
   const nextStep = () => updateStep(currentStep + 1);
-  const previousStep = () => { if (currentStep > 1) updateStep(currentStep - 1); };
+  const previousStep = () => {
+    if (currentStep > 1) updateStep(currentStep - 1);
+  };
   const goToStep = (step: number) => updateStep(step);
 
   const completeOnboarding = async () => {
     try {
-      await api.patch('/onboarding');
+      await api.patch("/onboarding");
     } catch (error) {
       console.error("Failed to mark onboarding as complete on server:", error);
     } finally {
@@ -49,24 +58,40 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
       window.location.href = "/dashboard";
     }
   };
-
   const checkUserName = async (name: string): Promise<boolean> => {
     const supabase = createClient();
+
     try {
-      const { data, error } = await supabase
+      // Check active users
+      const { data: activeUser, error: activeError } = await supabase
         .from("users")
         .select("id")
         .eq("user_name", name)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error checking username availability:", error);
+      if (activeError) {
         return false;
       }
-      return !data;
+      if (activeUser) {
+        return false;
+      }
 
+      // Check deleted usernames
+      const { data: deletedUser, error: deletedError } = await supabase
+        .from("deleted_usernames")
+        .select("username")
+        .eq("username", name)
+        .maybeSingle();
+
+      if (deletedError) {
+        return false;
+      }
+      if (deletedUser) {
+        return false;
+      }
+
+      return true;
     } catch (e) {
-      console.error("A critical error occurred while checking username:", e);
       return false;
     }
   };
@@ -74,7 +99,10 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
   const updateUserName = async (userId: string, name: string) => {
     try {
       const supabase = createClient();
-      const { error } = await supabase.from("users").update({ user_name: name }).eq("id", userId);
+      const { error } = await supabase
+        .from("users")
+        .update({ user_name: name })
+        .eq("id", userId);
       return { error, data: "success" };
     } catch (error) {
       return { error, data: "error" };
@@ -83,10 +111,13 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
 
   const isOnboardingComplete = async (): Promise<boolean> => {
     try {
-      const { data } = await api.get<{ isComplete: boolean }>('/onboarding');
+      const { data } = await api.get<{ isComplete: boolean }>("/onboarding");
       return data.isComplete;
     } catch (error) {
-      console.error("Could not check onboarding status, assuming complete to avoid blocking user:", error);
+      console.error(
+        "Could not check onboarding status, assuming complete to avoid blocking user:",
+        error
+      );
       return true;
     }
   };
@@ -111,6 +142,7 @@ export const OnboardingProvider = ({ children }: { children: React.ReactNode }) 
 
 export const useOnboarding = (): OnboardingContextType => {
   const value = useContext(OnboardingContext);
-  if (!value) throw new Error("Cannot useOnboarding outside OnboardingProvider");
+  if (!value)
+    throw new Error("Cannot useOnboarding outside OnboardingProvider");
   return value;
 };
