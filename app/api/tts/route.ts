@@ -2,7 +2,11 @@
 import { NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
 
-const client = new textToSpeech.TextToSpeechClient();
+const credentials = JSON.parse(process.env.GOOGLE_TTS_CREDENTIALS || "{}");
+
+const client = new textToSpeech.TextToSpeechClient({
+  credentials,
+});
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +29,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert Uint8Array -> ArrayBuffer
     const audioBuffer = response.audioContent as Uint8Array;
+
+    // Convert to ArrayBuffer for Response
     const arrayBuffer: any = audioBuffer.buffer.slice(
       audioBuffer.byteOffset,
       audioBuffer.byteOffset + audioBuffer.byteLength
