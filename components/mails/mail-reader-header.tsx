@@ -7,7 +7,7 @@ import {
   Volume2,
   Maximize2,
   Minimize2,
-  FileText
+  FileText,
 } from "lucide-react";
 import { useMails } from "@/context/mailsContext";
 import { useSenders } from "@/context/sendersContext";
@@ -18,7 +18,7 @@ import {
   SparklesIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion";
 
 const MailReaderHeader = ({
   setSummaryDialogOpen,
@@ -26,7 +26,7 @@ const MailReaderHeader = ({
   onBack,
   isFullScreen,
   toggleFullScreen,
-  onOpenNotes
+  onOpenNotes,
 }: {
   setSummaryDialogOpen: (open: boolean) => void;
   setTextToAudioOpen: (open: boolean) => void;
@@ -37,13 +37,18 @@ const MailReaderHeader = ({
 }) => {
   const { selectedMail, setSelectedMail, markAsRead, bookmark } = useMails();
   const isMobileView = typeof window !== "undefined" && window.innerWidth < 768;
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
+  const NEXT_PUBLIC_SHARE_URL = process.env.NEXT_PUBLIC_SHARE_URL;
 
   const handleShare = () => {
-    navigator.clipboard.writeText("your-link-here")
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1000)
-  }
+    if (selectedMail) {
+      navigator.clipboard.writeText(
+        `${NEXT_PUBLIC_SHARE_URL}/${selectedMail.id}`
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    }
+  };
 
   const handleBack = () => {
     if (window.innerWidth < 768 && onBack) {
@@ -60,7 +65,10 @@ const MailReaderHeader = ({
         <div className="flex items-center gap-2">
           <button
             className="p-xs rounded-full bg-content hover:bg-muted transition-colors flex-shrink-0"
-            onClick={() => { setSelectedMail(null); handleBack(); }}
+            onClick={() => {
+              setSelectedMail(null);
+              handleBack();
+            }}
             title="Close"
           >
             <XMarkIcon className="w-4 h-4 text-muted-foreground stroke-[2]" />
@@ -78,7 +86,6 @@ const MailReaderHeader = ({
               )}
             </button>
           )}
-
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
@@ -128,9 +135,7 @@ const MailReaderHeader = ({
               // The context now handles the setSelectedMail update, so we just call bookmark
               bookmark(selectedMail.id, !selectedMail.bookmarked);
             }}
-            title={
-              selectedMail.bookmarked ? "Remove Bookmark" : "Add Bookmark"
-            }
+            title={selectedMail.bookmarked ? "Remove Bookmark" : "Add Bookmark"}
           >
             <Bookmark
               fill={selectedMail?.bookmarked ? "currentColor" : "none"}
@@ -160,7 +165,7 @@ const MailReaderHeader = ({
             )}
           </AnimatePresence>
         </div>
-      </div >
+      </div>
     )
   );
 };
