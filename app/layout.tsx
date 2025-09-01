@@ -50,7 +50,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Notification />
-            <Toaster position="bottom-center" />
+            <Toaster position="top-center" />
 
             <main className="min-h-screen flex flex-col items-center">
               <div className="flex-1 w-full flex flex-col items-center">

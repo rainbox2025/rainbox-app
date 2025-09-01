@@ -40,7 +40,10 @@ interface FoldersContextType {
   renameFolder: (folderId: string, name: string) => Promise<void>;
   isRenamingFolderId: string | null; // Add this
   toggleReadFolder: (folderId: string, isRead: boolean) => Promise<void>;
-  toggleNotificationFolder: (folderId: string, isRead: boolean) => Promise<void>;
+  toggleNotificationFolder: (
+    folderId: string,
+    isRead: boolean
+  ) => Promise<void>;
   isTogglingReadStateId: string | null;
   isTogglingNotificationStateId: string | null;
   fetchSidebarOrder: () => Promise<void>;
@@ -54,17 +57,29 @@ export const FoldersProvider = ({
   children: React.ReactNode;
 }) => {
   const supabase = createClient();
-  const { removeSender: removeSenderFromRoot, addSender: addSenderToRoot, updateSenderInRoot, setSelectedSender, selectedSender } =
-    useSenders();
+  const {
+    removeSender: removeSenderFromRoot,
+    addSender: addSenderToRoot,
+    updateSenderInRoot,
+    setSelectedSender,
+    selectedSender,
+  } = useSenders();
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(true);
-  const [isDeletingFolderId, setIsDeletingFolderId] = useState<string | null>(null);
+  const [isDeletingFolderId, setIsDeletingFolderId] = useState<string | null>(
+    null
+  );
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [foldersListError, setFoldersListError] = useState<string | null>(null);
   const [isLoadingSenders, setIsLoadingSenders] = useState<boolean>(false);
-  const [isRenamingFolderId, setIsRenamingFolderId] = useState<string | null>(null);
-  const [isTogglingReadStateId, setIsTogglingReadStateId] = useState<string | null>(null);
-  const [isTogglingNotificationStateId, setIsTogglingNotificationStateId] = useState<string | null>(null);
+  const [isRenamingFolderId, setIsRenamingFolderId] = useState<string | null>(
+    null
+  );
+  const [isTogglingReadStateId, setIsTogglingReadStateId] = useState<
+    string | null
+  >(null);
+  const [isTogglingNotificationStateId, setIsTogglingNotificationStateId] =
+    useState<string | null>(null);
   const [createFolderError, setCreateFolderError] = useState<string | null>(
     null
   );
@@ -77,7 +92,6 @@ export const FoldersProvider = ({
   const { fetchSenders } = useSenders();
   const { setSelectedMail } = useMails();
 
-
   const api = useAxios();
 
   const fetchFolders = useCallback(async () => {
@@ -88,7 +102,16 @@ export const FoldersProvider = ({
       if (!user.user) return;
 
       const response = await api.get(`/folders/user/${user.user.id}`);
-      setFolders(response.data);
+      const fetchedFolders: FolderType[] = response.data;
+
+      const foldersWithCounts = fetchedFolders.map((folder) => {
+        const unreadCount = (folder.senders || []).reduce((sum, sender) => {
+          return sum + (sender.count || 0);
+        }, 0);
+        return { ...folder, count: unreadCount };
+      });
+
+      setFolders(foldersWithCounts);
     } catch (error) {
       setFoldersListError(
         error instanceof Error ? error.message : "Unknown error"
@@ -133,7 +156,9 @@ export const FoldersProvider = ({
       setIsCreatingFolder(true);
       setCreateFolderError(null);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) {
           throw new Error("You must be logged in to create a folder.");
         }
@@ -147,7 +172,9 @@ export const FoldersProvider = ({
         setFolders((prevFolders) => [...prevFolders, newFolder]);
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : "Unknown error creating folder";
+          error instanceof Error
+            ? error.message
+            : "Unknown error creating folder";
         setCreateFolderError(errorMessage);
         // Re-throw the error so the calling component's catch block is triggered
         throw error;
@@ -189,7 +216,9 @@ export const FoldersProvider = ({
         fetchSenders();
       } catch (error) {
         setDeleteFolderError(
-          error instanceof Error ? error.message : "Unknown error deleting folder"
+          error instanceof Error
+            ? error.message
+            : "Unknown error deleting folder"
         );
         throw error;
       } finally {
@@ -321,24 +350,39 @@ export const FoldersProvider = ({
       if (originalFolderId === newFolderId) {
         if (newFolderId) {
           // It's in a folder.
-          setFolders(prev => prev.map(f =>
-            f.id === newFolderId
-              ? { ...f, senders: f.senders?.map(s => s.id === updatedSender.id ? updatedSender : s) }
-              : f
-          ));
+          setFolders((prev) =>
+            prev.map((f) =>
+              f.id === newFolderId
+                ? {
+                    ...f,
+                    senders: f.senders?.map((s) =>
+                      s.id === updatedSender.id ? updatedSender : s
+                    ),
+                  }
+                : f
+            )
+          );
         } else {
           // It's in the root.
           updateSenderInRoot(updatedSender);
         }
-      } else { // Case 2: The sender moved between root and a folder.
+      } else {
+        // Case 2: The sender moved between root and a folder.
         // Step 1: Remove from original location
         if (originalFolderId) {
           // Was in a folder, remove it from that folder's list
-          setFolders(prev => prev.map(f =>
-            f.id === originalFolderId
-              ? { ...f, senders: f.senders?.filter(s => s.id !== updatedSender.id) }
-              : f
-          ));
+          setFolders((prev) =>
+            prev.map((f) =>
+              f.id === originalFolderId
+                ? {
+                    ...f,
+                    senders: f.senders?.filter(
+                      (s) => s.id !== updatedSender.id
+                    ),
+                  }
+                : f
+            )
+          );
         } else {
           // Was in root, remove it from the root list
           removeSenderFromRoot(updatedSender.id);
@@ -347,11 +391,13 @@ export const FoldersProvider = ({
         // Step 2: Add to new location
         if (newFolderId) {
           // Moved to a folder, add it to the new folder's list
-          setFolders(prev => prev.map(f =>
-            f.id === newFolderId
-              ? { ...f, senders: [...(f.senders || []), updatedSender] }
-              : f
-          ));
+          setFolders((prev) =>
+            prev.map((f) =>
+              f.id === newFolderId
+                ? { ...f, senders: [...(f.senders || []), updatedSender] }
+                : f
+            )
+          );
         } else {
           // Moved to root, add it to the root list
           addSenderToRoot(updatedSender);
@@ -363,9 +409,16 @@ export const FoldersProvider = ({
         setSelectedSender(updatedSender);
       }
     },
-    [folders, setFolders, addSenderToRoot, removeSenderFromRoot, updateSenderInRoot, selectedSender, setSelectedSender]
+    [
+      folders,
+      setFolders,
+      addSenderToRoot,
+      removeSenderFromRoot,
+      updateSenderInRoot,
+      selectedSender,
+      setSelectedSender,
+    ]
   );
-
 
   return (
     <FoldersContext.Provider

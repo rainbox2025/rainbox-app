@@ -15,7 +15,7 @@ export interface SenderType {
   domain?: string;
   user_id: string;
   created_at: string;
-  folder_id?: string;
+  folder_id?: string | null;
   icon?: string;
   count: number;
   folder?: string;
@@ -98,7 +98,7 @@ export interface AddSenderRequest {
   name: string;
   email: string;
   domain?: string;
-  folder_id?: string;
+  folder_id?: string | null;
   order?: number;
   subscribed?: boolean;
   count?: number;

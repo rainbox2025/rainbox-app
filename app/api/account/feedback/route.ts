@@ -42,8 +42,8 @@ async function createFeedbackEntry({
 
   if (fileURLs?.length) {
     properties.files = {
-      files: fileURLs.map((url, i) => ({
-        name: `attachment-${i + 1}`,
+      files: fileURLs.map((url) => ({
+        name: url.substring(url.lastIndexOf('/') + 1), 
         external: { url },
       })),
     };
@@ -59,19 +59,15 @@ export async function POST(request: Request) {
   const supabase = await createClient();
 
   try {
-    const formData = await request.formData();
-    const message = formData.get("feedback") as string | null;
-    const category = formData.get("category") as string | null;
-    const screenshots = formData.getAll("screenshots") as File[];
+    const { feedback, category, screenshots } = await request.json();
 
-    if (!message?.trim()) {
+    if (!feedback?.trim()) {
       return NextResponse.json(
         { error: "Message cannot be empty" },
         { status: 400 }
       );
     }
 
-    // get authenticated user
     const {
       data: { user },
       error: authError,
@@ -87,39 +83,12 @@ export async function POST(request: Request) {
       "Anonymous";
     const email = user.email!;
 
-    // Upload screenshots to Supabase Storage
-    const fileURLs: string[] = [];
-    for (const file of screenshots) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const path = `feedback/${user.id}/${uuidv4()}-${file.name}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("feedback-screenshots")
-        .upload(path, buffer, {
-          contentType: file.type,
-        });
-
-      if (uploadError) {
-        console.error("Supabase upload error:", uploadError);
-        continue;
-      }
-
-      const { data: publicUrl } = supabase.storage
-        .from("feedback-screenshots")
-        .getPublicUrl(path);
-
-      if (publicUrl?.publicUrl) {
-        fileURLs.push(publicUrl.publicUrl);
-      }
-    }
-
-    // Store in Notion
     const response = await createFeedbackEntry({
       username,
       email,
       type: category || "Other",
-      message,
-      fileURLs,
+      message: feedback,
+      fileURLs: screenshots,
     });
 
     return NextResponse.json({

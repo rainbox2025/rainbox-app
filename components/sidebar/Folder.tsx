@@ -14,14 +14,17 @@ import { BasicModal } from "../modals/basic-modal";
 import { useState, useRef, useEffect } from "react";
 import { DeleteConfirmationModal } from "../modals/delete-modal";
 import { useFolders } from "@/context/foldersContext";
-import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 
-
 type SidebarItem =
-  | { type: 'folder', id: string; data: FolderType }
-  | { type: 'sender', id: string; data: SenderType };
+  | { type: "folder"; id: string; data: FolderType }
+  | { type: "sender"; id: string; data: SenderType };
 
 interface FolderProps {
   folder: FolderType;
@@ -38,7 +41,16 @@ export default function FolderComponent({
   activeFolder,
   activeItem,
 }: FolderProps) {
-  const { deleteFolder, renameFolder, toggleReadFolder, toggleNotificationFolder, isDeletingFolderId, isRenamingFolderId, isTogglingReadStateId, isTogglingNotificationStateId } = useFolders();
+  const {
+    deleteFolder,
+    renameFolder,
+    toggleReadFolder,
+    toggleNotificationFolder,
+    isDeletingFolderId,
+    isRenamingFolderId,
+    isTogglingReadStateId,
+    isTogglingNotificationStateId,
+  } = useFolders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenamingModalOpen, setIsRenamingModalOpen] = useState(false);
   const [isDeletingModalOpen, setIsDeletingModalOpen] = useState(false);
@@ -53,16 +65,18 @@ export default function FolderComponent({
     setNodeRef,
     transform,
     transition,
-    isDragging
-  } = useSortable({ id: `folder-${folder.id}`, data: { type: 'folder', folder } });
+    isDragging,
+  } = useSortable({
+    id: `folder-${folder.id}`,
+    data: { type: "folder", folder },
+  });
 
   const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
     id: `folder-${folder.id}`,
-    data: { type: 'folder', folder }
+    data: { type: "folder", folder },
   });
 
-
-  const isDropTarget = isOver && activeItem?.type === 'sender';
+  const isDropTarget = isOver && activeItem?.type === "sender";
 
   const style = {
     transform: isDropTarget ? undefined : CSS.Transform.toString(transform),
@@ -70,12 +84,10 @@ export default function FolderComponent({
     opacity: isDragging ? 0.5 : 1,
   };
 
-
   const combinedRef = (node: HTMLDivElement) => {
     setNodeRef(node);
     setDroppableNodeRef(node);
   };
-
 
   const isFolderActive = activeFolder === folder.id;
 
@@ -119,7 +131,7 @@ export default function FolderComponent({
   };
 
   const folderSenders = folder.senders || [];
-  const senderIds = folderSenders.map(s => `sender-${s.id}`);
+  const senderIds = folderSenders.map((s) => `sender-${s.id}`);
 
   return (
     <>
@@ -127,9 +139,13 @@ export default function FolderComponent({
         <motion.div
           whileTap={{ scale: 0.98 }}
           onClick={() => toggleExpanded(folder.id)}
-          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent ${isDropTarget ? 'bg-primary/10 border border-primary/50' : ''}`}
+          className={`group px-md p-xs flex items-center justify-between rounded-md transition-colors cursor-pointer hover:bg-accent ${isDropTarget ? "bg-primary/10 border border-primary/50" : ""}`}
         >
-          <div {...attributes} {...listeners} className="flex items-center space-x-md flex-grow">
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center space-x-md flex-grow"
+          >
             <div className="flex-shrink-0">
               {expanded ? (
                 <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
@@ -159,30 +175,50 @@ export default function FolderComponent({
                     transition={{ duration: 0.1 }}
                     className="absolute right-0 top-8 w-48 bg-content text-popover-foreground rounded-md shadow-lg py-1 z-20 border border-border"
                   >
-                    <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleMarkAsRead}>
-                      <CheckIcon className="w-4 h-4" /> <span>{folder.isRead ? "Mark as unread" : "Mark as read"}</span>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary"
+                      onClick={handleMarkAsRead}
+                    >
+                      <CheckIcon className="w-4 h-4" />{" "}
+                      <span>
+                        {folder.isRead ? "Mark as unread" : "Mark as read"}
+                      </span>
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleMuteNotifications}>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary"
+                      onClick={handleMuteNotifications}
+                    >
                       {/* <-- FIX: The text now correctly shows the action to be performed. --> */}
-                      <BellSlashIcon className="w-4 h-4" /> <span>{folder.notification ? "Mute notification" : "Unmute notification"}</span>
+                      <BellSlashIcon className="w-4 h-4" />{" "}
+                      <span>
+                        {folder.notification
+                          ? "Mute notification"
+                          : "Unmute notification"}
+                      </span>
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleRename}>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary"
+                      onClick={handleRename}
+                    >
                       <PencilIcon className="w-4 h-4" /> <span>Rename</span>
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary" onClick={handleDelete}>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2 hover:bg-secondary"
+                      onClick={handleDelete}
+                    >
                       <TrashIcon className="w-4 h-4" /> <span>Delete</span>
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-         {folder.count > 0 && (
-  <span className="text-xs text-muted-foreground font-medium">
-    {folder.count >= 1000
-      ? `${Math.floor(folder.count / 1000)}K+`
-      : folder.count}
-  </span>
-)}
+            {folder.count > 0 && (
+              <span className="text-xs text-muted-foreground font-medium">
+                {folder.count >= 1000
+                  ? `${Math.floor(folder.count / 1000)}K+`
+                  : folder.count}
+              </span>
+            )}
           </div>
         </motion.div>
 
@@ -194,7 +230,10 @@ export default function FolderComponent({
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
             >
-              <SortableContext items={senderIds} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={senderIds}
+                strategy={verticalListSortingStrategy}
+              >
                 {folderSenders.length > 0 ? (
                   <div className="ml-6 mt-1 space-y-1">
                     {folderSenders.map((sender) => (
@@ -216,7 +255,7 @@ export default function FolderComponent({
         isOpen={isRenamingModalOpen}
         onClose={() => setIsRenamingModalOpen(false)}
         onSave={async (newName) => {
-          await renameFolder(folder.id, newName)
+          await renameFolder(folder.id, newName);
         }}
         initialValue={folder.name}
         title="Rename Folder"
@@ -252,11 +291,13 @@ export default function FolderComponent({
         onClose={() => setIsNotificationModalOpen(false)}
         onConfirm={async () => {
           // The onConfirm logic was already correct, toggling the state.
-          await toggleNotificationFolder(folder.id, !folder.notification)
+          await toggleNotificationFolder(folder.id, !folder.notification);
         }}
         itemName={folder.name}
         // <-- FIX: The itemType is now based on `folder.notification` state, not `folder.isRead`.
-        itemType={folder.notification ? "mutenotification" : "unmutenotification"}
+        itemType={
+          folder.notification ? "mutenotification" : "unmutenotification"
+        }
         isLoading={isTogglingNotificationStateId === folder.id}
       />
     </>

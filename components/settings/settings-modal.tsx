@@ -23,6 +23,7 @@ import PreferencesTab from "./tabs/preferences";
 import NotificationTab from "./tabs/notification";
 import BillingTab from "./tabs/billing";
 import { FeedbackModal } from "../feedback-modal";
+import { BookOpen, HelpCircle, LifeBuoy } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     contactSupport: "team@rainbox.ai",
     roadmap: "https://rainbox.featurebase.app/roadmap",
     changelog: "https://rainbox.featurebase.app/changelog",
+    helpCenter: "https://rainbox.featurebase.app/help",
     plans: "https://rainbox.ai/plans",
     visitWebsite: "https://rainbox.ai",
     followX: "https://x.com/rainbox_ai",
@@ -118,7 +120,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         }`}
                       >
                         <UserCircleIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">Account</span>
+                        <span className="text-sm hidden md:inline">
+                          Account
+                        </span>
                       </button>
                     </li>
                     <li>
@@ -131,7 +135,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         }`}
                       >
                         <EnvelopeIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">Mailbox</span>
+                        <span className="text-sm hidden md:inline">
+                          Mailbox
+                        </span>
                       </button>
                     </li>
                     <li>
@@ -174,7 +180,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         }`}
                       >
                         <BillingIcon className="h-5 w-5" />
-                        <span className="text-sm hidden md:inline">Billing</span>
+                        <span className="text-sm hidden md:inline">
+                          Billing
+                        </span>
                       </button>
                     </li>
                   </ul>
@@ -220,6 +228,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         <ClockIcon className="h-5 w-5" />
                         <span className="text-sm hidden md:inline">
                           Changelog 🡥
+                        </span>
+                      </button>
+                    </li>{" "}
+                    <li>
+                      <button
+                        onClick={() =>
+                          redirectToExternalLink(
+                            redirectDestinations.helpCenter
+                          )
+                        }
+                        className={`flex items-center gap-2 w-full p-sm justify-center md:justify-start rounded-md transition-colors hover:bg-hovered`}
+                      >
+                        <BookOpen className="h-5 w-5" />
+                        <span className="text-sm hidden md:inline">
+                          Help Center 🡥
                         </span>
                       </button>
                     </li>

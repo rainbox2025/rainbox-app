@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CameraIcon } from "@heroicons/react/24/solid";
 import { useSettings } from "@/context/settingsContext";
+import { BookOpen } from "lucide-react";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -31,7 +32,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  // Assume submitFeedback now accepts FormData
   const { submitFeedback } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState<string>(
     feedbackCategories[0].name
@@ -44,31 +44,33 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const screenshotUrlsRef = useRef<string[]>([]);
 
-  // Effect to manage screenshot preview URLs and prevent memory leaks
   useEffect(() => {
-    const screenshotUrls = screenshots.map((file) => URL.createObjectURL(file));
+    screenshotUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    screenshotUrlsRef.current = screenshots.map((file) =>
+      URL.createObjectURL(file)
+    );
 
     return () => {
-      screenshotUrls.forEach((url) => URL.revokeObjectURL(url));
+      screenshotUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [screenshots]);
 
-  // Enhanced close handler to reset all states
   const handleCloseAndReset = useCallback(() => {
     onClose();
-    // Use a timeout to ensure state reset happens after exit animation
     setTimeout(() => {
       setSelectedCategory(feedbackCategories[0].name);
       setMessage("");
       setScreenshots([]);
       setSubmissionStatus("idle");
-    }, 300); // Should match animation duration
+      screenshotUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      screenshotUrlsRef.current = [];
+    }, 300);
   }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
-      // Focus textarea when modal opens
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
   }, [isOpen]);
@@ -78,7 +80,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     if (files.length > 0) {
       setScreenshots((prev) => [...prev, ...files].slice(0, MAX_SCREENSHOTS));
     }
-    // Reset file input value to allow selecting the same file again
     event.target.value = "";
   };
 
@@ -93,15 +94,15 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
     setSubmissionStatus("submitting");
 
-    const formData = new FormData();
-    formData.append("feedback", message);
-    formData.append("category", selectedCategory);
-    screenshots.forEach((file) => {
-      formData.append("screenshots", file, file.name);
-    });
+    const payload = {
+      feedback: message,
+      category: selectedCategory,
+      screenshots: screenshotUrlsRef.current,
+    };
 
     try {
-      await submitFeedback(formData);
+      // Assuming submitFeedback in context is updated to accept a plain object
+      await submitFeedback(payload as any);
       setSubmissionStatus("success");
     } catch (error) {
       console.error("Error submitting feedback:", error);
@@ -125,7 +126,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             className="bg-content rounded-lg shadow-xl w-full max-w-md border border-border"
           >
             {submissionStatus === "success" ? (
-              // --- THANK YOU MODAL ---
               <div className="p-8 flex flex-col items-center text-center">
                 <div className="bg-blue-500 rounded-full h-16 w-16 flex items-center justify-center mb-6">
                   <CheckCircleIcon className="h-10 w-10 text-white" />
@@ -155,6 +155,19 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                   <button
                     onClick={() =>
                       window.open(
+                        "https://rainbox.featurebase.app/help",
+                        "_blank"
+                      )
+                    }
+                    className="w-full flex items-center justify-center gap-2 bg-hovered h-10 rounded-md text-sm font-medium border border-border hover:bg-secondary"
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    Help Center
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      window.open(
                         "https://rainbox.featurebase.app/roadmap",
                         "_blank"
                       )
@@ -174,7 +187,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 </div>
               </div>
             ) : (
-              // --- FEEDBACK FORM MODAL ---
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-semibold text-foreground">
@@ -231,7 +243,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                   />
                 </div>
 
-                {/* --- SCREENSHOT UPLOAD UI --- */}
                 <div>
                   <input
                     type="file"
@@ -264,7 +275,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                         className="relative w-full aspect-video rounded-md overflow-hidden"
                       >
                         <img
-                          src={URL.createObjectURL(file)}
+                          src={screenshotUrlsRef.current[index]}
                           alt={`Screenshot preview ${index + 1}`}
                           className="w-full h-full object-cover"
                         />

@@ -29,7 +29,10 @@ interface SendersContextType {
   unsubcribeSender: (id: string) => Promise<void>;
   updateSender: (id: string, formData: FormData) => Promise<SenderType>;
   toggleReadSender: (senderId: string) => Promise<SenderType>;
-  toggleNotificationSender: (senderId: string, currentStatus: boolean) => Promise<SenderType>;
+  toggleNotificationSender: (
+    senderId: string,
+    currentStatus: boolean
+  ) => Promise<SenderType>;
   removeSender: (senderId: string) => void;
   addSender: (sender: SenderType) => void;
   setSelectedSender: (sender: SenderType | null) => void;
@@ -53,7 +56,9 @@ export const SendersProvider = ({
   // --- NEW: Granular loading states ---
   const [updatingSenderId, setUpdatingSenderId] = useState<string | null>(null);
   const [togglingReadId, setTogglingReadId] = useState<string | null>(null);
-  const [togglingNotificationId, setTogglingNotificationId] = useState<string | null>(null);
+  const [togglingNotificationId, setTogglingNotificationId] = useState<
+    string | null
+  >(null);
   const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
 
   const api = useAxios();
@@ -61,12 +66,16 @@ export const SendersProvider = ({
   const fetchSenders = useCallback(async () => {
     try {
       setIsSendersLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await api.get(`/senders/user/${user.id}`);
       setSenders(data);
     } catch (error) {
-      setSendersListError(error instanceof Error ? error.message : "Unknown error");
+      setSendersListError(
+        error instanceof Error ? error.message : "Unknown error"
+      );
     } finally {
       setIsSendersLoading(false);
     }
@@ -85,13 +94,16 @@ export const SendersProvider = ({
       setUpdatingSenderId(id);
       try {
         // 1. Make the API call
-        const { data: updatedSender } = await api.patch(`/senders/${id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data: updatedSender } = await api.patch(
+          `/senders/${id}`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
 
         // 2. IMPORTANT: Return the updated sender object from the server
         return updatedSender;
-
       } catch (error) {
         console.error("Failed to update sender", error);
         throw error; // Re-throw to be caught by the component
@@ -135,7 +147,9 @@ export const SendersProvider = ({
       setTogglingReadId(senderId);
       try {
         // The API now returns the updated sender
-        const { data: updatedSender } = await api.patch(`/senders/read`, { sender_id: senderId });
+        const { data: updatedSender } = await api.patch(`/senders/read`, {
+          sender_id: senderId,
+        });
         return updatedSender; // Return it
       } catch (error) {
         console.error("Failed to toggle read state", error);
@@ -152,13 +166,15 @@ export const SendersProvider = ({
       setTogglingNotificationId(senderId);
       try {
         // The API call returns the updated sender from the server
-        const { data: updatedSender } = await api.patch(`/senders/${senderId}`, {
-          notification: !currentStatus
-        });
+        const { data: updatedSender } = await api.patch(
+          `/senders/${senderId}`,
+          {
+            notification: !currentStatus,
+          }
+        );
 
         // IMPORTANT: Return the updated sender object
         return updatedSender;
-
       } catch (error) {
         console.error("Failed to toggle notification", error);
         throw error;
@@ -167,7 +183,7 @@ export const SendersProvider = ({
       }
     },
     [api]
-  )
+  );
 
   const removeSender = (senderId: string) => {
     setSenders((prev) => prev.filter((sender) => sender.id !== senderId));
@@ -176,8 +192,6 @@ export const SendersProvider = ({
   const addSender = (sender: SenderType) => {
     setSenders((prev) => [...prev, sender]);
   };
-
-
 
   return (
     <SendersContext.Provider
