@@ -1,29 +1,37 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import { useBookmarks } from '@/context/bookmarkContext';
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
+import { useBookmarks } from "@/context/bookmarkContext";
 
 interface MailBodyViewerProps {
   htmlContent: string;
   mailId?: string;
 }
 
-const createIndicatorSvg = (type: 'comment' | 'tag', bookmarkId: string) => {
+const createIndicatorSvg = (type: "comment" | "tag", bookmarkId: string) => {
   const paths = {
-    comment: "M5 2C3.34315 2 2 3.34315 2 5V9C2 10.6569 3.34315 12 5 12H6L8 15L10 12H11C12.6569 12 14 10.6569 14 9V5C14 3.34315 12.6569 2 11 2H5Z",
-    tag: "M13.5858 7.58579L8.58579 2.58579C8.21071 2.21071 7.70201 2 7.17157 2H4C2.89543 2 2 2.89543 2 4V7.17157C2 7.70201 2.21071 8.21071 2.58579 8.58579L7.58579 13.5858C8.36684 14.3668 9.63316 14.3668 10.4142 13.5858L13.5858 10.4142C14.3668 9.63317 14.3668 8.36684 13.5858 7.58579ZM6 7C6.55228 7 7 6.55228 7 6C7 5.44771 6.55228 5 6 5C5.44772 5 5 5.44771 5 6C5 6.55228 5.44772 7 6 7Z"
+    comment:
+      "M5 2C3.34315 2 2 3.34315 2 5V9C2 10.6569 3.34315 12 5 12H6L8 15L10 12H11C12.6569 12 14 10.6569 14 9V5C14 3.34315 12.6569 2 11 2H5Z",
+    tag: "M13.5858 7.58579L8.58579 2.58579C8.21071 2.21071 7.70201 2 7.17157 2H4C2.89543 2 2 2.89543 2 4V7.17157C2 7.70201 2.21071 8.21071 2.58579 8.58579L7.58579 13.5858C8.36684 14.3668 9.63316 14.3668 10.4142 13.5858L13.5858 10.4142C14.3668 9.63317 14.3668 8.36684 13.5858 7.58579ZM6 7C6.55228 7 7 6.55228 7 6C7 5.44771 6.55228 5 6 5C5.44772 5 5 5.44771 5 6C5 6.55228 5.44772 7 6 7Z",
   };
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="13" width="13" class="${type}-indicator-icon" data-bookmark-id="${bookmarkId}" style="margin: 0 2px; fill: currentColor; display: inline-block; cursor: pointer; vertical-align: middle;"><path d="${paths[type]}"></path></svg>`;
 };
 
-const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean): void => {
+const highlightRange = (
+  range: Range,
+  bookmarkId: string,
+  isConfirmed: boolean
+): void => {
   if (range.collapsed) return;
 
-  const highlightClassName = `bookmark-highlight ${isConfirmed ? 'bookmark-highlight-confirmed' : 'bookmark-highlight-unconfirmed'}`;
+  const highlightClassName = `bookmark-highlight ${isConfirmed ? "bookmark-highlight-confirmed" : "bookmark-highlight-unconfirmed"}`;
 
-  if (range.startContainer === range.endContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+  if (
+    range.startContainer === range.endContainer &&
+    range.startContainer.nodeType === Node.TEXT_NODE
+  ) {
     try {
-      const span = document.createElement('span');
+      const span = document.createElement("span");
       span.className = highlightClassName;
       span.dataset.bookmarkId = bookmarkId;
       range.surroundContents(span);
@@ -38,7 +46,9 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
     NodeFilter.SHOW_TEXT,
     {
       acceptNode: (node) =>
-        range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+        range.intersectsNode(node)
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT,
     }
   );
 
@@ -47,10 +57,10 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
     nodes.push(walker.currentNode as Text);
   }
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     const localRange = document.createRange();
-    const start = (node === range.startContainer) ? range.startOffset : 0;
-    const end = (node === range.endContainer) ? range.endOffset : node.length;
+    const start = node === range.startContainer ? range.startOffset : 0;
+    const end = node === range.endContainer ? range.endOffset : node.length;
 
     if (start === end) return;
 
@@ -58,7 +68,7 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
     localRange.setEnd(node, end);
 
     try {
-      const span = document.createElement('span');
+      const span = document.createElement("span");
       span.className = highlightClassName;
       span.dataset.bookmarkId = bookmarkId;
       localRange.surroundContents(span);
@@ -69,22 +79,29 @@ const highlightRange = (range: Range, bookmarkId: string, isConfirmed: boolean):
 };
 
 function sanitizeMailHtml(html: string): string {
-  html = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '');
-  html = html.replace(/<link[^>]*rel=["']?stylesheet["']?[^>]*>/gi, '');
-  html = html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-  html = html.replace(/<base[\s\S]*?>/gi, '');
+  html = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "");
+  html = html.replace(/<link[^>]*rel=["']?stylesheet["']?[^>]*>/gi, "");
+  html = html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+  html = html.replace(/<base[\s\S]*?>/gi, "");
   return html;
 }
 
-const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) => {
+const MailBodyViewer: React.FC<MailBodyViewerProps> = ({
+  htmlContent,
+  mailId,
+}) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const {
-    bookmarks, addBookmark, showPopup, deserializeRange,
-    showCommentModal, showTagModal,
+    bookmarks,
+    addBookmark,
+    showPopup,
+    deserializeRange,
+    showCommentModal,
+    showTagModal,
   } = useBookmarks();
 
-  const currentMailBookmarks = useMemo(() =>
-    mailId ? bookmarks.filter(b => b.mailId === mailId) : [],
+  const currentMailBookmarks = useMemo(
+    () => (mailId ? bookmarks.filter((b) => b.mailId === mailId) : []),
     [bookmarks, mailId]
   );
 
@@ -109,7 +126,7 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       return b.serializedRange.start.offset - a.serializedRange.start.offset;
     });
 
-    sortedBookmarks.forEach(bookmark => {
+    sortedBookmarks.forEach((bookmark) => {
       if (!bookmark.serializedRange) return;
       const range = deserializeRange(bookmark.serializedRange, rootElement);
 
@@ -119,29 +136,44 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
     });
 
     const processedBookmarkIds = new Set<string>();
-    currentMailBookmarks.forEach(bookmark => {
+    currentMailBookmarks.forEach((bookmark) => {
       if (processedBookmarkIds.has(bookmark.id)) return;
       processedBookmarkIds.add(bookmark.id);
 
       const highlightSpans = Array.from(
-        rootElement.querySelectorAll(`.bookmark-highlight[data-bookmark-id="${bookmark.id}"]`)
+        rootElement.querySelectorAll(
+          `.bookmark-highlight[data-bookmark-id="${bookmark.id}"]`
+        )
       ) as HTMLElement[];
 
       if (highlightSpans.length === 0) return;
 
-      highlightSpans.forEach(span => {
+      highlightSpans.forEach((span) => {
         let isDragging = false;
-        span.onmousedown = () => { isDragging = false; };
-        span.onmousemove = () => { isDragging = true; };
+        span.onmousedown = () => {
+          isDragging = false;
+        };
+        span.onmousemove = () => {
+          isDragging = true;
+        };
         span.onmouseup = (e) => {
           if (isDragging) return;
-          if ((e.target as HTMLElement).closest('.comment-indicator-icon, .tag-indicator-icon')) {
-            e.stopPropagation(); return;
+          if (
+            (e.target as HTMLElement).closest(
+              ".comment-indicator-icon, .tag-indicator-icon"
+            )
+          ) {
+            e.stopPropagation();
+            return;
           }
           e.stopPropagation();
-          const bookmarkId = (e.currentTarget as HTMLElement).dataset.bookmarkId;
+          const bookmarkId = (e.currentTarget as HTMLElement).dataset
+            .bookmarkId;
           if (bookmarkId) {
-            showPopup(bookmarkId, (e.currentTarget as HTMLElement).getBoundingClientRect());
+            showPopup(
+              bookmarkId,
+              (e.currentTarget as HTMLElement).getBoundingClientRect()
+            );
           }
         };
       });
@@ -149,74 +181,100 @@ const MailBodyViewer: React.FC<MailBodyViewerProps> = ({ htmlContent, mailId }) 
       const lastSpan = highlightSpans[highlightSpans.length - 1];
       if (lastSpan && bookmark.isConfirmed) {
         if (bookmark.comment) {
-          const indicator = document.createElement('span');
-          indicator.innerHTML = createIndicatorSvg('comment', bookmark.id);
-          indicator.onclick = (e) => { e.stopPropagation(); showCommentModal(bookmark.id, lastSpan.getBoundingClientRect()); };
-          lastSpan.insertAdjacentElement('beforeend', indicator);
+          const indicator = document.createElement("span");
+          indicator.innerHTML = createIndicatorSvg("comment", bookmark.id);
+          indicator.onclick = (e) => {
+            e.stopPropagation();
+            showCommentModal(bookmark.id, lastSpan.getBoundingClientRect());
+          };
+          lastSpan.insertAdjacentElement("beforeend", indicator);
         }
         if (bookmark.tags && bookmark.tags.length > 0) {
-          const indicator = document.createElement('span');
-          indicator.innerHTML = createIndicatorSvg('tag', bookmark.id);
-          indicator.onclick = (e) => { e.stopPropagation(); showTagModal(bookmark.id, lastSpan.getBoundingClientRect()); };
-          lastSpan.insertAdjacentElement('beforeend', indicator);
+          const indicator = document.createElement("span");
+          indicator.innerHTML = createIndicatorSvg("tag", bookmark.id);
+          indicator.onclick = (e) => {
+            e.stopPropagation();
+            showTagModal(bookmark.id, lastSpan.getBoundingClientRect());
+          };
+          lastSpan.insertAdjacentElement("beforeend", indicator);
         }
       }
     });
+  }, [
+    htmlContent,
+    currentMailBookmarks,
+    deserializeRange,
+    showPopup,
+    showCommentModal,
+    showTagModal,
+  ]);
 
-  }, [htmlContent, currentMailBookmarks, deserializeRange, showPopup, showCommentModal, showTagModal]);
+  const handleMouseUp = useCallback(
+    (event: MouseEvent) => {
+      if (!contentRef.current) return;
 
-  const handleMouseUp = useCallback((event: MouseEvent) => {
-    if (!contentRef.current) return;
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) return;
 
-    setTimeout(() => {
-      const selection = window.getSelection();
-      if (!selection || selection.isCollapsed) return;
-      
-      const targetElement = event.target as HTMLElement;
-      if (targetElement.closest('.selection-popup-class-name, .comment-modal-root-class, .tag-modal-root-class')) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      const text = range.toString().trim();
-
-      if (text.length > 0 && contentRef.current?.contains(range.commonAncestorContainer)) {
-        const rect = range.getBoundingClientRect();
-        const newBookmark = addBookmark(text, range, contentRef.current, mailId);
-        if (newBookmark) {
-          showPopup(newBookmark.id, rect);
+        const targetElement = event.target as HTMLElement;
+        if (
+          targetElement.closest(
+            ".selection-popup-class-name, .comment-modal-root-class, .tag-modal-root-class"
+          )
+        ) {
+          return;
         }
-      }
-    }, 10);
-  }, [addBookmark, showPopup, mailId]);
+
+        const range = selection.getRangeAt(0);
+        const text = range.toString().trim();
+
+        if (
+          text.length > 0 &&
+          contentRef.current?.contains(range.commonAncestorContainer)
+        ) {
+          const rect = range.getBoundingClientRect();
+          const newBookmark = addBookmark(
+            text,
+            range,
+            contentRef.current,
+            mailId
+          );
+          if (newBookmark) {
+            showPopup(newBookmark.id, rect);
+          }
+        }
+      }, 10);
+    },
+    [addBookmark, showPopup, mailId]
+  );
 
   useEffect(() => {
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => document.removeEventListener("mouseup", handleMouseUp);
   }, [handleMouseUp]);
 
   useEffect(() => {
-  if (contentRef.current) {
-    const links = contentRef.current.querySelectorAll("a");
-    links.forEach(link => {
-      link.setAttribute("target", "_blank");
-      link.setAttribute("rel", "noopener noreferrer");
-    });
+    if (contentRef.current) {
+      const links = contentRef.current.querySelectorAll("a");
+      links.forEach((link) => {
+        link.setAttribute("target", "_blank");
+        link.setAttribute("rel", "noopener noreferrer");
+      });
 
-    const tables = contentRef.current.querySelectorAll("table");
-    tables.forEach((table) => {
-      table.removeAttribute("width");       
-      table.style.width = "100%";           
-      table.style.tableLayout = "auto";     
-    });
-  }
-}, [htmlContent]);
-
+      const tables = contentRef.current.querySelectorAll("table");
+      tables.forEach((table) => {
+        table.removeAttribute("width");
+        table.style.width = "100%";
+        table.style.tableLayout = "auto";
+      });
+    }
+  }, [htmlContent]);
 
   return (
     <div
       ref={contentRef}
-      style={{ wordBreak: 'break-word' }}
+      style={{ wordBreak: "break-word" }}
       className="text-sm max-w-none mail-body-content"
     />
   );
