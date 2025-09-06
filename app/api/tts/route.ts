@@ -1,15 +1,27 @@
-// app/api/tts/route.ts
 import { NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
 
-const credentials = JSON.parse(process.env.GOOGLE_TTS_CREDENTIALS || "{}");
-
 const client = new textToSpeech.TextToSpeechClient({
-  credentials,
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n").replace(
+      /\n/g,
+      "\n"
+    ),
+  },
+  projectId: process.env.GOOGLE_PROJECT_ID,
 });
 
 export async function POST(request: Request) {
   try {
+    console.log("Project ID:", process.env.GOOGLE_PROJECT_ID);
+    console.log("Client Email:", process.env.GOOGLE_CLIENT_EMAIL);
+    console.log("Private Key exists:", !!process.env.GOOGLE_PRIVATE_KEY);
+    console.log(
+      "Private Key starts with:",
+      process.env.GOOGLE_PRIVATE_KEY?.substring(0, 50)
+    );
+
     const { text } = await request.json();
 
     if (!text || !text.trim()) {
@@ -29,18 +41,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const audioBuffer = response.audioContent as Uint8Array;
+    const audioBuffer = Buffer.from(response.audioContent as Uint8Array);
 
-    // Convert to ArrayBuffer for Response
-    const arrayBuffer: any = audioBuffer.buffer.slice(
-      audioBuffer.byteOffset,
-      audioBuffer.byteOffset + audioBuffer.byteLength
-    );
-
-    return new Response(arrayBuffer, {
+    return new Response(audioBuffer, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Disposition": `inline; filename="speech.mp3"`,
+        "Content-Disposition": 'inline; filename="speech.mp3"',
       },
     });
   } catch (error: any) {
