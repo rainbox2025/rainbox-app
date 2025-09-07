@@ -33,6 +33,9 @@ export async function POST(request: Request) {
   const variantId = plan.lemon_variant_id;
 
   const { data }: { data: any } = await createCheckout(storeId, variantId, {
+    productOptions: {
+      redirectUrl: process.env.LEMONSQUEEZY_SUCCESS_REDIRECT,
+    },
     checkoutOptions: {
       embed: false,
     },
@@ -43,5 +46,5 @@ export async function POST(request: Request) {
   });
   console.log(data);
 
-  return new Response(JSON.stringify({ url: data?.attributes.url }));
+  return new Response(JSON.stringify({ url: data.data.attributes.url }));
 }
