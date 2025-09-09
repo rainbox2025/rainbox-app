@@ -44,7 +44,6 @@ export async function POST(request: Request) {
       custom: { userId: user.id },
     },
   });
-  console.log(data);
 
   return new Response(JSON.stringify({ url: data.data.attributes.url }));
 }
