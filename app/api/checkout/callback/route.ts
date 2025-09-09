@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const supabase = await createWebhookAdminClient();
 
   // 3) Pull userId from checkout metadata if present
-  const userId = attrs?.checkout_data?.user_id ?? null;
+  const userId = meta?.custom_data?.user_id ?? null;
   log("userId extracted", userId);
 
   // 4) Map variant_id -> plan_id
