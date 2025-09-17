@@ -94,6 +94,8 @@ export interface EmailData {
   body: string;
 }
 
+
+
 export interface AddSenderRequest {
   name: string;
   email: string;
