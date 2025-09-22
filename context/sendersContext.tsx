@@ -5,6 +5,7 @@ import {
   useEffect,
   useContext,
   useCallback,
+  useRef,
   Dispatch,
   SetStateAction,
 } from "react";
@@ -81,13 +82,25 @@ export const SendersProvider = ({
     }
   }, [api]);
 
+  // Add caching to avoid unnecessary re-fetches
+  const lastFetchTime = useRef<number>(0);
+  const CACHE_DURATION = 30 * 1000; // 30 seconds cache for senders
+
   useEffect(() => {
     if (accessToken) {
-      fetchSenders();
+      // Only fetch if cache is stale or we don't have data
+      const now = Date.now();
+      if (
+        now - lastFetchTime.current > CACHE_DURATION ||
+        senders.length === 0
+      ) {
+        fetchSenders();
+        lastFetchTime.current = now;
+      }
     } else {
       setSenders([]);
     }
-  }, [accessToken, fetchSenders]);
+  }, [accessToken, fetchSenders, senders.length]);
 
   const updateSender = useCallback(
     async (id: string, formData: FormData) => {

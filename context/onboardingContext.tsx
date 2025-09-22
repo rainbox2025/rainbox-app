@@ -51,6 +51,8 @@ export const OnboardingProvider = ({
   const completeOnboarding = async () => {
     try {
       await api.patch("/onboarding");
+      // Clear onboarding cache after successful completion
+      onboardingStatusCache = null;
     } catch (error) {
       console.error("Failed to mark onboarding as complete on server:", error);
     } finally {
@@ -109,10 +111,31 @@ export const OnboardingProvider = ({
     }
   };
 
+  // Cache onboarding status to avoid repeated API calls
+  let onboardingStatusCache: { isComplete: boolean; timestamp: number } | null =
+    null;
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
   const isOnboardingComplete = async (): Promise<boolean> => {
     try {
+      // Check cache first
+      if (
+        onboardingStatusCache &&
+        Date.now() - onboardingStatusCache.timestamp < CACHE_DURATION
+      ) {
+        return onboardingStatusCache.isComplete;
+      }
+
       const { data } = await api.get<{ isComplete: boolean }>("/onboarding");
-      return data.isComplete;
+      const isComplete = data.isComplete;
+
+      // Cache the result
+      onboardingStatusCache = {
+        isComplete,
+        timestamp: Date.now(),
+      };
+
+      return isComplete;
     } catch (error) {
       console.error(
         "Could not check onboarding status, assuming complete to avoid blocking user:",

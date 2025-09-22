@@ -3,10 +3,11 @@
 import {
   createContext,
   useState,
-  useEffect, 
+  useEffect,
   useContext,
   useCallback,
   ReactNode,
+  useRef,
 } from "react";
 import { Mail } from "@/types/data";
 import { createClient } from "@/utils/supabase/client";
@@ -77,14 +78,18 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
             `/mails/sender/${selectedSender.id}?page=${page}&pageSize=20`
           );
         } else {
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (!user) throw new Error("User not authenticated");
           response = await api.get(
             `/mails/user/${user.id}?page=${page}&pageSize=20`
           );
         }
         const { data: newMails, pagination } = response.data;
-        setMails((prevMails) => (page === 1 ? newMails : [...prevMails, ...newMails]));
+        setMails((prevMails) =>
+          page === 1 ? newMails : [...prevMails, ...newMails]
+        );
         setPaginationInfo({
           currentPage: pagination.page,
           hasMore: pagination.hasMore,
@@ -92,7 +97,9 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
           totalCount: pagination.totalCount,
         });
       } catch (error) {
-        setMailsListError(error instanceof Error ? error.message : "Unknown error");
+        setMailsListError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
         console.error(error);
       } finally {
         setIsMailsLoading(false);
@@ -102,28 +109,41 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
     [api, selectedSender, supabase.auth]
   );
 
+  // Add caching to avoid unnecessary re-fetches when switching between senders
+  const lastFetchParams = useRef<{
+    accessToken: string | null;
+    selectedSenderId: string | null;
+  } | null>(null);
+
   useEffect(() => {
     if (!accessToken) {
       setMails([]);
       setPaginationInfo(INITIAL_PAGINATION_STATE);
       return;
     }
-    setMails([]);
-    setSelectedMail(null);
-    setPaginationInfo(INITIAL_PAGINATION_STATE);
-    fetchMails(1);
-  }, [accessToken, selectedSender]); 
 
-  
+    // Only fetch if the parameters have actually changed
+    const currentParams = {
+      accessToken,
+      selectedSenderId: selectedSender?.id || null,
+    };
+    if (
+      JSON.stringify(currentParams) !== JSON.stringify(lastFetchParams.current)
+    ) {
+      setMails([]);
+      setSelectedMail(null);
+      setPaginationInfo(INITIAL_PAGINATION_STATE);
+      fetchMails(1);
+      lastFetchParams.current = currentParams;
+    }
+  }, [accessToken, selectedSender]);
+
   useEffect(() => {
     if (selectedMail) {
-      
       const updatedMailInList = mails.find((m) => m.id === selectedMail.id);
-      
-      
+
       setSelectedMail(updatedMailInList || null);
     }
-    
   }, [mails]);
 
   const loadMoreMails = useCallback(() => {
@@ -136,26 +156,40 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
     await fetchMails(1);
   }, [fetchMails]);
 
-  const markAsRead = useCallback(async (id: string, read = true) => {
-    
-    const originalMails = mails;
-    setMails((prev) => prev.map((mail) => (mail.id === id ? { ...mail, read } : mail)));
-    if (selectedSender) {
+  const markAsRead = useCallback(
+    async (id: string, read = true) => {
+      const originalMails = mails;
+      setMails((prev) =>
+        prev.map((mail) => (mail.id === id ? { ...mail, read } : mail))
+      );
+      if (selectedSender) {
         const originalSenders = senders;
-        setSenders(prev => prev.map(s => s.id === selectedSender.id ? {...s, count: s.count + (read ? -1 : 1) } : s));
-    }
-    try {
-      await api.patch(`/mails/read/${id}`, { read });
-    } catch (error) {
-        setMails(originalMails); 
+        setSenders((prev) =>
+          prev.map((s) =>
+            s.id === selectedSender.id
+              ? { ...s, count: s.count + (read ? -1 : 1) }
+              : s
+          )
+        );
+      }
+      try {
+        await api.patch(`/mails/read/${id}`, { read });
+      } catch (error) {
+        setMails(originalMails);
         console.error("Failed to mark as read:", error);
-    }
-  }, [api, mails, selectedSender, senders, setSenders]);
+      }
+    },
+    [api, mails, selectedSender, senders, setSenders]
+  );
 
   const markAsReadAllBySenderId = useCallback(
     async (senderId: string) => {
       const originalMails = mails;
-      setMails((prev) => prev.map((mail) => mail.sender_id === senderId ? { ...mail, read: true } : mail));
+      setMails((prev) =>
+        prev.map((mail) =>
+          mail.sender_id === senderId ? { ...mail, read: true } : mail
+        )
+      );
       try {
         await api.patch(`/mails/read/sender/${senderId}`);
       } catch (error) {
@@ -166,18 +200,23 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
     [api, mails]
   );
 
- const bookmark = useCallback(async (id: string, bookmarked = true) => {
-  const originalMails = mails;
-  setMails((prev) =>
-    prev.map((mail) => (mail.id === id ? { ...mail, bookmarked } : mail))
+  const bookmark = useCallback(
+    async (id: string, bookmarked = true) => {
+      const originalMails = mails;
+      setMails((prev) =>
+        prev.map((mail) => (mail.id === id ? { ...mail, bookmarked } : mail))
+      );
+      try {
+        const res = await api.patch(`/mails/bookmark/${id}`, {
+          bookmark: bookmarked,
+        });
+      } catch (error) {
+        setMails(originalMails);
+        console.error("Failed to update bookmark:", error);
+      }
+    },
+    [api, mails]
   );
-  try {
-    const res = await api.patch(`/mails/bookmark/${id}`, { bookmark: bookmarked });
-  } catch (error) {
-    setMails(originalMails);
-    console.error("Failed to update bookmark:", error);
-  }
-}, [api, mails]);
 
   const summarize = useCallback(
     async (id: string) => {
@@ -186,7 +225,9 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
         const response = await api.get(`/mails/summarize/${id}`);
         return response.data;
       } catch (error) {
-        setSummarizeError(error instanceof Error ? error.message : "Unknown error");
+        setSummarizeError(
+          error instanceof Error ? error.message : "Unknown error"
+        );
         return "";
       } finally {
         setSummarizeLoading(false);
@@ -212,7 +253,7 @@ export const MailsProvider = ({ children }: { children: ReactNode }) => {
         markAsReadAllBySenderId,
         loadMoreMails,
         paginationInfo,
-        summarizeError
+        summarizeError,
       }}
     >
       {children}
