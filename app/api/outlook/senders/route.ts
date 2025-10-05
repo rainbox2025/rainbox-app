@@ -26,16 +26,99 @@ export async function GET(request: Request) {
     }
 
     const userId = user.id;
-    const tokensCookie = cookieStore.get("outlook_consent_tokens");
 
-    if (!tokensCookie) {
-      return NextResponse.json(
-        { error: "No Outlook tokens found" },
-        { status: 401 }
-      );
+    let tokens;
+    let fromDB = false;
+
+    // Try to get tokens from cookies first
+    const tokensCookie = cookieStore.get("outlook_consent_tokens");
+    if (tokensCookie) {
+      tokens = JSON.parse(tokensCookie.value);
+    } else {
+      // Fallback to database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from("outlook_tokens")
+        .select("tokens")
+        .eq("user_email", user.email)
+        .single();
+
+      if (tokenError || !tokenData) {
+        return NextResponse.json(
+          { error: "No Outlook tokens found" },
+          { status: 401 }
+        );
+      }
+
+      tokens = tokenData.tokens;
+      fromDB = true;
     }
 
-    const tokens = JSON.parse(tokensCookie.value);
+    // Check if token is expired and refresh if needed
+    const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+    if (tokens.expires_in && now >= tokens.expires_in) {
+      if (!tokens.refresh_token) {
+        return NextResponse.json(
+          { error: "Token expired and no refresh token available" },
+          { status: 401 }
+        );
+      }
+
+      // Refresh token
+      const refreshResponse = await fetch(
+        "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: process.env.OUTLOOK_CLIENT_ID!,
+            client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+            refresh_token: tokens.refresh_token,
+            grant_type: "refresh_token",
+          }),
+        }
+      );
+
+      const newTokens = await refreshResponse.json();
+      if (!refreshResponse.ok) {
+        return NextResponse.json(
+          { error: "Failed to refresh token" },
+          { status: 401 }
+        );
+      }
+
+      // Update tokens
+      tokens = {
+        ...tokens,
+        access_token: newTokens.access_token,
+        refresh_token: newTokens.refresh_token || tokens.refresh_token,
+        expires_in: now + (newTokens.expires_in || 3600),
+        ext_expires_in: newTokens.ext_expires_in || tokens.ext_expires_in,
+      };
+
+      // Update in DB
+      await supabase
+        .from("outlook_tokens")
+        .update({
+          tokens,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_email", user.email);
+
+      // Update cookie if it existed
+      if (!fromDB) {
+        cookieStore.set({
+          name: "outlook_consent_tokens",
+          value: JSON.stringify(tokens),
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 7,
+          path: "/",
+        });
+      }
+    }
     const url = new URL(request.url);
     const rawPageToken = url.searchParams.get("pageToken");
     const pageSize = Math.min(
