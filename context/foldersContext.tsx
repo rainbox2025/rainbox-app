@@ -15,6 +15,7 @@ import { AxiosResponse } from "axios";
 import { useSenders } from "./sendersContext";
 import { useAuth } from "./authContext";
 import { useMails } from "./mailsContext";
+import { useMutation } from "@tanstack/react-query";
 
 interface FoldersContextType {
   folders: FolderType[];
@@ -133,6 +134,13 @@ export const FoldersProvider = ({
     }
   }, [api]);
 
+  useEffect(() => {
+    if (accessToken) {
+      fetchFolders();
+      fetchSidebarOrder();
+    }
+  }, [accessToken, fetchFolders, fetchSidebarOrder]);
+
   const saveSidebarOrder = useCallback(
     async (order: any) => {
       try {
@@ -143,13 +151,6 @@ export const FoldersProvider = ({
     },
     [api]
   );
-
-  useEffect(() => {
-    if (accessToken) {
-      fetchFolders();
-      fetchSidebarOrder();
-    }
-  }, [accessToken, fetchFolders, fetchSidebarOrder]);
 
   const createFolder = useCallback(
     async (name: string) => {
@@ -311,20 +312,34 @@ export const FoldersProvider = ({
         );
       } catch (error) {
         console.error(error);
-        throw error; // <-- Re-throw error
+        throw error;
       } finally {
-        setIsTogglingReadStateId(null); // <-- Clear loading state
+        setIsTogglingReadStateId(null);
       }
     },
     [api]
   );
+  const toggleNotificationMutation = useMutation({
+    mutationFn: ({
+      folderId,
+      notification,
+    }: {
+      folderId: string;
+      notification: boolean;
+    }) =>
+      api.patch(`/folders/notification`, {
+        folder_id: folderId,
+        notification,
+      }),
+  });
+
   const toggleNotificationFolder = useCallback(
     async (folderId: string, notification: boolean) => {
       setIsTogglingNotificationStateId(folderId); // <-- Set loading state
       try {
-        await api.patch(`/folders/notification`, {
-          folder_id: folderId,
-          notification: notification,
+        await toggleNotificationMutation.mutateAsync({
+          folderId,
+          notification,
         });
         setFolders((prevFolders) =>
           prevFolders.map((folder) =>
@@ -338,7 +353,7 @@ export const FoldersProvider = ({
         setIsTogglingNotificationStateId(null); // <-- Clear loading state
       }
     },
-    [api]
+    [toggleNotificationMutation, accessToken]
   );
 
   const updateSenderInUI = useCallback(
@@ -363,7 +378,6 @@ export const FoldersProvider = ({
             )
           );
         } else {
-          // It's in the root.
           updateSenderInRoot(updatedSender);
         }
       } else {

@@ -9,19 +9,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const cookieStore = cookies();
-    const tokensCookie = cookieStore.get("consent_tokens");
-
-    if (!tokensCookie) {
-      return NextResponse.json(
-        { error: "No Gmail tokens found" },
-        { status: 401 }
-      );
-    }
-
-    const tokens = JSON.parse(tokensCookie.value);
+    const supabase = await createClient();
 
     // Get authenticated user
-    const supabase = await createClient();
     const {
       data: { user },
       error: authError,
@@ -29,6 +19,94 @@ export async function GET(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    let tokens;
+    let fromDB = false;
+
+    // Try to get tokens from cookies first
+    const tokensCookie = cookieStore.get("consent_tokens");
+    if (tokensCookie) {
+      tokens = JSON.parse(tokensCookie.value);
+    } else {
+      // Fallback to database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from("gmail_tokens")
+        .select("tokens")
+        .eq("user_email", user.email)
+        .single();
+
+      if (tokenError || !tokenData) {
+        return NextResponse.json(
+          { error: "No Gmail tokens found" },
+          { status: 401 }
+        );
+      }
+
+      tokens = tokenData.tokens;
+      fromDB = true;
+    }
+
+    // Check if token is expired and refresh if needed
+    const now = Date.now();
+    if (tokens.expiry_date && now >= tokens.expiry_date) {
+      if (!tokens.refresh_token) {
+        return NextResponse.json(
+          { error: "Token expired and no refresh token available" },
+          { status: 401 }
+        );
+      }
+
+      // Refresh token
+      const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: process.env.CLIENT_ID!,
+          client_secret: process.env.CLIENT_SECRET!,
+          refresh_token: tokens.refresh_token,
+          grant_type: "refresh_token",
+        }),
+      });
+
+      const newTokens = await refreshResponse.json();
+      if (!refreshResponse.ok) {
+        return NextResponse.json(
+          { error: "Failed to refresh token" },
+          { status: 401 }
+        );
+      }
+
+      // Update tokens
+      tokens = {
+        ...tokens,
+        access_token: newTokens.access_token,
+        expiry_date: now + (newTokens.expires_in || 3600) * 1000,
+      };
+
+      // Update in DB
+      await supabase
+        .from("gmail_tokens")
+        .update({
+          tokens,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_email", user.email);
+
+      // Update cookie if it existed
+      if (!fromDB) {
+        cookieStore.set({
+          name: "consent_tokens",
+          value: JSON.stringify(tokens),
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 7,
+          path: "/",
+        });
+      }
     }
 
     const userId = user.id;
