@@ -1,9 +1,17 @@
 "use client";
-import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useAuth } from "./authContext";
 import { useAxios } from "@/hooks/useAxios";
-import { Preferences, SenderType } from '@/types/data';
-
+import { Preferences, SenderType } from "@/types/data";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const DEFAULT_PREFERENCES: Preferences = {
   font_size: "medium",
@@ -24,100 +32,167 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
-export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
+export const SettingsProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const { user } = useAuth();
   const api = useAxios();
 
-  const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
-  const [globalNotificationsEnabled, setGlobalNotificationsEnabled] = useState<boolean>(true);
+  const [preferences, setPreferences] =
+    useState<Preferences>(DEFAULT_PREFERENCES);
+  const [globalNotificationsEnabled, setGlobalNotificationsEnabled] =
+    useState<boolean>(true);
   const [senders, setSenders] = useState<SenderType[]>([]);
-
 
   const isInitialFetchDone = useRef(false);
 
+  const queryClient = useQueryClient();
+
+  const { data: preferencesData, isLoading: isPreferencesLoading } = useQuery({
+    queryKey: ["settings", "preferences"],
+    queryFn: async () => {
+      const { data } = await api.get("/account/preferences");
+      return data.preferences;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: notificationsData, isLoading: isNotificationsLoading } =
+    useQuery({
+      queryKey: ["settings", "notifications"],
+      queryFn: async () => {
+        const { data } = await api.get("/account/notifications");
+        return data;
+      },
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000,
+    });
 
   useEffect(() => {
-    if (!user) return;
-    const fetchAllSettings = async () => {
-      try {
-        const [prefsRes, notifsRes] = await Promise.all([
-          api.get('/account/preferences'),
-          api.get('/account/notifications')
-        ]);
-
-        if (prefsRes.data.preferences) {
-          setPreferences({ ...DEFAULT_PREFERENCES, ...prefsRes.data.preferences });
-        }
-        if (notifsRes.data) {
-          setGlobalNotificationsEnabled(notifsRes.data.global_notification);
-          setSenders(notifsRes.data.senders || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch settings:", error);
-      } finally {
-        isInitialFetchDone.current = true;
-      }
-    };
-
-    fetchAllSettings();
-  }, [api]);
-
-
+    if (preferencesData) {
+      setPreferences({ ...DEFAULT_PREFERENCES, ...preferencesData });
+      isInitialFetchDone.current = true;
+    }
+  }, [preferencesData]);
 
   useEffect(() => {
+    if (notificationsData) {
+      setGlobalNotificationsEnabled(notificationsData.global_notification);
+      setSenders(notificationsData.senders || []);
+      isInitialFetchDone.current = true;
+    }
+  }, [notificationsData]);
 
+  const lastSynced = useRef<Preferences | null>(null);
 
+  useEffect(() => {
     if (!isInitialFetchDone.current) {
       return;
     }
 
+    if (JSON.stringify(preferences) === JSON.stringify(lastSynced.current)) {
+      return;
+    }
+
+    lastSynced.current = preferences;
 
     const handler = setTimeout(() => {
       console.log("Syncing preferences to server...");
-      api.put('/account/preferences', { preferences }).catch(e => console.error("Sync failed:", e));
+      api
+        .put("/account/preferences", { preferences })
+        .catch((e) => console.error("Sync failed:", e));
     }, 750);
 
     return () => clearTimeout(handler);
   }, [preferences, api]);
 
-
   const updatePreferences = useCallback((newPrefs: Partial<Preferences>) => {
-    setPreferences(prev => ({ ...prev, ...newPrefs }));
+    setPreferences((prev) => ({ ...prev, ...newPrefs }));
   }, []);
 
-
-  const updateGlobalNotifications = useCallback((enabled: boolean) => {
-    setGlobalNotificationsEnabled(enabled);
-    api.put('/account/notifications', { type: 'global', payload: { enabled } })
-      .catch(error => {
-        console.error("Failed to update global notifications:", error);
-        setGlobalNotificationsEnabled(!enabled);
+  const updateGlobalNotificationsMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      api.put("/account/notifications", {
+        type: "global",
+        payload: { enabled },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["settings", "notifications"],
       });
-  }, [api]);
+    },
+  });
 
-  const updateSenderNotification = useCallback((senderId: string, enabled: boolean) => {
-    setSenders(currentSenders => {
-      const newSenders = currentSenders.map(s =>
-        s.id === senderId ? { ...s, notification: enabled } : s
+  const updateGlobalNotifications = useCallback(
+    (enabled: boolean) => {
+      const previous = globalNotificationsEnabled;
+      setGlobalNotificationsEnabled(enabled);
+      updateGlobalNotificationsMutation.mutate(enabled, {
+        onError: () => {
+          setGlobalNotificationsEnabled(previous);
+        },
+      });
+    },
+    [globalNotificationsEnabled, updateGlobalNotificationsMutation]
+  );
+
+  const updateSenderNotificationMutation = useMutation({
+    mutationFn: ({
+      senderId,
+      enabled,
+    }: {
+      senderId: string;
+      enabled: boolean;
+    }) =>
+      api.put("/account/notifications", {
+        type: "sender",
+        payload: { senderId, enabled },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["settings", "notifications"],
+      });
+    },
+  });
+
+  const updateSenderNotification = useCallback(
+    (senderId: string, enabled: boolean) => {
+      const previousSenders = senders;
+      setSenders((currentSenders) =>
+        currentSenders.map((s) =>
+          s.id === senderId ? { ...s, notification: enabled } : s
+        )
       );
-      api.put('/account/notifications', { type: 'sender', payload: { senderId, enabled } })
-        .catch(error => {
-          console.error(`Failed to update sender ${senderId} notification:`, error);
-          setSenders(currentSenders);
-        });
-      return newSenders;
-    });
-  }, [api]);
+      updateSenderNotificationMutation.mutate(
+        { senderId, enabled },
+        {
+          onError: () => {
+            setSenders(previousSenders);
+          },
+        }
+      );
+    },
+    [senders, updateSenderNotificationMutation]
+  );
 
+  const submitFeedbackMutation = useMutation({
+    mutationFn: (formData: FormData) => api.post("/account/feedback", formData),
+  });
 
-const submitFeedback = useCallback(async (formData: FormData) => {
-  try {
-    await api.post('/account/feedback', formData);
-  } catch (error) {
-    console.error("Failed to submit feedback:", error);
-    throw error;
-  }
-}, [api]);
+  const submitFeedback = useCallback(
+    async (formData: FormData) => {
+      try {
+        await submitFeedbackMutation.mutateAsync(formData);
+      } catch (error) {
+        console.error("Failed to submit feedback:", error);
+        throw error;
+      }
+    },
+    [submitFeedbackMutation]
+  );
 
   const contextValue = {
     preferences,
@@ -126,7 +201,7 @@ const submitFeedback = useCallback(async (formData: FormData) => {
     updatePreferences,
     updateGlobalNotifications,
     updateSenderNotification,
-    submitFeedback
+    submitFeedback,
   };
 
   return (
@@ -143,4 +218,3 @@ export const useSettings = () => {
   }
   return context;
 };
-

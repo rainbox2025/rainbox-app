@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useAxios } from "@/hooks/useAxios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface OnboardingContextType {
   currentStep: number;
@@ -15,7 +16,8 @@ interface OnboardingContextType {
     name: string
   ) => Promise<{ error: unknown; data: string }>;
   isOnboardingComplete: () => Promise<boolean>;
-  completeOnboarding: () => Promise<void>;
+  isOnboardingLoading: boolean;
+  completeOnboarding: () => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
@@ -29,6 +31,7 @@ export const OnboardingProvider = ({
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const api = useAxios();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
@@ -48,16 +51,36 @@ export const OnboardingProvider = ({
   };
   const goToStep = (step: number) => updateStep(step);
 
-  const completeOnboarding = async () => {
-    try {
-      await api.patch("/onboarding");
-    } catch (error) {
-      console.error("Failed to mark onboarding as complete on server:", error);
-    } finally {
+  const {
+    data: isOnboardingCompleteData = true,
+    isLoading: isOnboardingLoading,
+  } = useQuery({
+    queryKey: ["onboarding", "status"],
+    queryFn: async () => {
+      const { data } = await api.get<{ isComplete: boolean }>("/onboarding");
+      return data.isComplete;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const completeOnboardingMutation = useMutation({
+    mutationFn: () => api.patch("/onboarding"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding", "status"] });
       localStorage.removeItem(ONBOARDING_STEP_KEY);
       window.location.href = "/dashboard";
-    }
+    },
+    onError: (error) => {
+      console.error("Failed to mark onboarding as complete on server:", error);
+    },
+  });
+
+  const completeOnboarding = () => {
+    completeOnboardingMutation.mutate();
   };
+
+  const isOnboardingComplete = async () => isOnboardingCompleteData ?? true;
+
   const checkUserName = async (name: string): Promise<boolean> => {
     const supabase = createClient();
 
@@ -109,19 +132,6 @@ export const OnboardingProvider = ({
     }
   };
 
-  const isOnboardingComplete = async (): Promise<boolean> => {
-    try {
-      const { data } = await api.get<{ isComplete: boolean }>("/onboarding");
-      return data.isComplete;
-    } catch (error) {
-      console.error(
-        "Could not check onboarding status, assuming complete to avoid blocking user:",
-        error
-      );
-      return true;
-    }
-  };
-
   return (
     <OnboardingContext.Provider
       value={{
@@ -132,6 +142,7 @@ export const OnboardingProvider = ({
         checkUserName,
         updateUserName,
         isOnboardingComplete,
+        isOnboardingLoading,
         completeOnboarding,
       }}
     >
